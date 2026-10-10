@@ -199,8 +199,8 @@ function Hero() {
         </div>
       </div>
 
-      <div className="hero-hud absolute bottom-6 left-4 z-10 hidden md:block min-[900px]:left-6">
-        <Astronaut size={92} mood="happy" action="wave" say="Hi, I'm Astra — your field-test crew." />
+      <div className="hero-hud absolute bottom-3 left-[calc(50%-120px)] z-10 hidden md:block [@media(max-height:760px)]:hidden">
+        <Astronaut size={78} mood="happy" action="wave" say="Hi, I'm Astra — your field-test crew." sayAlign="side" />
       </div>
       <style>{`@keyframes hudIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
     </section>
@@ -231,7 +231,7 @@ function Challenge() {
   const stats = [
     { n: EARTH_SITES.length, label: "Reference Earth analogs", note: "published field-test sites" },
     { n: TARGETS.length, label: "Moon & Mars targets", note: "Artemis regions, rover sites, caves" },
-    { n: LAYERS.length, label: "Live NASA map layers", note: "GIBS + Solar System Treks" },
+    { n: LAYERS.length, label: "Live map layers", note: "NASA GIBS, Trek + ESA Sentinel-2" },
     { n: SCREENING_REGIONS.length, label: "Regions queued to screen", note: "for new analogs" },
   ];
   return (

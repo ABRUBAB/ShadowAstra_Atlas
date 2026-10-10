@@ -34,7 +34,7 @@
 |---|---|
 | `/` | Ten-chapter story from Earth to Moon to Mars |
 | `/atlas` | 3D globes and 12 live NASA map layers for three worlds, filtered by mission task |
-| `/lab` | **Analog Lab**: Terrain Twins, Shadow Lab, Analog Fit, Light Twin, imagery swipe, sustainability, reality gaps |
+| `/lab` | **Analog Lab**: side-by-side / swipe real-imagery comparison at matched scale + Analog Fit panel; below it real 3D terrain slabs with imagery drape, cross-section slice, slope stats, geology plates, Light & Shadow, rehearse-closer, reality gaps |
 | `/methods` | Pipeline, scoring model and weights, source registry |
 | `/about` | Team, the meaning of the name, award mapping, timeline |
 
@@ -43,7 +43,8 @@
 | World | Product | Use | Service |
 |---|---|---|---|
 | Earth | Blue Marble · MODIS · ASTER GDEM · VIIRS Black Marble · MODIS LST | Maps, globe textures, thumbnails | NASA GIBS |
-| Earth | SRTM-derived Terrain Tiles | Terrain Twins (elevation in metres) | AWS Open Data |
+| Earth | SRTM-derived Terrain Tiles | Terrain slabs (elevation in metres) | AWS Open Data |
+| Earth | Sentinel-2 cloudless 2020 (10 m) | Real-colour comparison, 3D drape, geology plates | ESA Copernicus via EOX (CC BY-NC-SA) |
 | Moon | LRO LROC WAC, LOLA colour / hillshade / DEM | Maps, globe, south-pole map, Terrain Twins | NASA Solar System Treks |
 | Mars | Viking MDIM 2.1, MGS MOLA colour / DEM, Odyssey THEMIS | Maps, globe, Terrain Twins | NASA Solar System Treks |
 
@@ -102,6 +103,6 @@ docs/         PROJECT_PLAN.md
 
 ## Credits and disclaimer
 
-Data: NASA GIBS / ESDIS; NASA Solar System Treks (JPL); LRO (LROC, LOLA), MGS MOLA, Viking, Mars Odyssey THEMIS, Terra MODIS and ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles. NASA does not endorse this project. The 8-bit Trek DEM calibrations are our own approximations. CO₂ figures are indicative. Coordinates are approximate region centres. Field visits require permission, local partnership and environmental care.
+Data: NASA GIBS / ESDIS; Sentinel-2 cloudless — https://s2maps.eu by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020); NASA Solar System Treks (JPL); LRO (LROC, LOLA), MGS MOLA, Viking, Mars Odyssey THEMIS, Terra MODIS and ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles. NASA does not endorse this project. The 8-bit Trek DEM calibrations are our own approximations. CO₂ figures are indicative. Coordinates are approximate region centres. Field visits require permission, local partnership and environmental care.
 
 MIT License. See [LICENSE](LICENSE).

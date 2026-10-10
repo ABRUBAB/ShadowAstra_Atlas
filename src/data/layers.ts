@@ -18,7 +18,7 @@ export interface MapLayer {
   projection: Projection;
   url: string;
   maxNativeZoom: number;
-  provider: "NASA GIBS" | "NASA Trek" | "NASA Trek · reprojected";
+  provider: "NASA GIBS" | "NASA Trek" | "NASA Trek · reprojected" | "ESA Copernicus · EOX";
   link: string;
   /** Rendered on top of the body's base layer instead of replacing it. */
   overlay?: boolean;
@@ -31,6 +31,19 @@ const TREK = "https://trek.nasa.gov/tiles";
 export const MODIS_DATE = "2026-09-01";
 
 export const LAYERS: MapLayer[] = [
+  {
+    id: "earth-s2",
+    body: "earth",
+    name: "Sentinel-2 cloudless · true colour",
+    instrument: "ESA Copernicus Sentinel-2 (2020 cloudless, EOX)",
+    measures: "Cloud-free true colour — rock, sand, ice and soil as they look",
+    resolution: "10 m",
+    projection: "mercator",
+    url: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+    maxNativeZoom: 14,
+    provider: "ESA Copernicus · EOX",
+    link: "https://s2maps.eu",
+  },
   {
     id: "earth-bluemarble",
     body: "earth",

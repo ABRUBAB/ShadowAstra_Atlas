@@ -17,7 +17,7 @@ interface Props {
   say?: string | null;
   size?: number;
   className?: string;
-  sayAlign?: "left" | "right";
+  sayAlign?: "left" | "right" | "side";
 }
 
 export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, className, sayAlign = "right" }: Props) {
@@ -33,8 +33,12 @@ export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, 
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             role="status"
             className={clsx(
-              "absolute bottom-[86%] z-10 w-max max-w-[220px] rounded-2xl rounded-bl-sm border border-line-2 bg-panel/95 px-3 py-2 text-[12px] leading-snug text-platinum backdrop-blur",
-              sayAlign === "right" ? "left-[58%]" : "right-[58%] rounded-bl-2xl rounded-br-sm",
+              "absolute z-10 w-max max-w-[220px] rounded-2xl border border-line-2 bg-panel/95 px-3 py-2 text-[12px] leading-snug text-platinum backdrop-blur",
+              sayAlign === "side"
+                ? "top-[18%] left-[88%] rounded-tl-sm"
+                : sayAlign === "right"
+                  ? "bottom-[86%] left-[58%] rounded-bl-sm"
+                  : "right-[58%] bottom-[86%] rounded-br-sm",
             )}
           >
             {say}

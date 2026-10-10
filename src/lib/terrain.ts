@@ -141,7 +141,10 @@ export async function sampleTerrain({ body, lat, lon, footprintKm, spacingKm, on
   const src = DEM[body];
   const n = Math.max(24, Math.min(128, Math.round(footprintKm / spacingKm)));
   const step = footprintKm / n;
-  const z = chooseZoom(src, lat, step);
+  let z = chooseZoom(src, lat, step);
+  // Polar footprints touch every longitude column — cap the request count.
+  const cols0 = (src.grid === "mercator" ? 1 : 2) * 2 ** z;
+  if (Math.abs(lat) > 80 && cols0 > 64 && src.grid === "equirect") z = Math.max(0, z - 1);
   const worldW = (src.grid === "mercator" ? 256 : 512) * 2 ** z;
 
   // Pre-compute pixel positions and the set of tiles they touch.
@@ -368,4 +371,192 @@ export function illumination(g: TerrainGrid, sunElevDeg: number, azimuths = 24):
       if (count === 0) never++;
     }
   return { lit, persistentShadow: never / (n * n), meanLit: total / (n * n) };
+}
+
+/* ------------------------------------------------------------------ imagery */
+
+export interface ImgSource {
+  id: string;
+  body: Body;
+  name: string;
+  instrument: string;
+  res: string;
+  grid: "mercator" | "equirect";
+  maxZoom: number;
+  url: (z: number, x: number, y: number) => string;
+}
+
+const TREK = "https://trek.nasa.gov/tiles";
+const trek = (body: string, layer: string, ext: string) => (z: number, x: number, y: number) =>
+  `${TREK}/${body}/EQ/${layer}/1.0.0/default/default028mm/${z}/${y}/${x}.${ext}`;
+
+/** Real imagery, sampled onto the same ground footprint as the elevation grids. */
+export const IMAGERY: Record<Body, { visible: ImgSource; second: ImgSource }> = {
+  earth: {
+    visible: {
+      id: "s2",
+      body: "earth",
+      name: "Sentinel-2 cloudless 2020",
+      instrument: "ESA Copernicus Sentinel-2 · EOX",
+      res: "10 m",
+      grid: "mercator",
+      maxZoom: 14,
+      url: (z, x, y) => `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/GoogleMapsCompatible/${z}/${y}/${x}.jpg`,
+    },
+    second: {
+      id: "aster",
+      body: "earth",
+      name: "ASTER GDEM hillshade",
+      instrument: "NASA/METI Terra ASTER",
+      res: "30 m",
+      grid: "mercator",
+      maxZoom: 12,
+      url: (z, x, y) => `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/ASTER_GDEM_Greyscale_Shaded_Relief/default/GoogleMapsCompatible_Level12/${z}/${y}/${x}.jpg`,
+    },
+  },
+  moon: {
+    visible: {
+      id: "wac",
+      body: "moon",
+      name: "LROC WAC global mosaic",
+      instrument: "NASA LRO Camera",
+      res: "100 m",
+      grid: "equirect",
+      maxZoom: 7,
+      url: trek("Moon", "LRO_WAC_Mosaic_Global_303ppd_v02", "jpg"),
+    },
+    second: {
+      id: "lola",
+      body: "moon",
+      name: "LOLA hillshade",
+      instrument: "NASA LRO LOLA",
+      res: "118 m",
+      grid: "equirect",
+      maxZoom: 6,
+      url: trek("Moon", "LRO_LOLA_Shade_Global_256ppd_v06", "png"),
+    },
+  },
+  mars: {
+    visible: {
+      id: "viking",
+      body: "mars",
+      name: "Viking MDIM 2.1 colour",
+      instrument: "NASA Viking Orbiters",
+      res: "232 m",
+      grid: "equirect",
+      maxZoom: 7,
+      url: trek("Mars", "Mars_Viking_MDIM21_ClrMosaic_global_232m", "jpg"),
+    },
+    second: {
+      id: "themis",
+      body: "mars",
+      name: "THEMIS day infrared",
+      instrument: "NASA Mars Odyssey THEMIS",
+      res: "100 m",
+      grid: "equirect",
+      maxZoom: 8,
+      url: trek("Mars", "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018", "png"),
+    },
+  },
+};
+
+/** Sentinel-2 cloudless has colour artefacts over polar ice; use NASA Blue Marble there. */
+export const EARTH_POLAR_VISIBLE: ImgSource = {
+  id: "bmng",
+  body: "earth",
+  name: "Blue Marble Next Generation",
+  instrument: "NASA Terra/Aqua MODIS",
+  res: "500 m",
+  grid: "mercator",
+  maxZoom: 8,
+  url: (z, x, y) => `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/${z}/${y}/${x}.jpeg`,
+};
+export function earthVisible(lat: number) {
+  return Math.abs(lat) > 60 ? EARTH_POLAR_VISIBLE : IMAGERY.earth.visible;
+}
+
+function srcKm(src: { grid: "mercator" | "equirect"; body: Body }, z: number, lat: number) {
+  if (src.grid === "mercator") return (156.543_033_92 * Math.cos((lat * Math.PI) / 180)) / 2 ** z;
+  return (Math.PI * RADIUS[src.body]) / 1000 / (256 * 2 ** z);
+}
+
+/** Resample real imagery onto an N×N ground grid (north up, same footprint as the DEM). */
+export async function sampleImagery(src: ImgSource, lat: number, lon: number, footprintKm: number, size = 512): Promise<HTMLCanvasElement> {
+  const step = footprintKm / size;
+  let z = src.maxZoom;
+  while (z > 0 && srcKm(src, z - 1, lat) <= step) z--;
+
+  const plan = (zz: number) => {
+    const worldW = (src.grid === "mercator" ? 256 : 512) * 2 ** zz;
+    const pts = new Float64Array(size * size * 2);
+    const need = new Set<string>();
+    const fake: DemSource = { ...DEM[src.body], grid: src.grid };
+    for (let j = 0; j < size; j++)
+      for (let i = 0; i < size; i++) {
+        const [la, lo] = localToLatLon(src.body, lat, lon, (i + 0.5 - size / 2) * step, (size / 2 - j - 0.5) * step);
+        const [X, Y] = worldPx(fake, zz, la, lo);
+        pts[(j * size + i) * 2] = X;
+        pts[(j * size + i) * 2 + 1] = Y;
+        const cols = worldW / 256;
+        need.add(`${((Math.floor(X / 256) % cols) + cols) % cols},${Math.floor(Y / 256)}`);
+      }
+    return { pts, need, worldW };
+  };
+  let p = plan(z);
+  // Near the poles the footprint spans many longitudes — trade resolution for tile count.
+  while (p.need.size > 80 && z > 0) p = plan(--z);
+
+  const tiles = new Map<string, ImageData | null>();
+  await Promise.all(
+    [...p.need].map(async (key) => {
+      const [tx, ty] = key.split(",").map(Number);
+      tiles.set(key, ty < 0 || ty >= 2 ** z ? null : await loadTile(src.url(z, tx, ty)));
+    }),
+  );
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const out = ctx.createImageData(size, size);
+  const cols = p.worldW / 256;
+  const px = (X: number, Y: number, o: number[]) => {
+    const tx = ((Math.floor(X / 256) % cols) + cols) % cols;
+    const ty = Math.floor(Y / 256);
+    const t = tiles.get(`${tx},${ty}`);
+    if (!t) return false;
+    const ix = Math.min(t.width - 1, Math.max(0, Math.floor(X - Math.floor(X / 256) * 256)));
+    const iy = Math.min(t.height - 1, Math.max(0, Math.floor(Y - ty * 256)));
+    const k = (iy * t.width + ix) * 4;
+    o[0] = t.data[k];
+    o[1] = t.data[k + 1];
+    o[2] = t.data[k + 2];
+    o[3] = t.data[k + 3];
+    return true;
+  };
+  const a = [0, 0, 0, 0];
+  const b = [0, 0, 0, 0];
+  const c = [0, 0, 0, 0];
+  const d = [0, 0, 0, 0];
+  for (let k = 0; k < size * size; k++) {
+    const X = p.pts[k * 2] - 0.5;
+    const Y = p.pts[k * 2 + 1] - 0.5;
+    const x0 = Math.floor(X);
+    const y0 = Math.floor(Y);
+    const fx = X - x0;
+    const fy = Y - y0;
+    const ok = px(x0, y0, a) && px(x0 + 1, y0, b) && px(x0, y0 + 1, c) && px(x0 + 1, y0 + 1, d);
+    for (let ch = 0; ch < 3; ch++)
+      out.data[k * 4 + ch] = ok ? (a[ch] * (1 - fx) + b[ch] * fx) * (1 - fy) + (c[ch] * (1 - fx) + d[ch] * fx) * fy : 12;
+    out.data[k * 4 + 3] = 255;
+  }
+  ctx.putImageData(out, 0, 0);
+  return canvas;
+}
+
+/** W–E elevation profile through the centre row (metres relative to the grid mean). */
+export function centreProfile(g: TerrainGrid) {
+  const row = Math.floor(g.n / 2);
+  const vals = Array.from(g.heights.slice(row * g.n, row * g.n + g.n));
+  const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+  return vals.map((v, i) => ({ km: (i + 0.5) * g.spacingKm, m: v - mean }));
 }

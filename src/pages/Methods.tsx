@@ -19,6 +19,7 @@ const SOURCES: Source[] = [
   { body: "earth", name: "SRTM-based Terrain Tiles", agency: "NASA SRTM via AWS Open Data", use: "Terrain Twins (live)", res: "~30 m src", status: "live", link: "https://registry.opendata.aws/terrain-tiles/" },
   { body: "earth", name: "NASADEM", agency: "NASA / JPL", use: "Slope, roughness, relief", res: "30 m", status: "planned", link: "https://www.earthdata.nasa.gov/esds/competitive-programs/measures/nasadem" },
   { body: "earth", name: "ASTER GDEM v3", agency: "NASA / METI", use: "Terrain relief (live hillshade)", res: "30 m", status: "live", link: "https://asterweb.jpl.nasa.gov/gdem.asp" },
+  { body: "earth", name: "Sentinel-2 cloudless 2020", agency: "ESA Copernicus / EOX", use: "True-colour Earth imagery, 3D drape, geology plates", res: "10 m", status: "live", link: "https://s2maps.eu" },
   { body: "earth", name: "Copernicus DEM GLO-30", agency: "ESA", use: "Independent DEM cross-check", res: "30 m", status: "planned", link: "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM" },
   { body: "earth", name: "HLS (Landsat + Sentinel-2)", agency: "NASA / USGS / ESA", use: "Surface cover & bare-rock masks", res: "30 m", status: "planned", link: "https://hls.gsfc.nasa.gov/" },
   { body: "earth", name: "EMIT L2B minerals", agency: "NASA / JPL", use: "Surface mineralogy in arid regions", res: "60 m", status: "planned", link: "https://earth.jpl.nasa.gov/emit/" },
@@ -73,7 +74,7 @@ export default function Methods() {
           </p>
           <div className="mt-10 flex flex-wrap gap-3 text-[13px]">
             <span className="flex items-center gap-2 rounded-full border border-strong/40 bg-strong/10 px-3 py-1.5 text-strong">
-              <Check size={14} /> {live} live NASA layers in the prototype
+              <Check size={14} /> {live} live map layers in the prototype
             </span>
             <span className="flex items-center gap-2 rounded-full border border-dashed border-line-2 px-3 py-1.5 text-chrome">
               <CircleDashed size={14} /> {SOURCES.filter((s) => s.status === "planned").length} datasets planned for the pipeline
