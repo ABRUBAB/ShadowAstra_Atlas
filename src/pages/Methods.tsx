@@ -1,6 +1,8 @@
 import { ArrowUpRight, Check, CircleDashed } from "lucide-react";
 import { Eyebrow, Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { LAYERS } from "../data/layers";
+import { PARAMS, TASK_WEIGHTS } from "../lib/scoring";
+import { TASKS } from "../data/sites";
 
 type Status = "live" | "planned";
 interface Source {
@@ -14,6 +16,7 @@ interface Source {
 }
 
 const SOURCES: Source[] = [
+  { body: "earth", name: "SRTM-based Terrain Tiles", agency: "NASA SRTM via AWS Open Data", use: "Terrain Twins (live)", res: "~30 m src", status: "live", link: "https://registry.opendata.aws/terrain-tiles/" },
   { body: "earth", name: "NASADEM", agency: "NASA / JPL", use: "Slope, roughness, relief", res: "30 m", status: "planned", link: "https://www.earthdata.nasa.gov/esds/competitive-programs/measures/nasadem" },
   { body: "earth", name: "ASTER GDEM v3", agency: "NASA / METI", use: "Terrain relief (live hillshade)", res: "30 m", status: "live", link: "https://asterweb.jpl.nasa.gov/gdem.asp" },
   { body: "earth", name: "Copernicus DEM GLO-30", agency: "ESA", use: "Independent DEM cross-check", res: "30 m", status: "planned", link: "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM" },
@@ -21,12 +24,12 @@ const SOURCES: Source[] = [
   { body: "earth", name: "EMIT L2B minerals", agency: "NASA / JPL", use: "Surface mineralogy in arid regions", res: "60 m", status: "planned", link: "https://earth.jpl.nasa.gov/emit/" },
   { body: "earth", name: "MODIS LST · true colour", agency: "NASA", use: "Thermal regime, context imagery", res: "250 m–1 km", status: "live", link: "https://modis.gsfc.nasa.gov/" },
   { body: "earth", name: "VIIRS Black Marble", agency: "NASA / NOAA", use: "Remoteness proxy", res: "500 m", status: "live", link: "https://blackmarble.gsfc.nasa.gov/" },
-  { body: "moon", name: "LRO LOLA DEMs & hillshade", agency: "NASA", use: "Polar terrain, slope, illumination context", res: "5–118 m", status: "live", link: "https://science.nasa.gov/mission/lro/lola/" },
+  { body: "moon", name: "LRO LOLA DEMs & hillshade", agency: "NASA", use: "Terrain Twins, Shadow Lab, polar map", res: "5–237 m", status: "live", link: "https://science.nasa.gov/mission/lro/lola/" },
   { body: "moon", name: "LROC WAC mosaic", agency: "NASA / ASU", use: "Visible context", res: "100 m", status: "live", link: "https://lroc.im-ldi.com/" },
   { body: "moon", name: "LRO Diviner", agency: "NASA / UCLA", use: "Temperature, cold traps", res: "~240 m", status: "planned", link: "https://www.diviner.ucla.edu/" },
   { body: "moon", name: "SELENE / Kaguya TC DTM", agency: "JAXA", use: "Independent lunar terrain", res: "10 m", status: "planned", link: "https://darts.isas.jaxa.jp/planet/pdap/selene/" },
   { body: "moon", name: "Chandrayaan-2 OHRC / DFSAR", agency: "ISRO", use: "High-res polar imaging & radar", res: "0.25–20 m", status: "planned", link: "https://pradan.issdc.gov.in/" },
-  { body: "mars", name: "MGS MOLA", agency: "NASA", use: "Regional elevation", res: "463 m", status: "live", link: "https://attic.gsfc.nasa.gov/mola/" },
+  { body: "mars", name: "MGS MOLA", agency: "NASA", use: "Terrain Twins, regional elevation", res: "463 m", status: "live", link: "https://attic.gsfc.nasa.gov/mola/" },
   { body: "mars", name: "Viking MDIM 2.1", agency: "NASA / USGS", use: "Global colour context", res: "232 m", status: "live", link: "https://astrogeology.usgs.gov/" },
   { body: "mars", name: "Mars Odyssey THEMIS", agency: "NASA / ASU", use: "Thermal inertia, rock vs. dust", res: "100 m", status: "live", link: "https://themis.mars.asu.edu/" },
   { body: "mars", name: "MRO HiRISE DTMs", agency: "NASA / UArizona", use: "Wheel-scale slope & roughness", res: "1 m", status: "planned", link: "https://www.uahirise.org/dtm/" },
@@ -94,6 +97,60 @@ export default function Methods() {
         </div>
       </section>
 
+
+      <section className="border-b border-line bg-ink px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-[1400px]">
+          <Eyebrow>How we score an Earth analog</Eyebrow>
+          <h2 className="mt-6 max-w-3xl text-[clamp(26px,3vw,42px)] font-medium tracking-tight">Six parameters, weighted by the mission — never one universal number.</h2>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+            {PARAMS.map((p) => {
+              const kind = p.id === "radiation" ? "Reality gap" : p.id === "topography" || p.id === "lighting" ? "Computed today" : "Demo → model";
+              const tone = p.id === "radiation" ? "text-weak" : kind === "Computed today" ? "text-strong" : "text-chrome";
+              return (
+                <div key={p.id} className="bg-panel p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[17px] text-platinum">{p.label}</span>
+                    <span className={`font-mono text-[10px] tracking-widest uppercase ${tone}`}>{kind}</span>
+                  </div>
+                  <p className="mt-2 text-[13.5px] text-chrome">{p.what}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-line">
+            <table className="w-full min-w-[720px] text-left text-[13px]">
+              <thead className="bg-panel font-mono text-[10px] tracking-[0.18em] text-dim uppercase">
+                <tr>
+                  <th className="px-4 py-3 font-normal">Mission task</th>
+                  {(["topography", "geology", "temperature", "lighting", "regolith"] as const).map((k) => (
+                    <th key={k} className="px-4 py-3 text-right font-normal">{k}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {TASKS.map((t) => (
+                  <tr key={t.id} className="border-t border-line">
+                    <td className="px-4 py-2.5 text-platinum">{t.label}</td>
+                    {(["topography", "geology", "temperature", "lighting", "regolith"] as const).map((k) => {
+                      const w = TASK_WEIGHTS[t.id][k];
+                      return (
+                        <td key={k} className="px-4 py-2.5 text-right font-mono text-chrome">
+                          <span className="inline-block h-1 rounded-full bg-platinum/70 align-middle" style={{ width: w * 60 }} /> {Math.round(w * 100)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-5 max-w-3xl text-[13px] leading-relaxed text-dim">
+            Score bands: ≥ 0.75 high · 0.50–0.74 medium · &lt; 0.50 low. Topography = 0.65 × slope-histogram overlap + 0.35 × relief agreement on a
+            shared grid. Lighting = 1 − W₁/25°, the earth-mover distance between daylight Sun-elevation distributions in the best season. Radiation, gravity
+            and atmosphere are displayed as reality gaps and never scored.
+          </p>
+        </div>
+      </section>
       <section className="border-b border-line px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-[1400px]">
           <Eyebrow>Source registry</Eyebrow>

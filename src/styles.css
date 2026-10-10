@@ -3,27 +3,31 @@
 
 /* ShadowAstra Atlas design tokens — see DESIGN.md */
 @theme {
-  --color-void: #020306;
-  --color-ink: #06080d;
-  --color-panel: #0a0d14;
-  --color-panel-2: #0f131c;
-  --color-line: #1b2130;
-  --color-line-2: #283043;
-  --color-platinum: #f3f5f7;
-  --color-chrome: #afb9c7;
-  --color-dim: #6f7a8c;
+  /* "Observatory" neutrals — warm blacks and bone whites, never pure #000/#fff */
+  --color-void: #07080a;
+  --color-ink: #0b0c0f;
+  --color-panel: #101114;
+  --color-panel-2: #16171b;
+  --color-line: #212226;
+  --color-line-2: #2f3035;
+  --color-platinum: #edeae4;
+  --color-chrome: #a8a59e;
+  --color-dim: #6c6a65;
+
+  /* one accent: low-angle sunlight on a polar ridge — used for light/shadow and key actions */
+  --color-flare: #f2c879;
 
   /* worlds — colour is reserved for which body we are talking about */
-  --color-earth: #75bbff;
-  --color-cobalt: #3466d8;
-  --color-moon: #d6dbe4;
+  --color-earth: #8fb4ea;
+  --color-cobalt: #4f74c8;
+  --color-moon: #c9c5bc;
   --color-mars: #e08a5f;
-  --color-amethyst: #9b86d9;
+  --color-amethyst: #a197cf;
 
-  /* evidence states */
-  --color-strong: #4ade9b;
-  --color-partial: #f5b84a;
-  --color-weak: #ff6b6b;
+  /* evidence states (muted, legible on warm black) */
+  --color-strong: #7cc8a0;
+  --color-partial: #e3b35e;
+  --color-weak: #e47a63;
 
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
@@ -31,6 +35,7 @@
   --font-wide: "Michroma", "Geist", sans-serif;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
@@ -55,13 +60,13 @@ html.lenis body {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--color-earth) 40%, transparent);
-  color: white;
+  background: color-mix(in oklab, var(--color-flare) 35%, transparent);
+  color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-earth);
-  outline-offset: 2px;
+  outline: 1.5px solid var(--color-flare);
+  outline-offset: 3px;
   border-radius: 6px;
 }
 
@@ -69,39 +74,65 @@ html.lenis body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Film grain over the whole page — removes the flat "digital black" look */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
 /* Hairline grid used behind sections */
 .bg-grid {
   background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-
-.text-gradient {
-  background: linear-gradient(180deg, #ffffff 0%, #c9d2de 55%, #7e8aa0 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+    linear-gradient(to right, color-mix(in oklab, var(--color-line) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-line) 60%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
 }
 
 .panel {
-  background: color-mix(in oklab, var(--color-panel) 82%, transparent);
+  background: color-mix(in oklab, var(--color-panel) 88%, transparent);
   border: 1px solid var(--color-line);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.hairline {
-  border-color: var(--color-line);
+/* Link with an underline that draws in from the left */
+.link-wipe {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.45s var(--ease-out-quint), color 0.2s;
+}
+.link-wipe:hover {
+  background-size: 100% 1px;
 }
 
-.noise::after {
+/* Primary button: bone fill; on hover a sunlight edge slides across */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-platinum);
+  color: var(--color-void);
+  transition: transform 0.18s var(--ease-out-quint);
+}
+.btn-primary::after {
   content: "";
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  opacity: 0.06;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--color-flare) 55%, transparent) 50%, transparent 70%);
+  transform: translateX(-110%);
+  transition: transform 0.7s var(--ease-out-quint);
+}
+.btn-primary:hover::after {
+  transform: translateX(110%);
+}
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 .scrollbar-thin {
@@ -111,11 +142,11 @@ html.lenis body {
 
 /* Leaflet theming */
 .leaflet-container {
-  background: #020306;
+  background: var(--color-void);
   font-family: var(--font-sans);
 }
 .leaflet-control-attribution {
-  background: rgb(2 3 6 / 0.72) !important;
+  background: rgb(7 8 10 / 0.75) !important;
   color: var(--color-dim) !important;
   font-size: 10px !important;
 }
@@ -123,7 +154,7 @@ html.lenis body {
   color: var(--color-chrome) !important;
 }
 .leaflet-bar a {
-  background: rgb(10 13 20 / 0.9) !important;
+  background: rgb(16 17 20 / 0.92) !important;
   color: var(--color-platinum) !important;
   border-color: var(--color-line) !important;
 }
@@ -131,10 +162,10 @@ html.lenis body {
   border: 1px solid var(--color-line) !important;
 }
 .leaflet-tooltip.sa-tip {
-  background: rgb(6 8 13 / 0.92);
+  background: rgb(11 12 15 / 0.94);
   color: var(--color-platinum);
   border: 1px solid var(--color-line-2);
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 12px;
   padding: 4px 8px;
   box-shadow: none;
@@ -143,7 +174,7 @@ html.lenis body {
   display: none;
 }
 
-/* Map pins */
+/* Map pins — still by default; only the selected one breathes */
 .sa-pin {
   position: relative;
   width: 18px;
@@ -154,31 +185,43 @@ html.lenis body {
   inset: 5px;
   border-radius: 999px;
   background: var(--pin);
-  box-shadow: 0 0 0 2px rgb(2 3 6 / 0.9), 0 0 14px var(--pin);
+  box-shadow: 0 0 0 2px rgb(7 8 10 / 0.9);
 }
 .sa-pin .ring {
   position: absolute;
-  inset: 0;
+  inset: 1px;
   border-radius: 999px;
   border: 1px solid var(--pin);
-  opacity: 0.7;
-  animation: pin-pulse 2.4s var(--ease-out-expo) infinite;
+  opacity: 0.45;
 }
 .sa-pin.dim {
-  opacity: 0.35;
+  opacity: 0.3;
 }
 .sa-pin.active .core {
-  inset: 3px;
+  inset: 4px;
+  background: #fff;
 }
-@keyframes pin-pulse {
+.sa-pin.active .ring {
+  animation: pin-breathe 2.8s var(--ease-out-quint) infinite;
+}
+@keyframes pin-breathe {
   from {
-    transform: scale(0.6);
+    transform: scale(0.8);
     opacity: 0.9;
   }
   to {
-    transform: scale(2.2);
+    transform: scale(2.6);
     opacity: 0;
   }
+}
+.sa-pin.dashed .core {
+  background: transparent;
+  box-shadow: none;
+  border: 1.5px dashed var(--pin);
+  inset: 2px;
+}
+.sa-pin.dashed .ring {
+  opacity: 0;
 }
 
 @keyframes marquee {
@@ -187,7 +230,7 @@ html.lenis body {
   }
 }
 .animate-marquee {
-  animation: marquee 60s linear infinite;
+  animation: marquee 80s linear infinite;
 }
 
 @keyframes scan {
@@ -199,6 +242,19 @@ html.lenis body {
   }
 }
 
+@keyframes spin-tex {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.polar-image {
+  filter: contrast(1.4) brightness(0.9) sepia(0.08);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -207,18 +263,4 @@ html.lenis body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
-
-.polar-image {
-  filter: contrast(1.45) brightness(0.92);
-}
-.sa-pin.dashed .core {
-  background: transparent;
-  box-shadow: none;
-  border: 1.5px dashed var(--pin);
-  inset: 2px;
-}
-.sa-pin.dashed .ring {
-  animation: none;
-  opacity: 0;
 }

@@ -109,10 +109,19 @@ def moon_south_pole(z: int = 5, size: int = 1400, edge_lat: float = -80.0) -> Im
     return Image.fromarray(out.astype(np.uint8), "L")
 
 
-def save(img: Image.Image, name: str, quality: int = 86) -> None:
-    path = OUT / name
-    img.save(path, "JPEG", quality=quality, optimize=True, progressive=True)
-    print(f"  {name:28s} {img.size[0]}x{img.size[1]}  {path.stat().st_size / 1e6:.2f} MB")
+def save(img: Image.Image, name: str, quality: int = 82) -> None:
+    """Write WebP levels of detail: <stem>_4k/_2k/_1k.webp (the app streams 1K first)."""
+    stem = name.rsplit("_4k", 1)[0].rsplit(".", 1)[0]
+    if img.size[0] != 2 * img.size[1]:  # non-equirectangular (polar view): single file
+        path = OUT / f"{stem}.webp"
+        img.save(path, "WEBP", quality=quality, method=6)
+        print(f"  {path.name:28s} {img.size[0]}x{img.size[1]}  {path.stat().st_size / 1e6:.2f} MB")
+        return
+    for tag, w in (("4k", 4096), ("2k", 2048), ("1k", 1024)):
+        level = img if img.size[0] == w else img.resize((w, w // 2), Image.LANCZOS)
+        path = OUT / f"{stem}_{tag}.webp"
+        level.save(path, "WEBP", quality=quality, method=6)
+        print(f"  {path.name:28s} {w}x{w // 2}  {path.stat().st_size / 1e6:.2f} MB")
 
 
 def main() -> None:
@@ -126,7 +135,7 @@ def main() -> None:
     if "mars" in which:
         save(trek_global("Mars", "Mars_Viking_MDIM21_ClrMosaic_global_232m", 3, "jpg"), "mars_viking_4k.jpg")
     if "pole" in which:
-        save(moon_south_pole(), "moon_south_pole_lola.jpg", 88)
+        save(moon_south_pole(), "moon_south_pole_lola.jpg", 84)
 
 
 if __name__ == "__main__":

@@ -127,7 +127,9 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
       map.setView([15, 0], projection === "mercator" ? 2 : 1.4);
     }
 
+    let alive = true;
     const emit = () => {
+      if (!alive) return;
       const mpp = metresPerPixel(map, projection, body);
       const nice = niceScale(mpp * 110);
       setScale({ px: nice.value / mpp, label: nice.label });
@@ -137,15 +139,19 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
     };
     map.on("zoomend moveend", emit);
     mapRef.current = map;
-    requestAnimationFrame(() => {
+    const raf = requestAnimationFrame(() => {
+      if (!alive) return;
       map.invalidateSize();
       emit();
     });
-    const ro = new ResizeObserver(() => map.invalidateSize());
+    const ro = new ResizeObserver(() => alive && map.invalidateSize());
     ro.observe(host.current);
 
     return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
       ro.disconnect();
+      map.off();
       map.remove();
       mapRef.current = null;
       baseRef.current = null;

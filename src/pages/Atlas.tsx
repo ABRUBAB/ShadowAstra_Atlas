@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
 import { ArrowRight, Box, ChevronRight, CircleDashed, ExternalLink, Layers, Map as MapIcon, Radar, X } from "lucide-react";
 import { Nav, FitBadge, WorldDot, WORLD_COLOR } from "../components/ui/Chrome";
+import { Astronaut } from "../components/ui/Astronaut";
 import { BodyMap, type BodyMapHandle, type MapMarker } from "../components/map/BodyMap";
 import type { GlobeMarker } from "../components/three/Planet";
 import {
@@ -92,14 +93,14 @@ export default function Atlas() {
             id: `screen:${r.id}`,
             lat: r.lat,
             lon: r.lon,
-            color: "#9b86d9",
+            color: "#a197cf",
             label: `${r.name} · queued`,
             dashed: true,
             dim: world !== "both" && !r.worlds.includes(world),
           });
     } else {
       for (const t of TARGETS.filter((t) => t.body === body))
-        out.push({ id: t.id, lat: t.lat, lon: t.lon, color: "#75bbff", label: t.name, dim: !matchTarget(t) });
+        out.push({ id: t.id, lat: t.lat, lon: t.lon, color: "#edeae4", label: t.name, dim: !matchTarget(t) });
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,7 +237,7 @@ export default function Atlas() {
                         setLst(e.target.checked);
                         if (e.target.checked) setView("2d");
                       }}
-                      className="size-4 accent-[#75bbff]"
+                      className="size-4 accent-[#edeae4]"
                     />
                   </label>
                 )}
@@ -253,7 +254,7 @@ export default function Atlas() {
                     type="checkbox"
                     checked={showScreening}
                     onChange={(e) => setShowScreening(e.target.checked)}
-                    className="mt-0.5 size-4 accent-[#9b86d9]"
+                    className="mt-0.5 size-4 accent-[#a197cf]"
                   />
                   <span>
                     <span className="block text-[13px] text-platinum">Show queued search regions</span>
@@ -307,16 +308,24 @@ export default function Atlas() {
             </div>
           </div>
 
+          <div className="pointer-events-none absolute bottom-16 left-4 z-[600] hidden md:block">
+            <Astronaut
+              size={76}
+              mood={sel ? "happy" : task ? "focused" : "thinking"}
+              action={sel ? "sample" : task ? "scan" : "idle"}
+              say={sel ? null : task ? "Dim pins don't fit this task." : "Pick a pin, or choose a mission task."}
+            />
+          </div>
           <div className="pointer-events-none absolute bottom-4 left-1/2 z-[600] hidden -translate-x-1/2 items-center gap-4 whitespace-nowrap rounded-full border border-line bg-void/75 px-4 py-2 text-[11px] text-chrome backdrop-blur-xl md:flex">
             {body === "earth" ? (
               <>
                 <Key color={WORLD_COLOR.moon} label="Moon analog" />
                 <Key color={WORLD_COLOR.mars} label="Mars analog" />
                 <Key color={WORLD_COLOR.earth} label="Both" />
-                {showScreening && <Key color="#9b86d9" label="Queued for screening" dashed />}
+                {showScreening && <Key color="#a197cf" label="Queued for screening" dashed />}
               </>
             ) : (
-              <Key color="#75bbff" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
+              <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
             )}
             <span className="font-mono text-dim">{visibleCount} shown</span>
           </div>
@@ -458,7 +467,7 @@ function Overview({
         {earth.map((s) => (
           <li key={s.id}>
             <button onClick={() => onEarth(s.id)} className="group flex w-full items-center gap-3 border-b border-line py-2 text-left">
-              <img src={`/thumbs/${s.id}.jpg`} alt="" className="h-9 w-12 rounded-md object-cover" loading="lazy" />
+              <img src={`/thumbs/${s.id}.webp`} alt="" className="h-9 w-12 rounded-md object-cover" loading="lazy" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] text-platinum">{s.name}</span>
                 <span className="block text-[11px] text-dim">{s.country}</span>
@@ -479,7 +488,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
   return (
     <div>
       <div className="relative h-48 overflow-hidden">
-        <img src={`/thumbs/${s.id}.jpg`} alt={`NASA Blue Marble regional view around ${s.name}`} className="size-full object-cover" />
+        <img src={`/thumbs/${s.id}.webp`} alt={`NASA Blue Marble regional view around ${s.name}`} className="size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/20 to-transparent" />
         <span className="absolute right-3 bottom-3 rounded-full bg-void/70 px-2 py-0.5 font-mono text-[10px] text-chrome backdrop-blur">
           NASA Blue Marble · 500 m
@@ -559,10 +568,10 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
         </div>
 
         <Link
-          to={`/compare?earth=${s.id}&target=${s.pairs[0]}`}
+          to={`/lab?earth=${s.id}&target=${s.pairs[0]}`}
           className="flex items-center justify-center gap-2 rounded-full bg-platinum py-3 text-sm font-medium text-void transition-transform hover:bg-white active:scale-[0.99]"
         >
-          Compare at matched scale <ArrowRight size={15} />
+          Open in Analog Lab <ArrowRight size={15} />
         </Link>
       </div>
     </div>
@@ -596,7 +605,7 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
         <div className="mt-2 grid gap-1.5">
           {grounds.map((s) => (
             <button key={s.id} onClick={() => onEarth(s.id)} className="group flex items-center gap-3 rounded-xl border border-line p-2 text-left hover:border-line-2">
-              <img src={`/thumbs/${s.id}.jpg`} alt="" className="h-11 w-16 rounded-lg object-cover" />
+              <img src={`/thumbs/${s.id}.webp`} alt="" className="h-11 w-16 rounded-lg object-cover" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] text-platinum">{s.name}</span>
                 <span className="block text-[11px] text-dim">{s.country}</span>
@@ -625,8 +634,8 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
 
       {grounds[0] && (
         <Link
-          to={`/compare?earth=${grounds[0].id}&target=${t.id}`}
-          className="flex items-center justify-center gap-2 rounded-full bg-platinum py-3 text-sm font-medium text-void hover:bg-white"
+          to={`/lab?earth=${grounds[0].id}&target=${t.id}`}
+          className="btn-primary flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium"
         >
           Compare with {grounds[0].name.split(",")[0]} <ArrowRight size={15} />
         </Link>
@@ -641,7 +650,7 @@ function ScreenDetail({ id, onClose }: { id: string; onClose: () => void }) {
   return (
     <div>
       <div className="relative h-44 overflow-hidden">
-        <img src={`/thumbs/${r.id}.jpg`} alt={`NASA Blue Marble regional view around ${r.name}`} className="size-full object-cover opacity-80" />
+        <img src={`/thumbs/${r.id}.webp`} alt={`NASA Blue Marble regional view around ${r.name}`} className="size-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/20 to-transparent" />
       </div>
     <div className="space-y-7 p-5">

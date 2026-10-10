@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { AdaptiveDpr, OrbitControls, Stars } from "@react-three/drei";
 import { Planet, SUN_DIR, type GlobeMarker } from "./Planet";
+import { Starfield } from "./Starfield";
+import { Orbit } from "./Controls";
 import type { Body } from "../../data/sites";
 
 interface Props {
@@ -10,30 +11,22 @@ interface Props {
   activeId: string | null;
   onSelect: (id: string) => void;
   focus: { lat: number; lon: number } | null;
+  lod?: "1k" | "2k" | "4k";
+  stars?: boolean;
 }
 
-/** Interactive single-body globe used in the Atlas. */
-export default function GlobeView({ body, markers, activeId, onSelect, focus }: Props) {
+/** Interactive single-body globe used in the Atlas and the Analog Lab. */
+export default function GlobeView({ body, markers, activeId, onSelect, focus, lod, stars = true }: Props) {
   return (
     <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0, 3.4], fov: 40 }} aria-label={`${body} globe`}>
-      <color attach="background" args={["#020306"]} />
-      <ambientLight intensity={body === "earth" ? 0.08 : 0.32} />
-      <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={body === "earth" ? 2.4 : 2.2} />
-      <Stars radius={60} depth={30} count={2500} factor={2} saturation={0} fade speed={0.3} />
+      <color attach="background" args={["#07080a"]} />
+      <ambientLight intensity={body === "earth" ? 0.06 : 0.22} />
+      <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={body === "earth" ? 2.2 : 2.4} />
+      {stars && <Starfield count={1800} />}
       <Suspense fallback={null}>
-        <Planet
-          key={body}
-          body={body}
-          markers={markers}
-          activeId={activeId}
-          onSelect={onSelect}
-          focus={focus}
-          autoRotate={!focus}
-          spin={0.04}
-        />
+        <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus} spin={0.035} lod={lod} />
       </Suspense>
-      <OrbitControls enablePan={false} minDistance={1.6} maxDistance={6} rotateSpeed={0.5} zoomSpeed={0.6} />
-      <AdaptiveDpr pixelated={false} />
+      <Orbit />
     </Canvas>
   );
 }

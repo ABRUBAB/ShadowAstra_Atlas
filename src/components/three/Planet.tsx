@@ -1,20 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Html, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { Body } from "../../data/sites";
 import { latLonToVec3 } from "../../lib/geo";
+import { bestLod, useProgressiveTexture } from "./textures";
 
-// Phones get the 2K mosaics (same NASA sources, downsampled) to keep loading fast.
-const RES = typeof window !== "undefined" && window.innerWidth < 900 ? "2k" : "4k";
-export const TEXTURES: Record<Body, string> = {
-  earth: `/textures/earth_day_${RES}.jpg`,
-  moon: `/textures/moon_lroc_${RES}.jpg`,
-  mars: `/textures/mars_viking_${RES}.jpg`,
-};
-const NIGHT = `/textures/earth_night_${RES}.jpg`;
-
-export const SUN_DIR = new THREE.Vector3(-0.85, 0.35, 0.6).normalize();
+export const SUN_DIR = new THREE.Vector3(-0.85, 0.32, 0.55).normalize();
 
 export interface GlobeMarker {
   id: string;
@@ -37,6 +28,8 @@ interface PlanetProps {
   spin?: number;
   tilt?: number;
   atmosphere?: boolean;
+  /** Highest texture size to stream in after the 1K placeholder. */
+  lod?: "1k" | "2k" | "4k";
 }
 
 const earthVertex = /* glsl */ `
@@ -52,6 +45,8 @@ const earthVertex = /* glsl */ `
   }
 `;
 
+// Day/night from real NASA mosaics. City lights only on the night side; a thin
+// limb brightening instead of a neon rim.
 const earthFragment = /* glsl */ `
   uniform sampler2D dayMap;
   uniform sampler2D nightMap;
@@ -62,14 +57,14 @@ const earthFragment = /* glsl */ `
   void main() {
     vec3 n = normalize(vNormalW);
     float d = dot(n, normalize(sunDir));
-    float dayMix = smoothstep(-0.12, 0.22, d);
+    float dayMix = smoothstep(-0.08, 0.18, d);
     vec3 day = texture2D(dayMap, vUv).rgb;
     vec3 night = texture2D(nightMap, vUv).rgb;
-    night = pow(night, vec3(1.6)) * vec3(1.0, 0.78, 0.5) * 2.4;
-    vec3 lit = day * (0.18 + 1.05 * max(d, 0.0));
+    night = pow(night, vec3(1.8)) * vec3(1.0, 0.8, 0.55) * 2.2;
+    vec3 lit = day * (0.16 + 1.2 * pow(max(d, 0.0), 0.75));
     vec3 col = mix(night, lit, dayMix);
-    float fres = pow(1.0 - max(dot(n, vViewDir), 0.0), 2.6);
-    col += vec3(0.32, 0.58, 1.0) * fres * (0.75 * dayMix + 0.08);
+    float fres = pow(1.0 - max(dot(n, vViewDir), 0.0), 3.4);
+    col += vec3(0.55, 0.7, 0.95) * fres * 0.45 * smoothstep(-0.2, 0.4, d);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -77,25 +72,29 @@ const earthFragment = /* glsl */ `
 
 const atmoVertex = /* glsl */ `
   varying vec3 vNormalV;
+  varying vec3 vNormalW;
   void main() {
     vNormalV = normalize(normalMatrix * normal);
+    vNormalW = normalize(mat3(modelMatrix) * normal);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 const atmoFragment = /* glsl */ `
   uniform vec3 glow;
   uniform float strength;
+  uniform vec3 sunDir;
   varying vec3 vNormalV;
+  varying vec3 vNormalW;
   void main() {
-    float i = pow(max(0.68 - dot(vNormalV, vec3(0.0, 0.0, 1.0)), 0.0), 4.0) * strength;
-    gl_FragColor = vec4(glow, 1.0) * i;
+    float rim = pow(max(0.66 - dot(vNormalV, vec3(0.0, 0.0, 1.0)), 0.0), 4.0);
+    float sun = smoothstep(-0.35, 0.5, dot(normalize(vNormalW), normalize(sunDir)));
+    gl_FragColor = vec4(glow, 1.0) * rim * strength * (0.15 + 0.85 * sun);
   }
 `;
 
 const ATMO: Partial<Record<Body, { color: string; strength: number }>> = {
-  earth: { color: "#5aa8ff", strength: 2.2 },
-  mars: { color: "#e0895c", strength: 1.1 },
-  moon: { color: "#c9d2e0", strength: 0.35 },
+  earth: { color: "#9cc0ff", strength: 1.9 },
+  mars: { color: "#e5a27c", strength: 0.9 },
 };
 
 export function Planet({
@@ -109,18 +108,13 @@ export function Planet({
   spin = 0.05,
   tilt = 0,
   atmosphere = true,
+  lod,
 }: PlanetProps) {
   const tiltRef = useRef<THREE.Group>(null);
   const spinRef = useRef<THREE.Group>(null);
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [day, night] = useTexture(body === "earth" ? [TEXTURES.earth, NIGHT] : [TEXTURES[body], TEXTURES[body]]);
-
-  useMemo(() => {
-    for (const t of [day, night]) {
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 8;
-    }
-  }, [day, night]);
+  const target = lod ?? bestLod();
+  const day = useProgressiveTexture(body, target);
+  const night = useProgressiveTexture(body === "earth" ? "night" : body, body === "earth" && target !== "1k" ? "2k" : "1k");
 
   const earthMat = useMemo(
     () =>
@@ -129,15 +123,18 @@ export function Planet({
         vertexShader: earthVertex,
         fragmentShader: earthFragment,
       }),
-    [day, night],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
+  earthMat.uniforms.dayMap.value = day;
+  earthMat.uniforms.nightMap.value = night;
 
   const atmo = ATMO[body];
   const atmoMat = useMemo(
     () =>
       atmo &&
       new THREE.ShaderMaterial({
-        uniforms: { glow: { value: new THREE.Color(atmo.color) }, strength: { value: atmo.strength } },
+        uniforms: { glow: { value: new THREE.Color(atmo.color) }, strength: { value: atmo.strength }, sunDir: { value: SUN_DIR } },
         vertexShader: atmoVertex,
         fragmentShader: atmoFragment,
         side: THREE.BackSide,
@@ -152,40 +149,32 @@ export function Planet({
     const s = spinRef.current;
     const t = tiltRef.current;
     if (!s || !t) return;
+    const k = Math.min(1, dt * 2.4);
     if (focus) {
       const targetY = (-(focus.lon + 90) * Math.PI) / 180;
-      // shortest path around the circle
       let diff = targetY - s.rotation.y;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      s.rotation.y += diff * Math.min(1, dt * 3);
-      const targetX = (focus.lat * Math.PI) / 180;
-      t.rotation.x += (targetX - t.rotation.x) * Math.min(1, dt * 3);
+      s.rotation.y += diff * k;
+      t.rotation.x += ((focus.lat * Math.PI) / 180 - t.rotation.x) * k;
     } else {
       if (autoRotate) s.rotation.y += dt * spin;
-      t.rotation.x += (tilt - t.rotation.x) * Math.min(1, dt * 2);
+      t.rotation.x += (tilt - t.rotation.x) * Math.min(1, dt * 1.5);
     }
   });
 
   return (
     <group ref={tiltRef}>
       <group ref={spinRef}>
-        <mesh ref={meshRef} material={body === "earth" ? earthMat : undefined}>
+        <mesh material={body === "earth" ? earthMat : undefined}>
           <sphereGeometry args={[radius, 128, 96]} />
           {body !== "earth" && <meshStandardMaterial map={day} roughness={1} metalness={0} />}
         </mesh>
         {markers.map((m) => (
-          <Marker
-            key={m.id}
-            marker={m}
-            radius={radius}
-            active={m.id === activeId}
-            onSelect={onSelect}
-            occluder={meshRef}
-          />
+          <Marker key={m.id} marker={m} radius={radius} active={m.id === activeId} onSelect={onSelect} />
         ))}
       </group>
       {atmosphere && atmoMat && (
-        <mesh material={atmoMat} scale={1.06}>
+        <mesh material={atmoMat} scale={1.055}>
           <sphereGeometry args={[radius, 64, 48]} />
         </mesh>
       )}
@@ -198,30 +187,34 @@ function Marker({
   radius,
   active,
   onSelect,
-  occluder,
 }: {
   marker: GlobeMarker;
   radius: number;
   active: boolean;
   onSelect?: (id: string) => void;
-  occluder: React.RefObject<THREE.Mesh | null>;
 }) {
   const ring = useRef<THREE.Mesh>(null);
   const [hover, setHover] = useState(false);
-  const pos = useMemo(() => new THREE.Vector3(...latLonToVec3(marker.lat, marker.lon, radius * 1.004)), [marker, radius]);
+  const pos = useMemo(() => new THREE.Vector3(...latLonToVec3(marker.lat, marker.lon, radius * 1.003)), [marker, radius]);
   const quat = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), pos.clone().normalize()), [pos]);
-  const offset = useMemo(() => Math.random() * 3, []);
   const color = useMemo(() => new THREE.Color(marker.color), [marker.color]);
 
+  // Only the selected site breathes — everything else is still.
   useFrame(({ clock }) => {
     if (!ring.current) return;
-    const t = ((clock.elapsedTime + offset) % 2.4) / 2.4;
-    const s = 1 + t * (active ? 3.2 : 2.2);
-    ring.current.scale.setScalar(s);
-    (ring.current.material as THREE.MeshBasicMaterial).opacity = (1 - t) * (marker.dim ? 0.2 : 0.85);
+    const mat = ring.current.material as THREE.MeshBasicMaterial;
+    if (!active) {
+      ring.current.scale.setScalar(1);
+      mat.opacity = marker.dim ? 0.15 : 0.55;
+      return;
+    }
+    const t = (clock.elapsedTime % 2.8) / 2.8;
+    const e = 1 - Math.pow(1 - t, 3);
+    ring.current.scale.setScalar(1 + e * 2.4);
+    mat.opacity = (1 - e) * 0.9;
   });
 
-  const size = radius * (active ? 0.018 : 0.012);
+  const size = radius * (active ? 0.016 : hover ? 0.014 : 0.0105);
   const click = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     onSelect?.(marker.id);
@@ -241,29 +234,17 @@ function Marker({
           document.body.style.cursor = "";
         }}
       >
-        <circleGeometry args={[size * 2.6, 24]} />
+        <circleGeometry args={[radius * 0.04, 16]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <mesh>
         <circleGeometry args={[size, 24]} />
-        <meshBasicMaterial color={color} transparent opacity={marker.dim ? 0.35 : 1} toneMapped={false} />
+        <meshBasicMaterial color={active ? "#ffffff" : color} transparent opacity={marker.dim ? 0.3 : 1} toneMapped={false} />
       </mesh>
       <mesh ref={ring}>
-        <ringGeometry args={[size * 1.15, size * 1.35, 40]} />
+        <ringGeometry args={[size * 1.5, size * 1.7, 48]} />
         <meshBasicMaterial color={color} transparent depthWrite={false} toneMapped={false} />
       </mesh>
-      {(active || hover) && marker.label && (
-        <Html
-          center
-          occlude={[occluder as React.RefObject<THREE.Object3D>]}
-          zIndexRange={[20, 0]}
-          style={{ pointerEvents: "none", transform: "translate(0, -26px)" }}
-        >
-          <div className="whitespace-nowrap rounded-md border border-line-2 bg-ink/90 px-2 py-1 text-[11px] font-medium text-platinum">
-            {marker.label}
-          </div>
-        </Html>
-      )}
     </group>
   );
 }

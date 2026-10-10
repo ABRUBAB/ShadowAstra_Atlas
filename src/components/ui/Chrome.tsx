@@ -20,7 +20,7 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
   return (
     <Link to="/" className="group flex items-center gap-3" aria-label="ShadowAstra Atlas home">
       <img
-        src="/brand/shadowastra-logo.jpg"
+        src="/brand/shadowastra-logo.webp"
         alt=""
         width={size}
         height={size}
@@ -37,9 +37,11 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
 }
 
 const LINKS = [
+  { to: "/", label: "Home" },
   { to: "/atlas", label: "Atlas" },
-  { to: "/compare", label: "Compare" },
+  { to: "/lab", label: "Analog Lab" },
   { to: "/methods", label: "Data & Method" },
+  { to: "/about", label: "About" },
 ];
 
 export function Nav({ overlay = false }: { overlay?: boolean }) {
@@ -72,10 +74,11 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
             <NavLink
               key={l.to}
               to={l.to}
+              end={l.to === "/"}
               className={({ isActive }) =>
                 clsx(
                   "rounded-full px-4 py-2 text-[13px] transition-colors duration-150",
-                  isActive ? "bg-white/[0.07] text-platinum" : "text-chrome hover:text-platinum",
+                  isActive ? "bg-white/[0.06] text-platinum" : "text-chrome hover:text-platinum",
                 )
               }
             >
@@ -204,13 +207,13 @@ export function Eyebrow({ children, className }: { children: React.ReactNode; cl
   );
 }
 
-export const WORLD_COLOR = { earth: "#75bbff", moon: "#d6dbe4", mars: "#e08a5f" } as const;
+export const WORLD_COLOR = { earth: "#8fb4ea", moon: "#c9c5bc", mars: "#e08a5f" } as const;
 
 export function WorldDot({ world, className }: { world: keyof typeof WORLD_COLOR; className?: string }) {
   return (
     <span
       className={clsx("inline-block size-2 rounded-full", className)}
-      style={{ background: WORLD_COLOR[world], boxShadow: `0 0 10px ${WORLD_COLOR[world]}` }}
+      style={{ background: WORLD_COLOR[world] }}
     />
   );
 }

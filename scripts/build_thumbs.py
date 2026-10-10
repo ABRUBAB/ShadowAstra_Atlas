@@ -3,7 +3,7 @@ and every screening region.
 
     python scripts/build_thumbs.py
 
-Reads site ids/coordinates from src/data/sites.ts and writes public/thumbs/<id>.jpg
+Reads site ids/coordinates from src/data/sites.ts and writes public/thumbs/<id>.webp
 using the NASA GIBS WMS layer BlueMarble_ShadedRelief (500 m).
 """
 
@@ -46,7 +46,7 @@ def thumb(site: tuple[str, float, float]) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "ShadowAstra-Atlas/0.1"})
     img = Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=90).read())).convert("RGB")
     img = ImageEnhance.Contrast(img).enhance(1.12)
-    img.save(OUT / f"{sid}.jpg", "JPEG", quality=84, optimize=True, progressive=True)
+    img.save(OUT / f"{sid}.webp", "WEBP", quality=80, method=6)
     return sid
 
 

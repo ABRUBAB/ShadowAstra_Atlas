@@ -145,7 +145,7 @@ export const LAYERS: MapLayer[] = [
     measures: "80°S to the pole, polar stereographic — where the Moon base will be",
     resolution: "~0.5 km",
     projection: "polar-south",
-    url: "/textures/moon_south_pole_lola.jpg",
+    url: "/textures/moon_south_pole_lola.webp",
     maxNativeZoom: 0,
     provider: "NASA Trek · reprojected",
     link: "https://science.nasa.gov/mission/lro/lola/",
