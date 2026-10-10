@@ -1,0 +1,224 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* ShadowAstra Atlas design tokens — see DESIGN.md */
+@theme {
+  --color-void: #020306;
+  --color-ink: #06080d;
+  --color-panel: #0a0d14;
+  --color-panel-2: #0f131c;
+  --color-line: #1b2130;
+  --color-line-2: #283043;
+  --color-platinum: #f3f5f7;
+  --color-chrome: #afb9c7;
+  --color-dim: #6f7a8c;
+
+  /* worlds — colour is reserved for which body we are talking about */
+  --color-earth: #75bbff;
+  --color-cobalt: #3466d8;
+  --color-moon: #d6dbe4;
+  --color-mars: #e08a5f;
+  --color-amethyst: #9b86d9;
+
+  /* evidence states */
+  --color-strong: #4ade9b;
+  --color-partial: #f5b84a;
+  --color-weak: #ff6b6b;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-wide: "Michroma", "Geist", sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: var(--color-platinum);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-earth) 40%, transparent);
+  color: white;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-earth);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline grid used behind sections */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.text-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #c9d2de 55%, #7e8aa0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.panel {
+  background: color-mix(in oklab, var(--color-panel) 82%, transparent);
+  border: 1px solid var(--color-line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hairline {
+  border-color: var(--color-line);
+}
+
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-2) transparent;
+}
+
+/* Leaflet theming */
+.leaflet-container {
+  background: #020306;
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  background: rgb(2 3 6 / 0.72) !important;
+  color: var(--color-dim) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-chrome) !important;
+}
+.leaflet-bar a {
+  background: rgb(10 13 20 / 0.9) !important;
+  color: var(--color-platinum) !important;
+  border-color: var(--color-line) !important;
+}
+.leaflet-bar {
+  border: 1px solid var(--color-line) !important;
+}
+.leaflet-tooltip.sa-tip {
+  background: rgb(6 8 13 / 0.92);
+  color: var(--color-platinum);
+  border: 1px solid var(--color-line-2);
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  box-shadow: none;
+}
+.leaflet-tooltip.sa-tip::before {
+  display: none;
+}
+
+/* Map pins */
+.sa-pin {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+.sa-pin .core {
+  position: absolute;
+  inset: 5px;
+  border-radius: 999px;
+  background: var(--pin);
+  box-shadow: 0 0 0 2px rgb(2 3 6 / 0.9), 0 0 14px var(--pin);
+}
+.sa-pin .ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid var(--pin);
+  opacity: 0.7;
+  animation: pin-pulse 2.4s var(--ease-out-expo) infinite;
+}
+.sa-pin.dim {
+  opacity: 0.35;
+}
+.sa-pin.active .core {
+  inset: 3px;
+}
+@keyframes pin-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 60s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.polar-image {
+  filter: contrast(1.45) brightness(0.92);
+}
+.sa-pin.dashed .core {
+  background: transparent;
+  box-shadow: none;
+  border: 1.5px dashed var(--pin);
+  inset: 2px;
+}
+.sa-pin.dashed .ring {
+  animation: none;
+  opacity: 0;
+}
