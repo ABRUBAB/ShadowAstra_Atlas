@@ -23,7 +23,7 @@ export default function Home() {
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const split = SplitText.create(".hero-title", { type: "lines,words", mask: "lines" });
+        const split = SplitText.create(".hero-title", { type: "words", mask: "words" });
         const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
         tl.from(split.words, { yPercent: 110, duration: 1.1, stagger: 0.05, delay: 0.2 })
           .from(".hero-fade", { opacity: 0, y: 16, duration: 0.8, stagger: 0.08 }, "-=0.7")
@@ -105,7 +105,7 @@ function Hero() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-void to-transparent" />
 
       <div className="relative z-10 mx-auto flex h-full max-w-[1600px] flex-col justify-end px-4 pb-24 sm:px-6 min-[900px]:justify-center min-[900px]:pb-0">
-        <div className="pointer-events-auto max-w-[760px]">
+        <div className="pointer-events-auto max-w-[860px]">
           <Eyebrow className="hero-fade mb-6">NASA Space Apps 2026 · Team ShadowAstra · Dhaka</Eyebrow>
           <h1 className="hero-title text-[clamp(40px,min(7vw,11vh),116px)] leading-[0.94] font-medium tracking-[-0.045em] text-platinum">
             <span className="block">Rehearse other worlds</span>
