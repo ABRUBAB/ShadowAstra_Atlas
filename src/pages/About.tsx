@@ -9,11 +9,11 @@ import { useSmoothScroll } from "../lib/useSmoothScroll";
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const TEAM = [
-  { id: "rubab", name: "Abdullah Rubab", role: "Team lead", line: "Leads the team — scope, architecture and every claim we make." },
+  { id: "rubab", name: "Abdullah Rubab", role: "Team lead", line: "Leads the team, scope, architecture and every claim we make." },
   { id: "hossin", name: "Tanvir Hossin", role: "Planetary terrain", line: "Researches Moon and Mars terrain, targets and the data behind them." },
-  { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design", line: "Designs the experience — maps, comparisons and how a judge reads them." },
+  { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design", line: "Designs the experience, maps, comparisons and how a judge reads them." },
   { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing", line: "Builds and tests the app, and is the voice of our film." },
-  { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation", line: "Validates our science — splits, baselines and independent checks." },
+  { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation", line: "Validates our science, splits, baselines and independent checks." },
   { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film & motion", line: "Edits our film and shapes the motion language." },
 ];
 
@@ -21,9 +21,9 @@ const AWARDS = [
   { a: "Best Use of Science", f: "Mission-conditioned scoring, matched-scale terrain statistics, a horizon shadow model, reality gaps on every site." },
   { a: "Best Use of Data", f: "13 live layers plus LOLA, MOLA & SRTM elevation; ESA, JAXA & ISRO in the pipeline; every value tagged by source." },
   { a: "Best Use of Technology", f: "WebGL terrain slabs from real DEMs with real imagery, browser-side illumination, three-body GIS, a trainable ranker." },
-  { a: "Galactic Impact", f: "Tells analog field teams where — and when — to rehearse, and what the rehearsal can't prove." },
-  { a: "Best Mission Concept", f: "“What mission can we test here?” — a target becomes a field passport with a best season." },
-  { a: "Most Inspirational", f: "Astra, our field-test astronaut, shows the search succeed and fail — exploration with honesty." },
+  { a: "Galactic Impact", f: "Tells analog field teams where, and when, to rehearse, and what the rehearsal can't prove." },
+  { a: "Best Mission Concept", f: "“What mission can we test here?”, a target becomes a field passport with a best season." },
+  { a: "Most Inspirational", f: "Astra, our field-test astronaut, shows the search succeed and fail, exploration with honesty." },
   { a: "Best Storytelling", f: "Earth → Moon → Mars, the false-friend reversal, and light and shadow as the thread." },
   { a: "Global Connection", f: "Search analogs anywhere; Rehearse-closer works from any team’s city." },
   { a: "Art & Technology", f: "Cinematic globes from NASA mosaics, a sunlight-and-shadow palette, restrained motion." },
@@ -40,7 +40,7 @@ const VALUES = [
 const TIMELINE = [
   { d: "Sep 2026", t: "Team formed in Dhaka", s: "Six people, one challenge: find Earth’s rehearsal grounds." },
   { d: "1 Oct", t: "Concept film submitted", s: "WHO → WHY → WHAT → SO WHAT NEXT, in under four minutes." },
-  { d: "Oct", t: "Preliminary prototype", s: "Atlas, Analog Lab, Shadow Lab and Astra — this repository." },
+  { d: "Oct", t: "Preliminary prototype", s: "Atlas, Analog Lab, Shadow Lab and Astra, this repository." },
   { d: "Nov", t: "Hackathon weekend", s: "Full-precision DEMs, baseline ranker, screening and site passports." },
   { d: "Next", t: "Model & community", s: "Trained matcher, expert review, open dataset and a classroom pilot." },
 ];
@@ -114,12 +114,12 @@ function Hero() {
   const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   return (
     <section ref={ref} className="relative overflow-hidden border-b border-line">
-      {/* The real lunar south pole, with a Sun sweeping around it — light and shadow. */}
+      {/* The real lunar south pole, with a Sun sweeping around it, light and shadow. */}
       <motion.div style={{ y, opacity: fade }} className="pointer-events-none absolute top-1/2 right-[-12%] hidden aspect-square w-[62vw] max-w-[860px] -translate-y-1/2 lg:block">
         <div className="relative size-full overflow-hidden rounded-full">
           <img src="/textures/moon_south_pole_lola.webp" alt="" className="polar-image size-full scale-[1.35] object-cover opacity-70" />
           <div className="absolute inset-0 animate-[sweep_22s_linear_infinite] rounded-full" style={{ background: "conic-gradient(from 0deg, rgba(242,200,121,0.28), rgba(7,8,10,0.0) 18%, rgba(7,8,10,0.85) 45%, rgba(7,8,10,0.9) 70%, rgba(242,200,121,0.0) 92%, rgba(242,200,121,0.28))", mixBlendMode: "multiply" }} />
-          <div className="absolute inset-0 rounded-full shadow-[inset_0_0_120px_60px_#07080a]" />
+          <div className="absolute inset-0 rounded-full shadow-[inset_0_0_120px_60px_var(--color-void)]" />
         </div>
       </motion.div>
       <div className="relative mx-auto max-w-[1400px] px-4 pt-28 pb-24 sm:px-6 lg:pt-36 lg:pb-32">
@@ -132,16 +132,16 @@ function Hero() {
           <Words text="so crews can walk in the light." className="font-serif font-normal tracking-[-0.02em] text-flare italic" delay={0.3} />
         </h1>
         <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: 0.7 }} className="mt-8 max-w-[600px] text-[17px] leading-relaxed text-chrome">
-          We are ShadowAstra, a six-person team from Dhaka. Our name comes from the place humanity will build its first permanent Moon base — the lunar south pole, where ridges catch the Sun and crater floors stay dark for billions of years.
+          We are ShadowAstra, a six-person team from Dhaka. Our name comes from the place humanity will build its first permanent Moon base, the lunar south pole, where ridges catch the Sun and crater floors stay dark for billions of years.
         </motion.p>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 1.1 }} className="mt-12">
-          <Astronaut size={86} mood="happy" action="wave" say="That's us — six crew, one mission." sayAlign="side" />
+          <Astronaut size={86} mood="happy" action="wave" say="That's us. Six crew, one mission." sayAlign="side" />
         </motion.div>
         <div className="mt-16 grid max-w-[720px] grid-cols-3 border-t border-line pt-8">
           {[
             ["6", "people"],
             ["3", "worlds"],
-            ["1", "city — Dhaka"],
+            ["1", "city: Dhaka"],
           ].map(([n, l], i) => (
             <motion.div key={l} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: EASE, delay: 1 + i * 0.1 }}>
               <div className="font-mono text-[44px] leading-none font-light">{n}</div>
@@ -179,7 +179,7 @@ function Crew() {
                     alt={`Portrait of ${m.name}`}
                     variants={{ hidden: { scale: 1.18 }, show: { scale: 1 } }}
                     transition={{ duration: 1.6, ease: EASE }}
-                    className="size-full object-cover object-top grayscale transition-[filter] duration-700 group-hover:contrast-[1.08]"
+                    className="size-full object-cover object-top grayscale transition-[filter] duration-700 group-hover:grayscale-0"
                   />
                 </motion.div>
                 <div className="absolute inset-0 bg-gradient-to-t from-void/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -211,7 +211,7 @@ function Name() {
         <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-2">
           {[
             { w: "Shadow", d: "Permanently shadowed craters at the lunar poles hold water ice in the coldest places in the Solar System. Where the light never reaches is where the future base will find water." },
-            { w: "Astra", d: "Latin for “the stars”. The destination — and the reason we practise first, here, on the one world we can walk freely." },
+            { w: "Astra", d: "Latin for “the stars”. The destination, and the reason we practise first, here, on the one world we can walk freely." },
           ].map((x, i) => (
             <motion.div key={x.w} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: i * 0.15 }} className="group relative overflow-hidden bg-panel p-10 md:p-14">
               <div className={`absolute inset-0 opacity-0 transition-opacity duration-1000 group-hover:opacity-100 ${i === 0 ? "bg-[radial-gradient(60%_80%_at_0%_100%,rgba(16,26,58,0.9),transparent)]" : "bg-[radial-gradient(60%_80%_at_100%_0%,rgba(242,200,121,0.14),transparent)]"}`} />
@@ -238,7 +238,7 @@ function Awards() {
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }} className="mt-6 text-[clamp(28px,3.4vw,50px)] leading-[1.04] font-medium tracking-[-0.035em]">
             Ten award categories, <span className="font-serif font-normal text-chrome italic">one honest product.</span>
           </motion.h2>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-chrome">Each category maps to something you can open and test in this prototype — or to a clearly labelled next step.</p>
+          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-chrome">Each category maps to something you can open and test in this prototype, or to a clearly labelled next step.</p>
           <div className="mt-10 hidden lg:block">
             <Astronaut size={110} mood="happy" action="flag" />
           </div>

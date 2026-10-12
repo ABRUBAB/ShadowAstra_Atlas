@@ -1,16 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { animate, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, animate, motion, useReducedMotion } from "motion/react";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, Columns2, Cpu, Leaf, Link2, Link2Off, Pause, Play, Plane, RotateCcw, ShieldCheck, SplitSquareHorizontal, Sun } from "lucide-react";
-import { Footer, Nav, WorldDot, WORLD_COLOR } from "../components/ui/Chrome";
-import { Astronaut, reactionFor } from "../components/ui/Astronaut";
+import { ArrowDown, ArrowRight, Columns2, Cpu, Hand, Info, Leaf, Link2, Link2Off, Pause, Play, Plane, RotateCcw, ShieldCheck, SplitSquareHorizontal, Sparkles, Sun, X } from "lucide-react";
+import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
+import { Astronaut, reactionFor, type Action, type Mood } from "../components/ui/Astronaut";
 import { BodyMap, type BodyMapHandle, type MapView } from "../components/map/BodyMap";
 import { SwipeStage } from "../components/map/Swipe";
 import type { Overlay } from "../components/three/TerrainTwins";
 import { EARTH_BY_ID, EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS, type TaskId } from "../data/sites";
 import { LAYERS_BY_BODY } from "../data/layers";
-import { formatCoord } from "../lib/geo";
+import { formatCoord, zoomForMercator } from "../lib/geo";
 import {
   centreProfile,
   DEM,
@@ -33,6 +33,24 @@ import { analogFit, band, demoValues, greatCircleKm, HOME_BASES, PARAMS, STEWARD
 const TerrainTwins = lazy(() => import("../components/three/TerrainTwins"));
 
 const FOOTPRINTS = [40, 80, 160];
+
+/** Curated starting points, one click sets Earth site, target and task. */
+const QUICK_PAIRS: { earth: string; target: string; task: TaskId; label: string }[] = [
+  { earth: "dry-valleys", target: "shackleton", task: "polar", label: "Dry Valleys → Shackleton" },
+  { earth: "atacama", target: "gale", task: "traverse", label: "Atacama → Gale crater" },
+  { earth: "lava-beds", target: "marius-pit", task: "caves", label: "Lava Beds → Marius pit" },
+  { earth: "mauna-kea", target: "mons-mouton", task: "isru", label: "Mauna Kea → Mons Mouton" },
+  { earth: "svalbard", target: "arcadia", task: "ice", label: "Svalbard → Arcadia" },
+];
+
+const DOCK = [
+  { id: "compare", label: "Compare" },
+  { id: "evidence", label: "Terrain" },
+  { id: "geology", label: "Geology" },
+  { id: "light", label: "Light" },
+  { id: "footprint", label: "Footprint" },
+  { id: "gaps", label: "Gaps" },
+];
 const EASE = [0.22, 1, 0.36, 1] as const;
 type World = "earth" | "moon" | "mars";
 
@@ -121,9 +139,18 @@ export default function Lab() {
   const target = TARGET_BY_ID[targetId];
 
   useEffect(() => {
-    setParams({ earth: earthId, target: targetId, task }, { replace: true });
+    setParams({ earth: earthId, target: targetId, task }, { replace: true, preventScrollReset: true });
   }, [earthId, targetId, task, setParams]);
   useEffect(() => setWeights(TASK_WEIGHTS[task]), [task]);
+  // Deep links such as /lab#geology scroll to that section once the page has laid out.
+  // Read the hash before the search params are rewritten (which drops it).
+  const [initialHash] = useState(() => window.location.hash.slice(1));
+  useEffect(() => {
+    const id = initialHash;
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 900);
+    return () => clearTimeout(t);
+  }, []);
 
   const twins = useTerrainTwins(earthId, targetId, footprint);
   const plates = useImagery(earthId, targetId, footprint);
@@ -160,6 +187,11 @@ export default function Lab() {
         task={task}
         setTask={setTask}
         pairedTargets={pairedTargets}
+        onQuick={(q) => {
+          setEarthId(q.earth);
+          setTargetId(q.target);
+          setTask(q.task);
+        }}
         panel={<EvidencePanel results={results} fit={fit} weights={weights} setWeights={setWeights} task={task} loading={loading} light={light} earthName={earthName} />}
       />
 
@@ -173,9 +205,15 @@ export default function Lab() {
                 Real terrain, <Em>cut to the same size.</Em>
               </>
             }
-            text={`Both slabs are ${footprint} × ${footprint} km of measured elevation on one shared grid, draped with real orbital imagery. The gold line marks the cross-section below.`}
+            text={`Both blocks show the same ${footprint} × ${footprint} km of real ground, at the same scale, with real satellite images on top. The gold line marks the slice shown below.`}
             kind="computed"
-            aside={<Seg value={String(footprint)} onChange={(v) => setFootprint(+v)} options={FOOTPRINTS.map((f) => ({ id: String(f), label: `${f} km` }))} />}
+            astra={{ mood: "focused", action: "scan", say: "Drag to turn the view. Try “Light & shadow”, then “Turn the Sun”." }}
+            aside={
+              <div className="flex flex-col items-end gap-2">
+                <span className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Footprint</span>
+                <Seg value={String(footprint)} onChange={(v) => setFootprint(+v)} options={FOOTPRINTS.map((f) => ({ id: String(f), label: `${f} km` }))} />
+              </div>
+            }
           />
           <TerrainCard twins={twins} plates={plates} illE={illE} illT={illT} footprint={footprint} sunElev={sunElev} setSunElev={setSunElev} defaultSun={defaultSun} earthName={earthName} targetName={target.name} targetBody={target.body} earthImg={earthVisible(earth.lat).name} />
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
@@ -184,32 +222,34 @@ export default function Lab() {
           </div>
         </section>
 
-        <section>
+        <section id="geology" className="scroll-mt-32">
           <SectionHead
             n="02"
+            astra={{ mood: "happy", action: "sample", say: "Same size, north up, compare texture and colour." }}
             kicker="Geological similarity"
             title={
               <>
                 Same scale, <Em>real surfaces.</Em>
               </>
             }
-            text="Matched-footprint crops from orbit, north up. Read texture, colour and landforms side by side; the mineral score itself stays a demo until EMIT and CRISM spectra are in the pipeline."
+            text="Real satellite images of the same size, north up. Compare texture, colour and shapes. The mineral score stays a demo until NASA EMIT and CRISM data are added."
             kind="demo"
-            aside={<span className="font-mono text-[13px] text-chrome">geology {demo.geology?.toFixed(2) ?? "—"}</span>}
+            aside={<span className="font-mono text-[13px] text-chrome">geology {demo.geology?.toFixed(2) ?? "n/a"}</span>}
           />
           <GeologyPlates plates={plates} footprint={footprint} earthName={earthName} targetName={target.name} targetBody={target.body} earthLat={earth.lat} />
         </section>
 
-        <section>
+        <section id="light" className="scroll-mt-32">
           <SectionHead
             n="03"
+            astra={{ mood: "wow", action: "flag", say: `Best season at ${earthName}: ${light.best.join(" · ") || "n/a"}.` }}
             kicker="Light & shadow"
             title={
               <>
                 Same Sun, <Em>two worlds.</Em>
               </>
             }
-            text="Solar geometry finds when Earth's Sun behaves like the target's. The horizon model maps which ground never sees light at the target's Sun elevation — the Shadow Lab."
+            text="Sun maths finds when Earth's sunlight acts like the target's. The Shadow Lab then finds ground that never gets light at that Sun angle."
             kind="computed"
           />
           <div className="grid gap-4 lg:grid-cols-2">
@@ -218,23 +258,25 @@ export default function Lab() {
           </div>
         </section>
 
-        <section>
+        <section id="footprint" className="scroll-mt-32">
           <SectionHead
             n="04"
+            astra={{ mood: "happy", action: "walk", say: "Closer site, fewer flights, same science." }}
             kicker="Rehearse closer"
             title={
               <>
                 The nearest credible site <Em>is the greenest one.</Em>
               </>
             }
-            text="Distance and an indicative flight footprint from your team's city, the closest analogs that still clear the bar for this task, and the stewardship rules of the site."
+            text="How far your team must travel, a rough CO₂ number, the closest good sites for this task, and the rules for visiting the site."
           />
           <Sustainability task={task} targetId={targetId} earthId={earthId} onPick={setEarthId} />
         </section>
 
-        <section>
+        <section id="gaps" className="scroll-mt-32">
           <SectionHead
             n="05"
+            astra={{ mood: "sad", action: "slump", say: "Earth can't fake gravity, vacuum or radiation." }}
             kicker="What Earth cannot reproduce"
             title={
               <>
@@ -249,8 +291,136 @@ export default function Lab() {
           </div>
         </section>
       </div>
+      <SectionDock />
       <Footer />
     </div>
+  );
+}
+
+/* ================================================================ guidance */
+
+/** Floating section dock, appears once you leave the compare stage. */
+function SectionDock() {
+  const [active, setActive] = useState("compare");
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const els = DOCK.map((d) => document.getElementById(d.id)).filter(Boolean) as HTMLElement[];
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    els.forEach((el) => io.observe(el));
+    const onScroll = () => setShow(window.scrollY > window.innerHeight * 0.7);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.nav
+          aria-label="Lab sections"
+          initial={{ opacity: 0, y: 24, x: "-50%" }}
+          animate={{ opacity: 1, y: 0, x: "-50%" }}
+          exit={{ opacity: 0, y: 24, x: "-50%" }}
+          transition={{ duration: 0.45, ease: EASE }}
+          className="fixed bottom-5 left-1/2 z-50 hidden gap-0.5 rounded-full border border-line-2 bg-panel/90 p-1 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl md:flex"
+        >
+          {DOCK.map((d, i) => (
+            <a key={d.id} href={`#${d.id}`} className={clsx("relative rounded-full px-3.5 py-1.5 text-[12px] transition-colors", active === d.id ? "text-void" : "text-chrome hover:text-platinum")}>
+              {active === d.id && <motion.span layoutId="dock-pill" className="absolute inset-0 rounded-full bg-platinum" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+              <span className="relative">
+                <span className="mr-1 font-mono text-[10px] opacity-60">{String(i).padStart(2, "0")}</span>
+                {d.label}
+              </span>
+            </a>
+          ))}
+        </motion.nav>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const STAGE_TIPS = [
+  "Pick a quick pair above, or choose ① Earth, ② target and ③ task.",
+  "Zoom one map and the other follows at the same scale.",
+  "Switch to Swipe and drag the divider to compare surfaces.",
+  "Scroll down for real 3D ground, rocks, sunlight and travel footprint.",
+];
+
+/** Astra's coach tips on the compare stage; dismissible and remembered per browser. */
+function StageCoach() {
+  const [i, setI] = useState(0);
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem("sa-coach") === "done";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (hidden) return;
+    const t = setInterval(() => setI((n) => (n + 1) % STAGE_TIPS.length), 6500);
+    return () => clearInterval(t);
+  }, [hidden]);
+  if (hidden) return null;
+  const close = () => {
+    setHidden(true);
+    try {
+      localStorage.setItem("sa-coach", "done");
+    } catch {
+      /* private mode, tips just come back next visit */
+    }
+  };
+  return (
+    <div className="absolute bottom-16 left-4 z-[650] hidden items-end gap-2 md:flex">
+      <Astronaut size={70} mood="happy" action="wave" />
+      <div className="panel mb-6 max-w-[290px] rounded-2xl rounded-bl-sm p-3">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }} className="text-[12.5px] leading-snug text-platinum">
+            {STAGE_TIPS[i]}
+          </motion.p>
+        </AnimatePresence>
+        <div className="mt-2 flex items-center justify-between">
+          <div className="flex gap-1">
+            {STAGE_TIPS.map((_, k) => (
+              <button key={k} onClick={() => setI(k)} aria-label={`Tip ${k + 1}`} className={clsx("h-1 rounded-full transition-all", k === i ? "w-4 bg-flare" : "w-1.5 bg-line-2")} />
+            ))}
+          </div>
+          <button onClick={close} className="flex items-center gap-1 text-[11px] text-dim hover:text-platinum">
+            Got it <X size={11} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** "Drag to orbit" hint that fades after a few seconds. */
+function OrbitHint() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 5000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
+          <div className="flex items-center gap-2 rounded-full border border-line-2 bg-void/80 px-4 py-2 text-[12px] text-platinum backdrop-blur">
+            <motion.span animate={{ x: [-6, 6, -6] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
+              <Hand size={14} />
+            </motion.span>
+            Drag to orbit · scroll to zoom
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -268,7 +438,23 @@ function Reveal({ children, className, delay = 0 }: { children: React.ReactNode;
   );
 }
 
-function SectionHead({ n, kicker, title, text, kind, aside }: { n: string; kicker: string; title: React.ReactNode; text?: string; kind?: "computed" | "demo"; aside?: React.ReactNode }) {
+function SectionHead({
+  n,
+  kicker,
+  title,
+  text,
+  kind,
+  aside,
+  astra,
+}: {
+  n: string;
+  kicker: string;
+  title: React.ReactNode;
+  text?: string;
+  kind?: "computed" | "demo";
+  aside?: React.ReactNode;
+  astra?: { mood: Mood; action: Action; say: string };
+}) {
   return (
     <Reveal className="mb-10 grid items-end gap-6 lg:grid-cols-[1fr_auto]">
       <div>
@@ -281,7 +467,14 @@ function SectionHead({ n, kicker, title, text, kind, aside }: { n: string; kicke
         <h2 className="mt-6 max-w-[900px] text-[clamp(30px,3.8vw,56px)] leading-[1.03] font-medium tracking-[-0.038em]">{title}</h2>
         {text && <p className="mt-4 max-w-[680px] text-[15px] leading-relaxed text-chrome">{text}</p>}
       </div>
-      {aside}
+      <div className="flex items-end gap-6">
+        {astra && (
+          <div className="hidden md:block">
+            <Astronaut size={84} mood={astra.mood} action={astra.action} say={astra.say} sayAlign="left" />
+          </div>
+        )}
+        {aside}
+      </div>
     </Reveal>
   );
 }
@@ -310,9 +503,14 @@ function Seg({ value, onChange, options }: { value: string; onChange: (v: string
   );
 }
 
-function PairSelect({ world, value, onChange, options }: { world: World; value: string; onChange: (v: string) => void; options: { id: string; label: string }[] }) {
+function StepDot({ n }: { n: number }) {
+  return <span className="grid size-5 shrink-0 place-items-center rounded-full bg-platinum font-mono text-[10px] font-medium text-void">{n}</span>;
+}
+
+function PairSelect({ world, value, onChange, options, step, hint }: { world: World; value: string; onChange: (v: string) => void; options: { id: string; label: string }[]; step: number; hint: string }) {
   return (
-    <label className="flex items-center gap-2 rounded-full border border-line-2 bg-ink py-1 pr-1 pl-3 transition-colors hover:border-chrome/50">
+    <label className="flex items-center gap-2 rounded-full border border-line-2 bg-ink py-1 pr-1 pl-1.5 transition-colors hover:border-chrome/50" title={`Step ${step}: ${hint}`}>
+      <StepDot n={step} />
       <WorldDot world={world} />
       <select value={value} onChange={(e) => onChange(e.target.value)} className="max-w-[230px] cursor-pointer rounded-full bg-transparent py-1.5 pr-2 text-[13px] text-platinum outline-none">
         {options.map((o) => (
@@ -367,7 +565,8 @@ function Loader({ label, progress }: { label: string; progress?: number }) {
   );
 }
 
-const TONE = { strong: "#7cc8a0", partial: "#e3b35e", weak: "#e47a63" };
+const TONE = { strong: "var(--color-strong)", partial: "var(--color-partial)", weak: "var(--color-weak)" };
+const C = (w: World) => `var(--color-${w})`;
 
 /* ============================================================ compare stage */
 
@@ -380,6 +579,7 @@ function CompareStage({
   setTask,
   pairedTargets,
   panel,
+  onQuick,
 }: {
   earthId: string;
   targetId: string;
@@ -389,6 +589,7 @@ function CompareStage({
   setTask: (t: TaskId) => void;
   pairedTargets: typeof TARGETS;
   panel: React.ReactNode;
+  onQuick: (q: (typeof QUICK_PAIRS)[number]) => void;
 }) {
   const earth = EARTH_BY_ID[earthId];
   const target = TARGET_BY_ID[targetId];
@@ -425,8 +626,10 @@ function CompareStage({
   );
   useEffect(() => {
     const t = setTimeout(() => {
-      eRef.current?.flyTo(earth.lat, earth.lon, 9);
-      tRef.current?.flyTo(target.lat, target.lon, polar ? 1.2 : 6);
+      // Open the target first, then let the Earth map follow its scale (no competing animations).
+      // Polar targets open at a regional ~450 m/px so the craters read in context.
+      tRef.current?.flyTo(target.lat, target.lon, polar ? 0 : 6, false);
+      eRef.current?.flyTo(earth.lat, earth.lon, polar ? zoomForMercator(earth.lat, 450) : 9, false);
     }, 160);
     return () => clearTimeout(t);
   }, [earthId, targetId, targetLayer, earthLayer, mode]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -439,7 +642,7 @@ function CompareStage({
       ref={eRef}
       body="earth"
       layerId={earthLayer}
-      markers={[{ id: earth.id, lat: earth.lat, lon: earth.lon, color: WORLD_COLOR.earth, label: earth.name }]}
+      markers={[{ id: earth.id, lat: earth.lat, lon: earth.lon, color: C("earth"), label: earth.name }]}
       activeId={earth.id}
       onViewChange={onE}
       initial={{ lat: earth.lat, lon: earth.lon, zoom: 9 }}
@@ -458,18 +661,21 @@ function CompareStage({
   );
 
   return (
-    <section className="border-b border-line">
+    <section id="compare" className="border-b border-line">
       <div className="z-40 border-b border-line bg-void/90 backdrop-blur-xl lg:sticky lg:top-16">
         <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-6">
-          <PairSelect world="earth" value={earthId} onChange={setEarthId} options={EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))} />
+          <PairSelect step={1} hint="Earth site" world="earth" value={earthId} onChange={setEarthId} options={EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))} />
           <span className="font-serif text-lg text-dim italic">rehearses</span>
           <PairSelect
+            step={2}
+            hint="Moon or Mars target"
             world={target.body}
             value={targetId}
             onChange={setTargetId}
             options={pairedTargets.map((t) => ({ id: t.id, label: `${earth.pairs.includes(t.id) ? "● " : ""}${t.name} · ${t.body === "moon" ? "Moon" : "Mars"}` }))}
           />
-          <label className="flex items-center gap-2 rounded-full border border-line-2 bg-ink py-1 pr-1 pl-3">
+          <label className="flex items-center gap-2 rounded-full border border-line-2 bg-ink py-1 pr-1 pl-1.5" title="Step 3: what you want to practise. It sets the score weights.">
+            <StepDot n={3} />
             <span className="font-mono text-[10px] tracking-widest text-dim uppercase">Task</span>
             <select value={task} onChange={(e) => setTask(e.target.value as TaskId)} className="cursor-pointer rounded-full bg-transparent py-1.5 pr-2 text-[13px] text-platinum outline-none">
               {TASKS.map((t) => (
@@ -511,9 +717,26 @@ function CompareStage({
             </button>
           </div>
         </div>
+        <div className="scrollbar-thin flex items-center gap-2 overflow-x-auto border-t border-line px-4 py-2 sm:px-6">
+          <span className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
+            <Sparkles size={12} className="text-flare" /> Quick pairs
+          </span>
+          {QUICK_PAIRS.map((q) => {
+            const on = q.earth === earthId && q.target === targetId;
+            return (
+              <button
+                key={q.label}
+                onClick={() => onQuick(q)}
+                className={clsx("shrink-0 rounded-full border px-3 py-1 text-[12px] transition-colors", on ? "border-flare/60 bg-flare/10 text-flare" : "border-line-2 text-chrome hover:border-chrome hover:text-platinum")}
+              >
+                {q.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid lg:h-[calc(100dvh-64px-61px)] lg:min-h-[620px] lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid lg:h-[calc(100dvh-64px-104px)] lg:min-h-[620px] lg:grid-cols-[minmax(0,1fr)_400px]">
         <div className="relative min-h-[520px]">
           {mode === "split" ? (
             <div className="grid h-full md:grid-cols-2">
@@ -527,6 +750,7 @@ function CompareStage({
           ) : (
             <SwipeStage className="h-[70vh] lg:h-full" value={swipe} onChange={setSwipe} left={earthMap} right={targetMap} leftLabel={earth.name.split(",")[0]} rightLabel={target.name} rightWorld={target.body} />
           )}
+          <StageCoach />
           <a href="#evidence" className="absolute bottom-5 left-1/2 z-[700] hidden -translate-x-1/2 items-center gap-2 rounded-full border border-line-2 bg-void/80 px-4 py-2 text-[12px] text-chrome backdrop-blur transition-colors hover:text-platinum lg:flex">
             Terrain, geology, light & footprint <ArrowDown size={13} className="animate-bounce" />
           </a>
@@ -616,13 +840,13 @@ function EvidencePanel({
       <div className="mt-4 flex items-center justify-between gap-4">
         <div className="relative size-[124px] shrink-0">
           <svg viewBox="0 0 128 128" className="size-full -rotate-90">
-            <circle cx="64" cy="64" r="54" fill="none" stroke="#212226" strokeWidth="6" />
-            <motion.circle cx="64" cy="64" r="54" fill="none" stroke={TONE[b.tone]} strokeWidth="3" strokeLinecap="round" strokeDasharray={C} initial={{ strokeDashoffset: C }} animate={{ strokeDashoffset: loading ? C : C * (1 - fit.score) }} transition={{ duration: 1.2, ease: EASE }} />
+            <circle cx="64" cy="64" r="54" fill="none" style={{ stroke: "var(--color-line)" }} strokeWidth="6" />
+            <motion.circle cx="64" cy="64" r="54" fill="none" style={{ stroke: TONE[b.tone] }} strokeWidth="3" strokeLinecap="round" strokeDasharray={C} initial={{ strokeDashoffset: C }} animate={{ strokeDashoffset: loading ? C : C * (1 - fit.score) }} transition={{ duration: 1.2, ease: EASE }} />
           </svg>
           <div className="absolute inset-0 grid place-items-center text-center">
             <div>
               <div className="font-mono text-[28px] leading-none font-light">{loading ? "··" : <CountUp value={fit.score} />}</div>
-              <div className="mt-1 text-[11px]" style={{ color: loading ? "#6c6a65" : TONE[b.tone] }}>
+              <div className="mt-1 text-[11px]" style={{ color: loading ? "var(--color-dim)" : TONE[b.tone] }}>
                 {loading ? "measuring" : b.label}
               </div>
             </div>
@@ -643,7 +867,7 @@ function EvidencePanel({
                 <span className="flex items-center gap-2 text-[13px] text-platinum">
                   {meta.label} <KindBadge kind={p.kind} />
                 </span>
-                <span className="font-mono text-[13px] text-platinum tabular">{p.value === null ? "—" : p.value.toFixed(2)}</span>
+                <span className="font-mono text-[13px] text-platinum tabular">{p.value === null ? "n/a" : p.value.toFixed(2)}</span>
               </div>
               <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-line">
                 {p.value !== null && <motion.div className={clsx("h-full rounded-full", p.kind === "computed" ? "bg-platinum" : "bg-chrome/45")} initial={{ width: 0 }} animate={{ width: `${p.value * 100}%` }} transition={{ duration: 1, ease: EASE }} />}
@@ -656,6 +880,18 @@ function EvidencePanel({
           );
         })}
       </ul>
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10.5px] text-dim">
+        <Info size={11} />
+        <span className="flex items-center gap-1.5">
+          <KindBadge kind="computed" /> measured live
+        </span>
+        <span className="flex items-center gap-1.5">
+          <KindBadge kind="demo" /> placeholder
+        </span>
+        <span className="flex items-center gap-1.5">
+          <KindBadge kind="gap" /> never scored
+        </span>
+      </div>
       <button onClick={() => setOpen((o) => !o)} className="link-wipe mt-4 text-[12px] text-chrome">
         {open ? "Hide" : "Adjust"} mission weights
       </button>
@@ -678,11 +914,11 @@ function EvidencePanel({
           <Sun size={12} className="text-flare" /> Best rehearsal window
         </div>
         <div className="mt-1 text-[15px] text-platinum">
-          {earthName}: <span className="text-flare">{light.best.join(" · ") || "—"}</span>
+          {earthName}: <span className="text-flare">{light.best.join(" · ") || "n/a"}</span>
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2 text-[11px] text-dim">
-        <Cpu size={12} /> Prototype — model training at the hackathon
+        <Cpu size={12} /> Prototype. Our model is trained at the hackathon.
       </div>
     </div>
   );
@@ -723,7 +959,7 @@ function TerrainCard({
   const [exag, setExag] = useState(3);
   return (
     <Reveal>
-      <Card className="relative overflow-hidden">
+      <div data-theme="dark" className="relative overflow-hidden rounded-2xl border border-line bg-panel">
         <div className="relative h-[520px] md:h-[640px]">
           {twins.earth && twins.target ? (
             <Suspense fallback={<Loader label="Preparing 3D terrain" />}>
@@ -741,6 +977,7 @@ function TerrainCard({
                 exaggeration={exag}
                 overlay={overlay}
               />
+              <OrbitHint />
             </Suspense>
           ) : (
             <Loader label={twins.error ?? `Streaming elevation · ${Math.round(twins.progress * 100)}%`} progress={twins.progress} />
@@ -759,7 +996,7 @@ function TerrainCard({
                 { id: "relief", label: "Elevation" },
               ]}
             />
-            <button onClick={() => setPlaying((p) => !p)} className="flex items-center gap-1.5 rounded-full border border-flare/50 px-3 py-1.5 text-[12px] text-flare transition-colors hover:bg-flare/10">
+            <button onClick={() => setPlaying((p) => !p)} title="Sweep the Sun around the horizon, as at the lunar poles" className="flex items-center gap-1.5 rounded-full border border-flare/50 px-3 py-1.5 text-[12px] text-flare transition-colors hover:bg-flare/10">
               {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? "Pause Sun" : "Turn the Sun"}
             </button>
             <label className="flex items-center gap-2 text-[11px] text-chrome">
@@ -782,7 +1019,7 @@ function TerrainCard({
             <span className="ml-auto hidden font-mono text-[10px] text-dim md:block">drag to orbit · scroll to zoom</span>
           </div>
         </div>
-      </Card>
+      </div>
     </Reveal>
   );
 }
@@ -831,31 +1068,31 @@ function ProfileCard({ earth, target, footprint, targetBody }: { earth: TerrainG
           <svg viewBox={`0 0 ${W} ${H + 24}`} className="mt-6 w-full overflow-visible">
             <defs>
               <linearGradient id="pf-e" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={WORLD_COLOR.earth} stopOpacity="0.22" />
-                <stop offset="1" stopColor={WORLD_COLOR.earth} stopOpacity="0" />
+                <stop offset="0" style={{ stopColor: C("earth"), stopOpacity: 0.22 }} />
+                <stop offset="1" style={{ stopColor: C("earth"), stopOpacity: 0 }} />
               </linearGradient>
               <linearGradient id="pf-t" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={WORLD_COLOR[targetBody]} stopOpacity="0.22" />
-                <stop offset="1" stopColor={WORLD_COLOR[targetBody]} stopOpacity="0" />
+                <stop offset="0" style={{ stopColor: C(targetBody), stopOpacity: 0.22 }} />
+                <stop offset="1" style={{ stopColor: C(targetBody), stopOpacity: 0 }} />
               </linearGradient>
             </defs>
             {[0.25, 0.5, 0.75].map((f) => (
-              <line key={f} x1={0} x2={W} y1={H * f} y2={H * f} stroke="#212226" strokeDasharray={f === 0.5 ? "0" : "3 6"} />
+              <line key={f} x1={0} x2={W} y1={H * f} y2={H * f} style={{ stroke: "var(--color-line)" }} strokeDasharray={f === 0.5 ? "0" : "3 6"} />
             ))}
             <motion.path d={data.aa} fill="url(#pf-e)" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, delay: 0.6 }} />
             <motion.path d={data.ba} fill="url(#pf-t)" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, delay: 0.8 }} />
-            <motion.path d={data.a} fill="none" stroke={WORLD_COLOR.earth} strokeWidth={2} initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
-            <motion.path d={data.b} fill="none" stroke={WORLD_COLOR[targetBody]} strokeWidth={2} initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE, delay: 0.15 }} />
-            <text x={0} y={H + 20} fill="#6c6a65" fontSize="12" fontFamily="Geist Mono">
+            <motion.path d={data.a} fill="none" style={{ stroke: C("earth") }} strokeWidth={2} initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
+            <motion.path d={data.b} fill="none" style={{ stroke: C(targetBody) }} strokeWidth={2} initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE, delay: 0.15 }} />
+            <text x={0} y={H + 20} style={{ fill: "var(--color-dim)" }} fontSize="12" fontFamily="Geist Mono">
               0 km
             </text>
-            <text x={W} y={H + 20} fill="#6c6a65" fontSize="12" fontFamily="Geist Mono" textAnchor="end">
+            <text x={W} y={H + 20} style={{ fill: "var(--color-dim)" }} fontSize="12" fontFamily="Geist Mono" textAnchor="end">
               {footprint} km
             </text>
-            <text x={4} y={14} fill="#6c6a65" fontSize="12" fontFamily="Geist Mono">
+            <text x={4} y={14} style={{ fill: "var(--color-dim)" }} fontSize="12" fontFamily="Geist Mono">
               +{Math.round(data.lim)} m
             </text>
-            <text x={4} y={H - 4} fill="#6c6a65" fontSize="12" fontFamily="Geist Mono">
+            <text x={4} y={H - 4} style={{ fill: "var(--color-dim)" }} fontSize="12" fontFamily="Geist Mono">
               −{Math.round(data.lim)} m
             </text>
           </svg>
@@ -864,12 +1101,12 @@ function ProfileCard({ earth, target, footprint, targetBody }: { earth: TerrainG
         )}
         <div className="mt-3 flex flex-wrap gap-5 text-[12px] text-chrome">
           <span className="flex items-center gap-2">
-            <span className="h-0.5 w-5" style={{ background: WORLD_COLOR.earth }} /> Earth
+            <span className="h-0.5 w-5" style={{ background: C("earth") }} /> Earth
           </span>
           <span className="flex items-center gap-2 capitalize">
-            <span className="h-0.5 w-5" style={{ background: WORLD_COLOR[targetBody] }} /> {targetBody}
+            <span className="h-0.5 w-5" style={{ background: C(targetBody) }} /> {targetBody}
           </span>
-          <span className="ml-auto text-dim">relative to each slice's mean · same vertical scale</span>
+          <span className="ml-auto text-dim">height above each slice's average · same scale</span>
         </div>
       </Card>
     </Reveal>
@@ -920,7 +1157,7 @@ function SlopeCard({ statsE, statsT, topo, targetBody }: { statsE: TerrainStats 
         {statsE && statsT ? (
           <>
             <div className="mt-6">
-              <Bars a={statsE.slopeHist} b={statsT.slopeHist} labels={labels} colorB={WORLD_COLOR[targetBody]} />
+              <Bars a={statsE.slopeHist} b={statsT.slopeHist} labels={labels} colorB={C(targetBody)} />
             </div>
             <div className="mt-5 grid grid-cols-[1fr_auto_auto] gap-x-6 text-[12.5px]">
               {rows.map(([k, f]) => (
@@ -950,7 +1187,7 @@ function Plate({ canvas, label, sub, footprint, world }: { canvas: HTMLCanvasEle
         {url ? (
           <motion.img
             src={url}
-            alt={`${label} — ${sub}`}
+            alt={`${label}, ${sub}`}
             initial={{ opacity: 0, scale: 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease: EASE }}
@@ -991,10 +1228,10 @@ function GeologyPlates({ plates, footprint, earthName, targetName, targetBody, e
               <div className="mt-2 text-[18px] text-platinum">{r.k}</div>
               <p className="mt-2 text-[13px] leading-relaxed text-dim">
                 {i === 0
-                  ? "Albedo, texture and drainage patterns. Earth is atmosphere-corrected Sentinel-2; Moon and Mars are orbital mosaics."
+                  ? "Brightness, texture and old water channels. Earth is from Sentinel-2. Moon and Mars are maps made from orbit."
                   : targetBody === "mars"
-                    ? "THEMIS day-IR separates warm bare rock from cool dust — compare with Earth's terrain texture."
-                    : "Hillshade from laser and radar elevation — the same landforms without colour."}
+                    ? "THEMIS heat images show warm bare rock and cool dust. Compare them with the shape of Earth's ground."
+                    : "Shaded relief from laser and radar height data. The same shapes, without colour."}
               </p>
             </div>
             <Plate canvas={r.ec} label={earthName} sub={`${r.e.name} · ${r.e.res}`} footprint={footprint} world="earth" />
@@ -1037,11 +1274,11 @@ function LightTwinCard({ light, targetBody, targetName, earthName }: { light: Re
           })}
         </div>
         <p className="mt-5 text-[14px] leading-relaxed text-chrome">
-          Go to {earthName} in <span className="text-flare">{light.best.join(" · ") || "—"}</span>: that is when its Sun-angle pattern is closest to {targetName}.
+          Go to {earthName} in <span className="text-flare">{light.best.join(" · ") || "n/a"}</span>: that is when its Sun-angle pattern is closest to {targetName}.
         </p>
         <div className="mt-6">
           <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Daylight Sun elevation · whole year</div>
-          <Bars a={light.earth.hist} b={light.target.hist} labels={labels} colorB={WORLD_COLOR[targetBody]} height="h-20" />
+          <Bars a={light.earth.hist} b={light.target.hist} labels={labels} colorB={C(targetBody)} height="h-20" />
         </div>
       </Card>
     </Reveal>
@@ -1105,7 +1342,7 @@ function ShadowCard({ grids, ills, sunElev, names, targetBody }: { grids: (Terra
           <span className="h-2 w-24 rounded-full" style={{ background: "linear-gradient(90deg,#0a1230,#101a3a,#f2c879)" }} />
           never lit → lit from every direction
         </div>
-        <p className="mt-4 text-[12px] leading-relaxed text-dim">Horizon method, 24 azimuths, Sun at constant elevation as at the lunar poles. Deep blue = persistent shadow, a proxy for cold traps.</p>
+        <p className="mt-4 text-[12px] leading-relaxed text-dim">We check 24 directions around every point. If hills block the low Sun from all of them, the point stays dark. Deep blue means always dark, where ice could last.</p>
       </Card>
     </Reveal>
   );
@@ -1170,7 +1407,7 @@ function Sustainability({ task, targetId, earthId, onPick }: { task: TaskId; tar
               </div>
             </div>
           )}
-          <p className="mt-4 text-[10.5px] leading-relaxed text-dim">Great-circle ×1.08, 0.15 kg CO₂e per passenger-km — indicative.</p>
+          <p className="mt-4 text-[10.5px] leading-relaxed text-dim">Straight-line distance ×1.08 and 0.15 kg CO₂e per passenger-km. A rough estimate.</p>
         </Card>
         <div className="grid gap-4 sm:grid-cols-2">
           {ranked.map(({ s, score, km }, i) => (
@@ -1264,10 +1501,10 @@ function Insight({
     const r = statsE.relief / Math.max(1, statsT.relief);
     lines.push(`Topography ${topo.toFixed(2)}: slope distributions ${topo >= 0.6 ? "overlap well" : "differ"} on the shared grid; ${earthName}'s relief is ${r >= 1 ? r.toFixed(1) + "×" : (1 / r).toFixed(1) + "× lower than"} ${targetName}'s.`);
   }
-  lines.push(`Lighting ${light.score.toFixed(2)}: plan field work in ${light.best.join(", ") || "—"}, when ${earthName}'s Sun-angle pattern is closest.`);
+  lines.push(`Lighting ${light.score.toFixed(2)}: plan field work in ${light.best.join(", ") || "n/a"}, when ${earthName}'s Sun-angle pattern is closest.`);
   if (illE && illT)
     lines.push(
-      `Under the same Sun, ${(illE.persistentShadow * 100).toFixed(1)}% of ${earthName} never sees light versus ${(illT.persistentShadow * 100).toFixed(1)}% of ${targetName} — ${illE.persistentShadow < illT.persistentShadow * 0.5 ? "shadow-trap rehearsal will be weaker than the real thing" : "a usable shadow rehearsal"}.`,
+      `Under the same Sun, ${(illE.persistentShadow * 100).toFixed(1)}% of ${earthName} never sees light versus ${(illT.persistentShadow * 100).toFixed(1)}% of ${targetName}, ${illE.persistentShadow < illT.persistentShadow * 0.5 ? "shadow-trap rehearsal will be weaker than the real thing" : "a usable shadow rehearsal"}.`,
     );
   lines.push(`Overall ${fit.toFixed(2)} is provisional: geology, temperature and regolith are demo values until the model is trained.`);
   return (
@@ -1283,7 +1520,7 @@ function Insight({
             </li>
           ))}
         </ol>
-        <p className="mt-5 text-[11px] text-dim">Written by a template from the computed values — no language model, no invented facts.</p>
+        <p className="mt-5 text-[11px] text-dim">Written from the numbers above by a simple template. No AI text, no made-up facts.</p>
       </Card>
     </Reveal>
   );

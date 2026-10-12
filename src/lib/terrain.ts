@@ -1,7 +1,7 @@
 /**
- * Terrain Twins — real elevation sampled at a shared physical scale.
+ * Terrain Twins, real elevation sampled at a shared physical scale.
  *
- *  Earth : AWS Terrain Tiles (Terrarium), built largely from NASA SRTM — metres, 16-bit.
+ *  Earth : AWS Terrain Tiles (Terrarium), built largely from NASA SRTM, metres, 16-bit.
  *  Moon  : NASA Trek LRO LOLA DEM (128 ppd), 8-bit preview tiles, global linear stretch.
  *  Mars  : NASA Trek MGS MOLA DEM (463 m), 8-bit preview tiles, global linear stretch.
  *
@@ -142,7 +142,7 @@ export async function sampleTerrain({ body, lat, lon, footprintKm, spacingKm, on
   const n = Math.max(24, Math.min(128, Math.round(footprintKm / spacingKm)));
   const step = footprintKm / n;
   let z = chooseZoom(src, lat, step);
-  // Polar footprints touch every longitude column — cap the request count.
+  // Polar footprints touch every longitude column, cap the request count.
   const cols0 = (src.grid === "mercator" ? 1 : 2) * 2 ** z;
   if (Math.abs(lat) > 80 && cols0 > 64 && src.grid === "equirect") z = Math.max(0, z - 1);
   const worldW = (src.grid === "mercator" ? 256 : 512) * 2 ** z;
@@ -315,7 +315,7 @@ export function terrainStats(g: TerrainGrid): TerrainStats {
   };
 }
 
-/** 0..1 — slope-distribution overlap blended with relief agreement. */
+/** 0..1, slope-distribution overlap blended with relief agreement. */
 export function topographySimilarity(a: TerrainStats, b: TerrainStats) {
   const overlap = a.slopeHist.reduce((s, v, i) => s + Math.min(v, b.slopeHist[i]), 0);
   const ratio = Math.max(a.relief, 1) / Math.max(b.relief, 1);
@@ -503,7 +503,7 @@ export async function sampleImagery(src: ImgSource, lat: number, lon: number, fo
     return { pts, need, worldW };
   };
   let p = plan(z);
-  // Near the poles the footprint spans many longitudes — trade resolution for tile count.
+  // Near the poles the footprint spans many longitudes, trade resolution for tile count.
   while (p.need.size > 80 && z > 0) p = plan(--z);
 
   const tiles = new Map<string, ImageData | null>();

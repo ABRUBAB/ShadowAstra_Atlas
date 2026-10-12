@@ -1,7 +1,7 @@
 /**
  * Site catalogue for the preliminary-round prototype.
  *
- * Earth sites here are KNOWN, published analog / field-test locations used as references —
+ * Earth sites here are KNOWN, published analog / field-test locations used as references,
  * they are not discoveries made by our model. Moon and Mars targets are named regions from
  * NASA mission planning and landing history. Coordinates are approximate region centres,
  * good for mapping, not for navigation or landing.
@@ -105,7 +105,7 @@ export interface TargetSite {
 }
 
 export const TARGETS: TargetSite[] = [
-  // Moon — Artemis south-polar candidate regions and classic targets
+  // Moon. Artemis south-polar candidate regions and classic targets
   {
     id: "shackleton",
     body: "moon",
@@ -114,7 +114,7 @@ export const TARGETS: TargetSite[] = [
     lat: -89.67,
     lon: 129.78,
     kind: "Permanent base region",
-    why: "Rim segments see near-continuous sunlight while the crater floor is permanently shadowed — power and ice side by side.",
+    why: "Rim segments see near-continuous sunlight while the crater floor is permanently shadowed, power and ice side by side.",
     tasks: ["base", "polar", "ice", "traverse"],
     source: "LRO LOLA illumination studies; NASA Artemis planning",
   },
@@ -138,7 +138,7 @@ export const TARGETS: TargetSite[] = [
     lat: -87.4,
     lon: -5.0,
     kind: "Artemis III candidate region",
-    why: "Large permanently shadowed crater beside illuminated ridges — volatiles within traverse range.",
+    why: "Large permanently shadowed crater beside illuminated ridges, volatiles within traverse range.",
     tasks: ["ice", "polar", "traverse"],
     source: "NASA Artemis III candidate regions",
   },
@@ -198,7 +198,7 @@ export const TARGETS: TargetSite[] = [
     lat: 14.1,
     lon: -56.8,
     kind: "Lava-tube skylight",
-    why: "Collapse pit that may open into a lava tube — natural radiation and thermal shelter.",
+    why: "Collapse pit that may open into a lava tube, natural radiation and thermal shelter.",
     tasks: ["caves", "base"],
     source: "SELENE/Kaguya & LROC NAC observations",
   },
@@ -260,7 +260,7 @@ export const TARGETS: TargetSite[] = [
     lat: 46.7,
     lon: -176.0,
     kind: "Human landing interest",
-    why: "Shallow, mid-latitude ground ice mapped by subsurface water ice studies — a water source for crews.",
+    why: "Shallow, mid-latitude ground ice mapped by subsurface water ice studies, a water source for crews.",
     tasks: ["ice", "base", "isru"],
     source: "SWIM project (Morgan et al., 2021)",
   },
@@ -320,7 +320,7 @@ export const TARGETS: TargetSite[] = [
     lat: 22.6,
     lon: -16.5,
     kind: "Clay-rich terrain",
-    why: "Thick, layered clay minerals — a long-studied astrobiology landing candidate.",
+    why: "Thick, layered clay minerals, a long-studied astrobiology landing candidate.",
     tasks: ["astrobio", "isru"],
     source: "CRISM / OMEGA mineral maps",
   },
@@ -350,7 +350,7 @@ export const EARTH_SITES: EarthSite[] = [
     lon: -116.83,
     worlds: ["mars"],
     tasks: ["traverse", "astrobio", "isru"],
-    summary: "Hot, hyper-arid basin with salt flats, alluvial fans and volcanic craters (Ubehebe) — named in the 2026 challenge.",
+    summary: "Hot, hyper-arid basin with salt flats, alluvial fans and volcanic craters (Ubehebe), named in the 2026 challenge.",
     heritage: "NASA rover & instrument field tests; Mars 2020 and MSL team training.",
     pairs: ["gale", "jezero", "meridiani"],
     fit: { topography: "strong", geology: "partial", environment: "partial", resources: "partial", access: "strong" },
@@ -378,7 +378,7 @@ export const EARTH_SITES: EarthSite[] = [
     lon: -89.68,
     worlds: ["mars", "moon"],
     tasks: ["impact", "base", "traverse", "polar"],
-    summary: "A 23 km impact crater in a polar desert — home of the Haughton-Mars Project field station.",
+    summary: "A 23 km impact crater in a polar desert, home of the Haughton-Mars Project field station.",
     heritage: "Haughton-Mars Project (NASA/SETI) since 1997; rover & EVA studies.",
     pairs: ["jezero", "gale", "nobile", "malapert"],
     fit: { topography: "strong", geology: "strong", environment: "partial", resources: "partial", access: "strong" },
@@ -410,7 +410,7 @@ export const EARTH_SITES: EarthSite[] = [
     heritage: "NASA/PISCES ISRU field tests (2008, 2010); regolith simulant sources.",
     pairs: ["mons-mouton", "cabeus", "hadley"],
     fit: { topography: "partial", geology: "strong", environment: "weak", resources: "strong", access: "partial" },
-    gaps: ["Weathered, not space-weathered, grains", "Sacred cultural landscape — access with consent", "Mild climate"],
+    gaps: ["Weathered, not space-weathered, grains", "Sacred cultural landscape, access with consent", "Mild climate"],
   },
   {
     id: "lava-beds",
@@ -420,8 +420,8 @@ export const EARTH_SITES: EarthSite[] = [
     lon: -121.51,
     worlds: ["moon", "mars"],
     tasks: ["caves"],
-    summary: "Hundreds of accessible basaltic lava tubes — a test bed for cave robotics and life detection.",
-    heritage: "NASA BRAILLE project (2019–2021) for robotic cave exploration.",
+    summary: "Hundreds of accessible basaltic lava tubes, a test bed for cave robotics and life detection.",
+    heritage: "NASA BRAILLE project (2019 to 2021) for robotic cave exploration.",
     pairs: ["marius-pit", "tranquillitatis-pit", "arsia"],
     fit: { topography: "strong", geology: "strong", environment: "weak", resources: "weak", access: "strong" },
     gaps: ["Lunar/Martian tubes are likely far larger", "Biological activity inside", "Earth gravity"],
@@ -448,8 +448,8 @@ export const EARTH_SITES: EarthSite[] = [
     lon: -6.59,
     worlds: ["mars"],
     tasks: ["astrobio", "isru"],
-    summary: "Acidic, iron-rich river with jarosite and hematite — the minerals found at Meridiani Planum.",
-    heritage: "NASA MARTE drilling experiment (2003–2006).",
+    summary: "Acidic, iron-rich river with jarosite and hematite, the minerals found at Meridiani Planum.",
+    heritage: "NASA MARTE drilling experiment (2003 to 2006).",
     pairs: ["meridiani", "mawrth"],
     fit: { topography: "weak", geology: "strong", environment: "weak", resources: "strong", access: "strong" },
     gaps: ["Active water and life", "Mining-altered landscape", "Vegetated surroundings"],
@@ -462,7 +462,7 @@ export const EARTH_SITES: EarthSite[] = [
     lon: 13.3,
     worlds: ["mars", "moon"],
     tasks: ["ice", "astrobio", "polar"],
-    summary: "Volcanic centres and carbonate deposits inside permafrost — an Arctic Mars analog.",
+    summary: "Volcanic centres and carbonate deposits inside permafrost, an Arctic Mars analog.",
     heritage: "AMASE expeditions (NASA/ESA) for Mars Science Laboratory and ExoMars instruments.",
     pairs: ["arcadia", "utopia", "shackleton"],
     fit: { topography: "partial", geology: "strong", environment: "strong", resources: "strong", access: "partial" },
@@ -505,7 +505,7 @@ export const EARTH_SITES: EarthSite[] = [
     worlds: ["moon", "mars"],
     tasks: ["traverse", "base", "isru"],
     summary: "Basalt flows where NASA Desert RATS rehearsed pressurised rover and EVA operations.",
-    heritage: "NASA Desert RATS (1997–2011).",
+    heritage: "NASA Desert RATS (1997 to 2011).",
     pairs: ["malapert", "mons-mouton", "de-gerlache"],
     fit: { topography: "strong", geology: "partial", environment: "weak", resources: "partial", access: "strong" },
     gaps: ["Mid-latitude Sun angles", "Warm climate", "Vegetation"],
@@ -532,7 +532,7 @@ export const EARTH_SITES: EarthSite[] = [
     lon: 119.4,
     worlds: ["mars"],
     tasks: ["astrobio"],
-    summary: "Some of Earth's oldest evidence of life (~3.5 billion years) — a guide for Mars biosignatures.",
+    summary: "Some of Earth's oldest evidence of life (~3.5 billion years), a guide for Mars biosignatures.",
     heritage: "Mars 2020 science team field training; astrobiology studies.",
     pairs: ["jezero", "gale"],
     fit: { topography: "partial", geology: "strong", environment: "partial", resources: "weak", access: "partial" },
@@ -574,7 +574,7 @@ export const EARTH_SITES: EarthSite[] = [
     lon: 40.3,
     worlds: ["mars"],
     tasks: ["astrobio"],
-    summary: "Hyper-acidic, hyper-saline hydrothermal pools — testing where life stops.",
+    summary: "Hyper-acidic, hyper-saline hydrothermal pools, testing where life stops.",
     heritage: "Europlanet & astrobiology field studies.",
     pairs: ["meridiani", "mawrth"],
     fit: { topography: "weak", geology: "partial", environment: "weak", resources: "partial", access: "weak" },
@@ -600,7 +600,7 @@ export const FIT_KEYS: { key: keyof EarthSite["fit"]; label: string }[] = [
   { key: "access", label: "Field access" },
 ];
 
-/** Universal reality gaps — no Earth site can reproduce these. */
+/** Universal reality gaps, no Earth site can reproduce these. */
 export const REALITY_GAPS: Record<World, string[]> = {
   moon: ["1/6 g gravity", "Hard vacuum", "Unfiltered radiation", "Electrostatic, jagged dust", "~-230 °C cold traps"],
   mars: ["3/8 g gravity", "~0.6 kPa CO₂ atmosphere", "Surface radiation", "Perchlorate-rich soil", "Global dust storms"],
@@ -626,9 +626,9 @@ export const SCREENING_REGIONS: ScreeningRegion[] = [
   { id: "lut", name: "Dasht-e Lut", country: "Iran", lat: 30.4, lon: 59.3, terrain: "Hyper-arid yardangs", hypothesis: "Wind-eroded ridges resemble Martian yardang fields (Medusae Fossae).", worlds: ["mars"] },
   { id: "khaybar", name: "Harrat Khaybar", country: "Saudi Arabia", lat: 25.7, lon: 39.9, terrain: "Basaltic lava field", hypothesis: "Young flows, cones and possible lava tubes for lunar mare traverses.", worlds: ["moon", "mars"] },
   { id: "namib", name: "Namib sand sea", country: "Namibia", lat: -24.7, lon: 15.3, terrain: "Coastal dune desert", hypothesis: "Dune fields for rover mobility on loose sand, like Gale's Bagnold dunes.", worlds: ["mars"] },
-  { id: "uyuni", name: "Altiplano salars", country: "Bolivia", lat: -20.1, lon: -67.6, terrain: "High-altitude salt flats", hypothesis: "High UV, low pressure and evaporites — chloride deposits on Mars.", worlds: ["mars"] },
+  { id: "uyuni", name: "Altiplano salars", country: "Bolivia", lat: -20.1, lon: -67.6, terrain: "High-altitude salt flats", hypothesis: "High UV, low pressure and evaporites, chloride deposits on Mars.", worlds: ["mars"] },
   { id: "tolbachik", name: "Tolbachik lava fields", country: "Russia", lat: 55.8, lon: 160.3, terrain: "Recent basalt & cold", hypothesis: "Fresh basalt in a cold climate for regolith and ISRU tests.", worlds: ["moon"] },
   { id: "blue-ice", name: "Antarctic blue-ice plateau", country: "Antarctica", lat: -72.0, lon: 25.0, terrain: "Polar ice & nunataks", hypothesis: "Low Sun, extreme cold and long shadows near the lunar south pole's illumination regime.", worlds: ["moon"] },
   { id: "taklamakan", name: "Taklamakan rim", country: "China", lat: 38.9, lon: 83.5, terrain: "Cold desert & alluvial fans", hypothesis: "Cold-arid fans and dunes for Mars traverse planning.", worlds: ["mars"] },
-  { id: "craters-moon", name: "Craters of the Moon", country: "Idaho, USA", lat: 43.42, lon: -113.52, terrain: "Basalt flows & tubes", hypothesis: "Lava tubes and spatter cones; already used by NASA FINESSE — a calibration control.", worlds: ["moon", "mars"] },
+  { id: "craters-moon", name: "Craters of the Moon", country: "Idaho, USA", lat: 43.42, lon: -113.52, terrain: "Basalt flows & tubes", hypothesis: "Lava tubes and spatter cones; already used by NASA FINESSE, a calibration control.", worlds: ["moon", "mars"] },
 ];

@@ -32,7 +32,7 @@ export interface MapView {
 }
 
 export interface BodyMapHandle {
-  flyTo: (lat: number, lon: number, zoom?: number) => void;
+  flyTo: (lat: number, lon: number, zoom?: number, animate?: boolean) => void;
   setMetresPerPixel: (mpp: number) => void;
 }
 
@@ -93,7 +93,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
   const projection = layer.projection;
   const [scale, setScale] = useState({ px: 100, label: "" });
 
-  // (Re)create the map whenever the projection changes — each needs its own CRS.
+  // (Re)create the map whenever the projection changes, each needs its own CRS.
   useEffect(() => {
     if (!host.current) return;
     const crs = projection === "mercator" ? L.CRS.EPSG3857 : projection === "equirect" ? L.CRS.EPSG4326 : L.CRS.Simple;
@@ -223,13 +223,15 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
   useImperativeHandle(
     ref,
     () => ({
-      flyTo(lat, lon, zoom) {
+      flyTo(lat, lon, zoom, animate = true) {
         const map = mapRef.current;
         if (!map) return;
         const ll = toLatLng(projection, lat, lon);
         if (!ll) return;
         const z = zoom ?? (projection === "polar-south" ? 1 : projection === "mercator" ? 6 : 5);
-        map.flyTo(ll, z, { duration: 1.1 });
+        map.stop();
+        if (animate) map.flyTo(ll, z, { duration: 1.1 });
+        else map.setView(ll, z, { animate: false });
       },
       setMetresPerPixel(mpp) {
         const map = mapRef.current;
@@ -240,8 +242,10 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
         else z = Math.log2(POLAR_METRES_PER_PIXEL / mpp);
         z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), z));
         if (Math.abs(z - map.getZoom()) < 0.01) return;
+        // Cancel any running fly-in first: zooming mid-animation leaves Leaflet's tile pane stuck.
+        map.stop();
         silent.current = true;
-        map.setZoom(z, { animate: false });
+        map.setView(map.getCenter(), z, { animate: false });
         silent.current = false;
       },
     }),

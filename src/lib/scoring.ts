@@ -1,5 +1,5 @@
 /**
- * Analog Fit — the mission-conditioned score shown in the Analog Lab.
+ * Analog Fit, the mission-conditioned score shown in the Analog Lab.
  *
  * Six parameters (Topography, Geology, Temperature, Lighting, Regolith, Radiation).
  *   computed → measured from data in the browser right now (terrain twins, light twin)
@@ -15,10 +15,10 @@ export type ParamKind = "computed" | "demo" | "gap";
 export const PARAMS: { id: ParamId; label: string; what: string }[] = [
   { id: "topography", label: "Topography", what: "Slope distribution & relief at a shared scale" },
   { id: "geology", label: "Geology", what: "Rock types and minerals" },
-  { id: "temperature", label: "Temperature", what: "Day–night range and cold extremes" },
+  { id: "temperature", label: "Temperature", what: "Day and night range and cold extremes" },
   { id: "lighting", label: "Lighting", what: "Sun-elevation regime and shadows" },
   { id: "regolith", label: "Regolith", what: "Soil and dust make-up" },
-  { id: "radiation", label: "Radiation", what: "Surface exposure — Earth's field and air block it" },
+  { id: "radiation", label: "Radiation", what: "Surface exposure. Earth's field and air block it" },
 ];
 
 export type Weights = Record<Exclude<ParamId, "radiation">, number>;
@@ -124,7 +124,7 @@ export const STEWARDSHIP: Record<string, { status: string; note: string }> = {
   "black-point": { status: "Public land (USFS/BLM)", note: "Low-impact access; previously used by NASA." },
   askja: { status: "Vatnajökull National Park", note: "Seasonal roads; fragile moss and soils." },
   pilbara: { status: "Traditional Owner land", note: "Aboriginal heritage approvals required." },
-  ries: { status: "UNESCO Global Geopark", note: "Towns and farmland — outcrops by permission." },
+  ries: { status: "UNESCO Global Geopark", note: "Towns and farmland, outcrops by permission." },
   sudbury: { status: "Mixed / mining", note: "Active mines; landowner permissions." },
   dallol: { status: "Afar Region", note: "Extreme hazard; local guides and permits mandatory." },
 };

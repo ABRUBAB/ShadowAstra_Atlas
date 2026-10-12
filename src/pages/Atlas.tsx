@@ -148,7 +148,7 @@ export default function Atlas() {
                     onClick={() => setWorld(w)}
                     className={clsx(
                       "flex items-center justify-center gap-2 rounded-lg py-2 text-[13px] capitalize transition-colors duration-150",
-                      world === w ? "bg-white/[0.08] text-platinum" : "text-dim hover:text-chrome",
+                      world === w ? "bg-platinum/[0.08] text-platinum" : "text-dim hover:text-chrome",
                     )}
                   >
                     {w !== "both" && <WorldDot world={w} />}
@@ -269,7 +269,7 @@ export default function Atlas() {
         </aside>
 
         {/* ------------------------------------------------ stage */}
-        <main className="relative order-1 h-[62vh] min-h-[420px] overflow-hidden border-b border-line lg:order-2 lg:h-auto lg:border-b-0">
+        <main data-theme="dark" className="relative order-1 h-[62vh] min-h-[420px] overflow-hidden border-b border-line lg:order-2 lg:h-auto lg:border-b-0">
           {view === "3d" ? (
             <Suspense fallback={<StageLoading />}>
               <GlobeView body={body} markers={markers} activeId={sel?.id ?? null} onSelect={onSelect} focus={focus} />
@@ -295,7 +295,7 @@ export default function Atlas() {
                   onClick={() => setBody(b.id)}
                   className={clsx(
                     "flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] transition-colors duration-150",
-                    body === b.id ? "bg-white/[0.1] text-platinum" : "text-dim hover:text-chrome",
+                    body === b.id ? "bg-platinum/[0.08] text-platinum" : "text-dim hover:text-chrome",
                   )}
                 >
                   <WorldDot world={b.id} /> {b.label}
@@ -476,7 +476,7 @@ function Overview({
             </button>
           </li>
         ))}
-        {earth.length === 0 && <li className="py-4 text-[13px] text-dim">No reference analog for this combination — a gap worth screening.</li>}
+        {earth.length === 0 && <li className="py-4 text-[13px] text-dim">No reference analog for this combination, a gap worth screening.</li>}
       </ul>
     </div>
   );
@@ -505,7 +505,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
         </div>
         <p className="text-[14px] leading-relaxed text-platinum">{s.summary}</p>
         <p className="text-[12px] leading-relaxed text-dim">
-          <span className="text-chrome">Heritage — </span>
+          <span className="text-chrome">History: </span>
           {s.heritage}
         </p>
 
@@ -596,7 +596,7 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
         ))}
       </div>
       <div className="text-[12px] text-dim">
-        <span className="text-chrome">Source — </span>
+        <span className="text-chrome">Source: </span>
         {t.source}
       </div>
 
@@ -615,7 +615,7 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
           ))}
           {grounds.length === 0 && (
             <div className="rounded-xl border border-dashed border-line-2 p-4 text-[13px] text-chrome">
-              No catalogued Earth analog yet — this target drives the new-analog screening.
+              No catalogued Earth analog yet, this target drives the new-analog screening.
             </div>
           )}
         </div>
@@ -646,7 +646,7 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
 
 function ScreenDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const r = SCREENING_REGIONS.find((x) => x.id === id)!;
-  const datasets = ["NASADEM / Copernicus DEM — slope & roughness", "HLS (Landsat + Sentinel-2) — surface cover", "EMIT — surface minerals (where covered)", "MODIS LST — thermal regime"];
+  const datasets = ["NASADEM / Copernicus DEM: slope and bumps", "HLS (Landsat + Sentinel-2): what covers the ground", "EMIT: surface minerals", "MODIS LST: ground temperature"];
   return (
     <div>
       <div className="relative h-44 overflow-hidden">
@@ -656,7 +656,7 @@ function ScreenDetail({ id, onClose }: { id: string; onClose: () => void }) {
     <div className="space-y-7 p-5">
       <PanelHeader eyebrow={`Search region · ${r.country}`} title={r.name} sub={formatCoord(r.lat, r.lon)} onClose={onClose} />
       <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-amethyst/60 px-3 py-1 text-[12px] text-amethyst">
-        <CircleDashed size={13} /> Queued — not yet screened
+        <CircleDashed size={13} /> Queued, not checked yet
       </span>
       <div>
         <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Terrain</div>

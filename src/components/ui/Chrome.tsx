@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
 import clsx from "clsx";
 import type { Fit } from "../../data/sites";
 import { FIT_LABEL } from "../../data/sites";
@@ -24,7 +24,7 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
         alt=""
         width={size}
         height={size}
-        className="rounded-full mix-blend-screen transition-transform duration-500 ease-out group-hover:rotate-[20deg]"
+        className="logo-mark rounded-full mix-blend-screen transition-transform duration-500 ease-out group-hover:rotate-[20deg]"
         style={{ width: size, height: size }}
       />
       {withWord && (
@@ -33,6 +33,60 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
         </span>
       )}
     </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ theme */
+
+type Theme = "dark" | "light";
+
+function readTheme(): Theme {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+/** Dark is the default; the choice is remembered per browser. */
+export function useTheme() {
+  const [theme, setTheme] = useState<Theme>(readTheme);
+  useEffect(() => {
+    const on = () => setTheme(readTheme());
+    window.addEventListener("sa-theme", on);
+    return () => window.removeEventListener("sa-theme", on);
+  }, []);
+  const toggle = () => {
+    const next: Theme = readTheme() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem("sa-theme", next);
+    } catch {
+      /* private mode */
+    }
+    window.dispatchEvent(new Event("sa-theme"));
+  };
+  return { theme, toggle };
+}
+
+export function ThemeToggle({ className }: { className?: string }) {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      onClick={toggle}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Light mode" : "Dark mode"}
+      className={clsx("relative grid size-9 place-items-center overflow-hidden rounded-full border border-line-2 text-chrome transition-colors hover:border-chrome hover:text-platinum", className)}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={theme}
+          initial={{ y: 14, opacity: 0, rotate: -40 }}
+          animate={{ y: 0, opacity: 1, rotate: 0 }}
+          exit={{ y: -14, opacity: 0, rotate: 40 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+        </motion.span>
+      </AnimatePresence>
+    </button>
   );
 }
 
@@ -61,6 +115,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
 
   return (
     <header
+      data-theme={overlay && !scrolled ? "dark" : undefined}
       className={clsx(
         "z-50 w-full transition-colors duration-300",
         overlay ? "fixed top-0" : "sticky top-0",
@@ -78,7 +133,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
               className={({ isActive }) =>
                 clsx(
                   "rounded-full px-4 py-2 text-[13px] transition-colors duration-150",
-                  isActive ? "bg-white/[0.06] text-platinum" : "text-chrome hover:text-platinum",
+                  isActive ? "bg-platinum/[0.07] text-platinum" : "text-chrome hover:text-platinum",
                 )
               }
             >
@@ -93,7 +148,10 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
           >
             <Github size={15} /> Source
           </a>
+          <ThemeToggle className="ml-2" />
         </nav>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
         <button
           className="rounded-full border border-line-2 p-2 text-chrome md:hidden"
           onClick={() => setOpen((o) => !o)}
@@ -102,6 +160,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
         >
           {open ? <X size={18} /> : <Menu size={18} />}
         </button>
+        </div>
       </div>
       <AnimatePresence>
         {open && (
@@ -134,7 +193,7 @@ export function Footer() {
         <div className="space-y-4">
           <Logo size={40} />
           <p className="max-w-md text-sm leading-relaxed text-chrome">
-            Built by team ShadowAstra in Dhaka, Bangladesh for the 2026 NASA Space Apps Challenge — “Identify Earth
+            Built by team ShadowAstra in Dhaka, Bangladesh for the 2026 NASA Space Apps Challenge: “Identify Earth
             Locations that Analog the Permanent Moon Base Locations and Mars.”
           </p>
           <p className="max-w-md text-xs leading-relaxed text-dim">
@@ -213,7 +272,7 @@ export function WorldDot({ world, className }: { world: keyof typeof WORLD_COLOR
   return (
     <span
       className={clsx("inline-block size-2 rounded-full", className)}
-      style={{ background: WORLD_COLOR[world] }}
+      style={{ background: `var(--color-${world})` }}
     />
   );
 }

@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
+import { MiniLoader, Splash } from "./components/ui/Splash";
+import { AskAstra } from "./components/ui/AskAstra";
 
 const Atlas = lazy(() => import("./pages/Atlas"));
 const Lab = lazy(() => import("./pages/Lab"));
@@ -27,14 +29,7 @@ function CompareRedirect() {
 }
 
 function Loading() {
-  return (
-    <div className="grid h-dvh place-items-center bg-void">
-      <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.25em] text-chrome uppercase">
-        <span className="h-px w-8 animate-pulse bg-flare" />
-        Loading
-      </div>
-    </div>
-  );
+  return <MiniLoader label="Loading" />;
 }
 
 export default function App() {
@@ -45,6 +40,7 @@ export default function App() {
   }, []);
   return (
     <>
+      <Splash />
       <ScrollToTop />
       <Suspense fallback={<Loading />}>
         <Routes>
@@ -57,6 +53,7 @@ export default function App() {
           <Route path="*" element={<Home />} />
         </Routes>
       </Suspense>
+      <AskAstra />
     </>
   );
 }

@@ -131,3 +131,12 @@ Six parameters, taken from our methodology sheet:
 | Tasnuva Arif | Development and testing; narration |
 | Md. Tanvir Hasan | Validates the science: splits, baselines, checks |
 | Mohammed Mahmud Parvez | Edits the film; motion language |
+
+## 12. v0.3 additions (preliminary round)
+
+- **Ask Astra:** an on-page assistant that answers from our catalogue, Sun maths and distance maths (no language model, no invented facts). It is page-aware and links straight into the Lab.
+- **Guided Lab:** numbered steps (① Earth site, ② target, ③ task), one-click quick pairs, a floating section dock, coach tips, deep links (`/lab#geology`) and a badge legend.
+- **Light mode:** a warm paper theme with its own accent colours. Space scenes stay dark. Dark is the default.
+- **Branded loading:** an orbit-mark splash on first visit and a compact orbit loader between pages.
+- **Plain English:** simpler copy across the site.
+- **Real team portraits** on Home and About.

@@ -5,7 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Lenis smooth scroll synced with GSAP ScrollTrigger — homepage only. */
+/** Lenis smooth scroll synced with GSAP ScrollTrigger, homepage only. */
 export function useSmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

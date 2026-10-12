@@ -42,6 +42,69 @@
   color-scheme: dark;
 }
 
+/* ---------------------------------------------------------------- themes
+   Dark ("observatory") is the default. Light is a warm paper theme with its own
+   tuned accents — not an inversion. Space scenes stay dark in both themes by
+   wrapping them in data-theme="dark" (a "window into space"). */
+[data-theme="light"] {
+  color-scheme: light;
+  --color-void: #f3efe6;
+  --color-ink: #ebe5d9;
+  --color-panel: #fbf8f2;
+  --color-panel-2: #f2ede3;
+  --color-line: #dcd5c7;
+  --color-line-2: #c9c0ae;
+  --color-platinum: #1c1a16;
+  --color-chrome: #55514a;
+  --color-dim: #888275;
+  --color-flare: #a5641a;
+  --color-earth: #2d62ad;
+  --color-cobalt: #2b4e9c;
+  --color-moon: #6d685d;
+  --color-mars: #b0522b;
+  --color-amethyst: #6858a6;
+  --color-strong: #2b8156;
+  --color-partial: #9f6b10;
+  --color-weak: #b2412a;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-void: #07080a;
+  --color-ink: #0b0c0f;
+  --color-panel: #101114;
+  --color-panel-2: #16171b;
+  --color-line: #212226;
+  --color-line-2: #2f3035;
+  --color-platinum: #edeae4;
+  --color-chrome: #a8a59e;
+  --color-dim: #6c6a65;
+  --color-flare: #f2c879;
+  --color-earth: #8fb4ea;
+  --color-cobalt: #4f74c8;
+  --color-moon: #c9c5bc;
+  --color-mars: #e08a5f;
+  --color-amethyst: #a197cf;
+  --color-strong: #7cc8a0;
+  --color-partial: #e3b35e;
+  --color-weak: #e47a63;
+}
+html[data-theme="light"] body::before {
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+}
+/* The team mark is silver-on-black; on paper we print it as ink. */
+html[data-theme="light"] .logo-mark {
+  filter: invert(1) hue-rotate(180deg) contrast(1.1);
+  mix-blend-mode: multiply;
+}
+html[data-theme="light"] [data-theme="dark"] .logo-mark {
+  filter: none;
+  mix-blend-mode: screen;
+}
+html {
+  transition: background-color 0.4s ease;
+}
+
 html,
 body {
   background: var(--color-void);

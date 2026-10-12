@@ -121,7 +121,7 @@ function Hero() {
   const pair = TARGET_BY_ID[s.pairs[0]];
 
   return (
-    <section className="hero relative h-dvh min-h-[680px] overflow-hidden">
+    <section data-theme="dark" className="hero relative h-dvh min-h-[680px] overflow-hidden bg-void">
       <div className="hero-scene absolute inset-0">
         {/* Poster: a 60 KB NASA Earth that paints instantly while WebGL warms up. */}
         {!compact && (
@@ -157,8 +157,8 @@ function Hero() {
             <span className="block font-serif font-normal tracking-[-0.02em] text-flare italic">on this one.</span>
           </h1>
           <p className="hero-fade mt-7 max-w-[540px] text-[17px] leading-relaxed text-chrome">
-            ShadowAstra Atlas finds the Earth landscapes where crews, rovers and instruments can practise for a permanent Moon base and for Mars —
-            matched by mission, measured at the same scale, lit by the same Sun.
+            ShadowAstra Atlas finds places on Earth where astronauts, rovers and tools can practise for a Moon base or a Mars mission. We match
+            each place to the job, compare the ground at the same size, and check the sunlight too.
           </p>
           <div className="hero-fade mt-9 flex flex-wrap items-center gap-3">
             <Link to="/lab" className="btn-primary group inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium">
@@ -172,7 +172,7 @@ function Hero() {
         </div>
       </div>
 
-      <div className="hero-hud pointer-events-none absolute right-4 bottom-8 z-10 hidden w-[340px] sm:right-6 min-[900px]:block">
+      <div className="hero-hud pointer-events-none absolute right-4 bottom-24 z-10 hidden w-[340px] sm:right-6 min-[900px]:block">
         <div className="panel rounded-xl p-4">
           <div className="flex items-center justify-between font-mono text-[10px] tracking-widest text-dim uppercase">
             <span>
@@ -200,7 +200,7 @@ function Hero() {
       </div>
 
       <div className="hero-hud absolute bottom-3 left-[calc(50%-120px)] z-10 hidden md:block [@media(max-height:760px)]:hidden">
-        <Astronaut size={78} mood="happy" action="wave" say="Hi, I'm Astra — your field-test crew." sayAlign="side" />
+        <Astronaut size={78} mood="happy" action="wave" say="Hi, I'm Astra, your field-test astronaut." sayAlign="side" />
       </div>
       <style>{`@keyframes hudIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
     </section>
@@ -242,18 +242,18 @@ function Challenge() {
           <Guide mood="thinking" action="idle" size={96} className="-mt-6 hidden md:block" />
         </div>
         <H2 className="mt-8 max-w-[1100px]">
-          Earth’s famous analog sites let teams test before they fly. <Em>But they are not well characterized</Em> — and the next ones haven’t been
+          Earth’s famous analog sites let teams test before they fly. <Em>But they are not well characterized</Em>, and the next ones haven’t been
           found.
         </H2>
         <div className="mt-14 grid gap-10 md:grid-cols-2">
           <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
             NASA asks teams to use open Earth, Moon and Mars data to <span className="text-platinum">identify and characterize new terrestrial analogs</span> for
-            future bases and landing sites — across deserts, polar regions, volcanic and arid terrain and caves.
+            future bases and landing sites, across deserts, polar regions, volcanic and arid terrain and caves.
           </p>
           <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
-            We start from the mission, not the picture. Choose what to rehearse and the Atlas compares{" "}
-            <span className="text-platinum">topography, geology, temperature, lighting, regolith and radiation</span> at a matched physical scale — then says
-            plainly what Earth can’t reproduce.
+            We start with the job, not the picture. Pick what you want to practise and the Atlas compares{" "}
+            <span className="text-platinum">ground shape, rocks, temperature, sunlight, soil and radiation</span> at the same scale. Then it tells you
+            plainly what Earth can’t copy.
           </p>
         </div>
         <div className="mt-20 grid grid-cols-2 border-t border-l border-line lg:grid-cols-4">
@@ -274,12 +274,12 @@ function Challenge() {
 
 function Novelty() {
   const items = [
-    { icon: Target, t: "Mission-conditioned matching", d: "No universal “Mars-like” score. Weights change with the task — a rover traverse and an ice prospect rank Earth differently." },
-    { icon: Mountain, t: "Terrain Twins", d: "Real Earth, Moon and Mars elevation side by side in 3D, resampled to the same grid so slopes are comparable." },
-    { icon: Sun, t: "Shadow Lab", d: "Turn a lunar-polar Sun around both terrains and map which ground never sees light — our name, our method." },
-    { icon: Radar, t: "Light Twin calendar", d: "Solar geometry tells a field team which months on Earth best reproduce the target’s Sun angles." },
-    { icon: Leaf, t: "Rehearse closer", d: "Find the closest credible analog to your team and see the travel footprint — fewer flights, same science." },
-    { icon: Scale, t: "Honest evidence", d: "Every number is tagged Computed, Demo or Reality gap. Gravity, vacuum and radiation are never hidden." },
+    { icon: Target, t: "Matched to the job", d: "There is no single “Mars-like” score. A rover test and an ice search need different places, so the score changes with the task." },
+    { icon: Mountain, t: "Terrain Twins", d: "Real Earth, Moon and Mars ground side by side in 3D, cut to the same size so slopes compare fairly." },
+    { icon: Sun, t: "Shadow Lab", d: "Move a low Sun around both places and see which ground never gets light. That is where ice can hide." },
+    { icon: Radar, t: "Light Twin calendar", d: "Our Sun maths tells field teams which months on Earth have sunlight most like the target." },
+    { icon: Leaf, t: "Rehearse closer", d: "Find the nearest good site to your team and see the travel footprint. Fewer flights, same science." },
+    { icon: Scale, t: "Honest evidence", d: "Every number is marked Computed, Demo or Reality gap. We never hide gravity, vacuum or radiation." },
   ];
   return (
     <section className="relative border-t border-line bg-ink px-4 py-28 sm:px-6 md:py-36">
@@ -332,7 +332,7 @@ function SpinningBody({ src, size = 220, speed = 60 }: { src: string; size?: num
 function Worlds() {
   const worlds = [
     { body: "moon" as const, title: "The Moon", sub: "Permanent base · south pole", tex: "/textures/moon_lroc_1k.webp", text: "Ridges with near-constant sunlight beside craters that haven’t seen the Sun in billions of years." },
-    { body: "earth" as const, title: "Earth", sub: "The rehearsal ground", tex: "/textures/earth_day_1k.webp", text: "Deserts, polar valleys, lava tubes and impact craters — screened with global NASA terrain, imagery and thermal data." },
+    { body: "earth" as const, title: "Earth", sub: "The rehearsal ground", tex: "/textures/earth_day_1k.webp", text: "Deserts, polar valleys, lava tubes and impact craters, screened with global NASA terrain, imagery and thermal data." },
     { body: "mars" as const, title: "Mars", sub: "Landing & human sites", tex: "/textures/mars_viking_1k.webp", text: "Rover craters, ice-rich plains and cave skylights that future crews will need to reach, survive and study." },
   ];
   return (
@@ -340,7 +340,7 @@ function Worlds() {
       <div className="mx-auto max-w-[1400px]">
         <Chapter n="03">Three worlds · one atlas</Chapter>
         <H2 className="mt-8 max-w-[900px]">
-          Every map is real NASA data — <Em>many maps per world.</Em>
+          Every map is real NASA data, <Em>many maps per world.</Em>
         </H2>
         <div className="mt-16 grid gap-4 lg:grid-cols-3">
           {worlds.map((w) => (
@@ -377,7 +377,7 @@ function Worlds() {
 
 /* ---------------------------------------------------------- false friend */
 
-// Illustrative profiles only — drawn to explain the idea, not measured.
+// Illustrative profiles only, drawn to explain the idea, not measured.
 const PROFILE_A = "M0,120 C60,118 90,96 140,100 S230,128 280,110 S380,84 430,96 S520,120 600,104";
 const PROFILE_B = "M0,128 C40,126 60,60 90,58 S120,140 160,132 S200,30 240,40 S290,150 330,138 S380,48 420,60 S470,146 520,128 S570,70 600,80";
 const PROFILE_T = "M0,126 C40,124 70,64 100,62 S130,138 170,130 S210,36 250,44 S300,146 340,136 S390,52 430,62 S480,142 530,126 S570,76 600,84";
@@ -387,12 +387,12 @@ function FalseFriend() {
   const [step, setStep] = useState(0);
   const steps = [
     { k: "01", title: "It looks like Mars.", text: "Red rock, no plants, a crater on the horizon. Site A is the obvious place to rehearse a rover traverse." },
-    { k: "02", title: "The mission asks a different question.", text: "The real route crosses steep, broken relief. What matters is slope and roughness at wheel scale — not colour." },
+    { k: "02", title: "The mission asks a different question.", text: "The real route crosses steep, broken ground. What matters is the slope and bumps under the wheels, not the colour." },
     { k: "03", title: "Compare the task, at the same scale.", text: "Site B carries the obstacle the mission cares about. The Atlas changes the choice while the plan can still change." },
   ];
   const astra: { mood: Mood; action: Action; say: string }[] = [
     { mood: "wow", action: "walk", say: "Looks just like Mars!" },
-    { mood: "sad", action: "slump", say: "Site A is too gentle — the rover test would prove nothing." },
+    { mood: "sad", action: "slump", say: "Site A is too gentle, the rover test would prove nothing." },
     { mood: "happy", action: "celebrate", say: "Site B matches the route. That's our rehearsal ground." },
   ];
 
@@ -443,25 +443,24 @@ function FalseFriend() {
             </div>
             <svg viewBox="0 0 600 170" className="mt-6 w-full overflow-visible" role="img" aria-label="Two route profiles compared against the target route">
               {[40, 80, 120, 160].map((y) => (
-                <line key={y} x1="0" x2="600" y1={y} y2={y} stroke="#212226" strokeWidth="1" />
+                <line key={y} x1="0" x2="600" y1={y} y2={y} style={{ stroke: "var(--color-line)" }} strokeWidth="1" />
               ))}
-              <path d={PROFILE_T} fill="none" stroke="#e08a5f" strokeWidth="1.8" strokeDasharray="5 5" opacity={step >= 1 ? 0.95 : 0} style={{ transition: "opacity .8s" }} />
-              <path d={PROFILE_A} fill="none" stroke="#a8a59e" strokeWidth="2" opacity={step === 2 ? 0.25 : 1} style={{ transition: "opacity .8s" }} />
+              <path d={PROFILE_T} fill="none" style={{ stroke: "var(--color-mars)", transition: "opacity .8s" }} strokeWidth="1.8" strokeDasharray="5 5" opacity={step >= 1 ? 0.95 : 0} />
+              <path d={PROFILE_A} fill="none" strokeWidth="2" opacity={step === 2 ? 0.25 : 1} style={{ stroke: "var(--color-chrome)", transition: "opacity .8s" }} />
               <path
                 d={PROFILE_B}
                 fill="none"
-                stroke="#edeae4"
                 strokeWidth="2.4"
                 pathLength={1}
                 strokeDasharray="1"
                 strokeDashoffset={step === 2 ? 0 : 1}
-                style={{ transition: "stroke-dashoffset 1.6s cubic-bezier(.22,1,.36,1)" }}
+                style={{ stroke: "var(--color-platinum)", transition: "stroke-dashoffset 1.6s cubic-bezier(.22,1,.36,1)" }}
               />
             </svg>
             <div className="mt-6 grid gap-3 text-[13px] sm:grid-cols-3">
-              <Legend color="#e08a5f" dashed label="Mars target route" on={step >= 1} />
-              <Legend color="#a8a59e" label="Site A — looks right" on />
-              <Legend color="#edeae4" label="Site B — tests right" on={step === 2} />
+              <Legend color="var(--color-mars)" dashed label="Mars target route" on={step >= 1} />
+              <Legend color="var(--color-chrome)" label="Site A: looks right" on />
+              <Legend color="var(--color-platinum)" label="Site B: tests right" on={step === 2} />
             </div>
             <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line text-[13px]">
               <div className="bg-panel p-4">
@@ -569,7 +568,7 @@ function MoonBase() {
 
 function Pipeline() {
   const steps = [
-    { k: "01", t: "Mission task", d: `Pick one of ${TASKS.length} rehearsal tasks — traverse, ISRU, ice, caves, polar light…`, live: true },
+    { k: "01", t: "Mission task", d: `Pick one of ${TASKS.length} rehearsal tasks, traverse, ISRU, ice, caves, polar light…`, live: true },
     { k: "02", t: "Target region", d: "Choose a Moon base region or Mars site; its NASA terrain sets the physical scale.", live: true },
     { k: "03", t: "Twin the evidence", d: "Terrain, Sun and shadow computed live today; geology, temperature and regolith next.", live: true },
     { k: "04", t: "Screen & rank", d: "Physical baseline first, then our trained terrain encoder on held-out regions.", live: false },
@@ -615,7 +614,7 @@ function Pipeline() {
 function Sustainability() {
   const cards = [
     { icon: Leaf, t: "Fewer, smarter field trips", d: "Remote screening narrows the shortlist before anyone flies. The Lab shows each trip's distance and an indicative CO₂ estimate, and suggests the closest credible analog." },
-    { icon: ShieldCheck, t: "Stewardship built in", d: "Every site carries its protection status — Antarctic Treaty, national parks, sacred and Indigenous land. Consent comes before coordinates." },
+    { icon: ShieldCheck, t: "Stewardship built in", d: "Every site carries its protection status. Antarctic Treaty, national parks, sacred and Indigenous land. Consent comes before coordinates." },
     { icon: Target, t: "Local impact, Dhaka first", d: "A Bangla-friendly classroom mode and a university workshop pilot so students who can't reach Atacama can still do real planetary science." },
   ];
   return (
@@ -656,7 +655,7 @@ function Library() {
         </div>
         <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
           <H2 className="max-w-[820px]">
-            The analogs we already know — <Em>our calibration set.</Em>
+            The analogs we already know, <Em>our calibration set.</Em>
           </H2>
           <p className="max-w-sm text-sm text-dim">Known sites are controls for validating the screening method. They are not presented as new discoveries.</p>
         </div>
@@ -708,7 +707,7 @@ function Progress() {
     "17 reference analogs, 18 targets, 8 tasks, 8 screening regions",
   ];
   const next = [
-    "Full-precision DEMs: LOLA polar 5–20 m, HiRISE 1 m, NASADEM 30 m",
+    "Full-precision DEMs: LOLA polar 5 to 20 m, HiRISE 1 m, NASADEM 30 m",
     "Geology, temperature & regolith from EMIT, Diviner, THEMIS, CRISM",
     "Physical baseline ranker + region-held-out evaluation",
     "Terrain encoder trained on Kaggle; uncertainty & abstention",
@@ -727,7 +726,7 @@ function Progress() {
         <div className="mt-16 grid gap-4 md:grid-cols-2">
           <div data-reveal className="rounded-2xl border border-line bg-panel p-7">
             <div className="flex items-center gap-2 text-sm text-strong">
-              <Check size={16} /> Built — in this repository
+              <Check size={16} /> Built and in this repository
             </div>
             <ul className="mt-6 space-y-3.5">
               {done.map((d) => (
@@ -740,7 +739,7 @@ function Progress() {
           </div>
           <div data-reveal className="rounded-2xl border border-dashed border-line-2 p-7">
             <div className="flex items-center gap-2 text-sm text-chrome">
-              <Radar size={16} /> Next — hackathon weekend
+              <Radar size={16} /> Next, at the hackathon
             </div>
             <ul className="mt-6 space-y-3.5">
               {next.map((d) => (
@@ -789,7 +788,7 @@ function TeamTeaser() {
                   src={`/team/${m.id}.webp`}
                   alt={m.name}
                   loading="lazy"
-                  className="size-full object-cover opacity-80 grayscale transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.03] group-hover:opacity-100"
+                  className="size-full object-cover opacity-85 grayscale transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.03] group-hover:opacity-100 group-hover:grayscale-0"
                 />
               </div>
               <div className="mt-2 text-[13px] text-platinum">{m.name}</div>

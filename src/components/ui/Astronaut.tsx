@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
 
 /**
- * "Astra" — the ShadowAstra field-test astronaut.
+ * "Astra", the ShadowAstra field-test astronaut.
  *
  * One hand-built SVG. Expressions appear on the visor as a HUD read-out (so the
  * character stays a crewed suit, not a cartoon face). Actions swap the tool in the
@@ -264,7 +264,7 @@ const ASTRO_CSS = `
 /** Map an Analog Fit score to Astra's reaction. */
 export function reactionFor(score: number | null, loading: boolean): { mood: Mood; action: Action; say: string } {
   if (loading || score === null) return { mood: "focused", action: "scan", say: "Scanning terrain tiles…" };
-  if (score >= 0.75) return { mood: "happy", action: "celebrate", say: `${score.toFixed(2)} — a strong rehearsal ground!` };
-  if (score >= 0.5) return { mood: "thinking", action: "sample", say: `${score.toFixed(2)} — useful for some tests. Check the gaps.` };
-  return { mood: "sad", action: "slump", say: `${score.toFixed(2)} — this place won't rehearse the mission well.` };
+  if (score >= 0.75) return { mood: "happy", action: "celebrate", say: `${score.toFixed(2)}! A strong place to practise.` };
+  if (score >= 0.5) return { mood: "thinking", action: "sample", say: `${score.toFixed(2)}. Good for some tests. Check the gaps.` };
+  return { mood: "sad", action: "slump", say: `${score.toFixed(2)}. This place won't copy the mission well.` };
 }

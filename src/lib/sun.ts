@@ -1,10 +1,10 @@
 /**
- * Light Twin — solar-geometry comparison between an Earth site and a Moon/Mars target.
+ * Light Twin, solar-geometry comparison between an Earth site and a Moon/Mars target.
  *
  * Computed, not demo: for each body we sample the Sun's elevation over a full year
  * (Earth / Mars) or a full seasonal cycle (Moon) and every hour angle, then compare
  * the distributions of daylight Sun elevation. Circular orbits are assumed, which is
- * accurate to a degree or two — enough to separate "polar low-Sun" from "tropical".
+ * accurate to a degree or two, enough to separate "polar low-Sun" from "tropical".
  */
 import type { Body } from "../data/sites";
 
@@ -26,7 +26,7 @@ function binOf(e: number) {
 
 export interface SunRegime {
   hist: number[]; // normalised daylight elevation distribution (display bins)
-  fine: number[]; // 1° bins, 0–90°, for the distance metric
+  fine: number[]; // 1° bins, 0 to 90°, for the distance metric
   daylight: number; // fraction of time the Sun is up
   maxElev: number;
   medianElev: number;

@@ -199,7 +199,7 @@ function Marker({
   const quat = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), pos.clone().normalize()), [pos]);
   const color = useMemo(() => new THREE.Color(marker.color), [marker.color]);
 
-  // Only the selected site breathes — everything else is still.
+  // Only the selected site breathes, everything else is still.
   useFrame(({ clock }) => {
     if (!ring.current) return;
     const mat = ring.current.material as THREE.MeshBasicMaterial;

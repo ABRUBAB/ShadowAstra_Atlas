@@ -5,7 +5,7 @@ import type { Body } from "../../data/sites";
 
 /**
  * NASA mosaics in three sizes (scripts/build_textures.py). We paint the 1K version
- * immediately (~60–150 KB) and swap in the sharper one once it has streamed in.
+ * immediately (~60 to 150 KB) and swap in the sharper one once it has streamed in.
  */
 type Lod = "1k" | "2k" | "4k";
 

@@ -42,7 +42,7 @@ function rampColor(stops: THREE.Color[], t: number, out: THREE.Color) {
   return out.copy(stops[i]).lerp(stops[i + 1], x - i);
 }
 
-/** Four vertical walls from the terrain edge down to a flat base — a cut sample. */
+/** Four vertical walls from the terrain edge down to a flat base, a cut sample. */
 function buildWalls(grid: TerrainGrid, yOf: (k: number) => number) {
   const n = grid.n;
   const pos: number[] = [];
