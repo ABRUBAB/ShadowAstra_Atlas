@@ -127,9 +127,9 @@ Six parameters, taken from our methodology sheet:
 |---|---|
 | Abdullah Rubab | Leads the team: scope, architecture, integration, submission |
 | Tanvir Hossin | Researches planetary terrain: Moon/Mars targets and products |
+| Md. Tanvir Hasan | Validates the science: splits, baselines, checks |
 | Mohammad Saniul Alam | Designs the experience: maps, Lab and interaction |
 | Tasnuva Arif | Development and testing; narration |
-| Md. Tanvir Hasan | Validates the science: splits, baselines, checks |
 | Mohammed Mahmud Parvez | Edits the film; motion language |
 
 ## 12. v0.3 additions (preliminary round)

@@ -45,9 +45,9 @@ Challenge: https://www.spaceappschallenge.org/2026/challenges/identify-earth-loc
 👩‍🚀 TEAM SHADOWASTRA
 • Abdullah Rubab: Team Lead
 • Tanvir Hossin: Planetary Terrain Research
+• Md. Tanvir Hasan: Scientific Validation
 • Mohammad Saniul Alam: Experience Design
 • Tasnuva Arif: Development & Testing (Narrator)
-• Md. Tanvir Hasan: Scientific Validation
 • Mohammed Mahmud Parvez: Film Editing
 
 📍 EVENT

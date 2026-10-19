@@ -761,9 +761,9 @@ function Progress() {
 const TEAM = [
   { id: "rubab", name: "Abdullah Rubab" },
   { id: "hossin", name: "Tanvir Hossin" },
+  { id: "hasan", name: "Md. Tanvir Hasan" },
   { id: "saniul", name: "Mohammad Saniul Alam" },
   { id: "tasnuva", name: "Tasnuva Arif" },
-  { id: "hasan", name: "Md. Tanvir Hasan" },
   { id: "parvez", name: "Mohammed Mahmud Parvez" },
 ];
 

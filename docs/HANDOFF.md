@@ -20,9 +20,9 @@ Read this first. With this file, `../CLAUDE.md`, `PROJECT_PLAN.md` and `../DESIG
 |---|---|---|
 | Abdullah Rubab | Team lead | public/team/rubab.webp |
 | Tanvir Hossin | Planetary terrain research | public/team/hossin.webp |
+| Md. Tanvir Hasan | Scientific validation | public/team/hasan.webp |
 | Mohammad Saniul Alam | Experience design | public/team/saniul.webp |
 | Tasnuva Arif | Development & testing (narrator of the film) | public/team/tasnuva.webp |
-| Md. Tanvir Hasan | Scientific validation | public/team/hasan.webp |
 | Mohammed Mahmud Parvez | Film editing | public/team/parvez.webp (**old crop**; still needs a new photo) |
 
 The original colour photos are in the parent folder (`Rubab_profile.png`, `tanvir_hossin.jpg`, `saniul.jpg`, `tasnuva.jpg`, `tanvir_hasan.jpg`). They are cropped to 4:5 at 800×1000 WebP.

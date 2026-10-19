@@ -152,7 +152,7 @@ export function astraAnswer(raw: string): AstraReply {
 
   if (/team|who (are|made|built)|member/.test(q))
     return {
-      text: "Team ShadowAstra is six people from Dhaka: Abdullah Rubab (team lead), Tanvir Hossin (planetary terrain), Mohammad Saniul Alam (experience design), Tasnuva Arif (development & testing), Md. Tanvir Hasan (science checks) and Mohammed Mahmud Parvez (film).",
+      text: "Team ShadowAstra is six people from Dhaka: Abdullah Rubab (team lead), Tanvir Hossin (planetary terrain), Md. Tanvir Hasan (science checks), Mohammad Saniul Alam (experience design), Tasnuva Arif (development & testing) and Mohammed Mahmud Parvez (film).",
       mood: "happy",
       links: [{ label: "Meet the team", to: "/about" }],
     };

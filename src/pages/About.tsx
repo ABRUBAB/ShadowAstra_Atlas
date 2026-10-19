@@ -11,9 +11,9 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const TEAM = [
   { id: "rubab", name: "Abdullah Rubab", role: "Team lead", line: "Leads the team, scope, architecture and every claim we make." },
   { id: "hossin", name: "Tanvir Hossin", role: "Planetary terrain", line: "Researches Moon and Mars terrain, targets and the data behind them." },
+  { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation", line: "Validates our science, splits, baselines and independent checks." },
   { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design", line: "Designs the experience, maps, comparisons and how a judge reads them." },
   { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing", line: "Builds and tests the app, and is the voice of our film." },
-  { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation", line: "Validates our science, splits, baselines and independent checks." },
   { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film & motion", line: "Edits our film and shapes the motion language." },
 ];
 

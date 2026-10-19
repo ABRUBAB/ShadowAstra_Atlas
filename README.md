@@ -199,9 +199,9 @@ docs/          PROJECT_PLAN.md · readme assets
   <tr>
     <td align="center" width="16%"><img src="public/team/rubab.webp" width="110" alt="Abdullah Rubab"/><br/><b>Abdullah Rubab</b><br/><sub>Team lead</sub></td>
     <td align="center" width="16%"><img src="public/team/hossin.webp" width="110" alt="Tanvir Hossin"/><br/><b>Tanvir Hossin</b><br/><sub>Planetary terrain research</sub></td>
+    <td align="center" width="16%"><img src="public/team/hasan.webp" width="110" alt="Md. Tanvir Hasan"/><br/><b>Md. Tanvir Hasan</b><br/><sub>Scientific validation</sub></td>
     <td align="center" width="16%"><img src="public/team/saniul.webp" width="110" alt="Mohammad Saniul Alam"/><br/><b>Mohammad Saniul Alam</b><br/><sub>Experience design</sub></td>
     <td align="center" width="16%"><img src="public/team/tasnuva.webp" width="110" alt="Tasnuva Arif"/><br/><b>Tasnuva Arif</b><br/><sub>Development & testing</sub></td>
-    <td align="center" width="16%"><img src="public/team/hasan.webp" width="110" alt="Md. Tanvir Hasan"/><br/><b>Md. Tanvir Hasan</b><br/><sub>Scientific validation</sub></td>
     <td align="center" width="16%"><img src="public/team/parvez.webp" width="110" alt="Mohammed Mahmud Parvez"/><br/><b>Mohammed Mahmud Parvez</b><br/><sub>Film editing</sub></td>
   </tr>
 </table>
