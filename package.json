@@ -5,9 +5,10 @@
   "description": "ShadowAstra Atlas — find Earth rehearsal grounds for Moon base and Mars missions. NASA Space Apps Challenge 2026, Dhaka.",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "tsc -p tsconfig.json",
     "textures": "python scripts/build_textures.py",
     "typecheck": "tsc -p tsconfig.json"
   },
