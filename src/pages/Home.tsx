@@ -6,7 +6,7 @@ import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
-import { ArrowRight, ArrowUpRight, Award, Check, CircleDashed, Gamepad2, Globe, Layers, Leaf, Lock, MapPin, Radar, ShieldCheck, Target } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Award, Check, CircleDashed, Gamepad2, Globe, GraduationCap, Layers, Leaf, Lock, MapPin, Orbit, Radar, ShieldCheck, Target } from "lucide-react";
 import { Footer, Github, Nav, REPO_URL, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, type Action, type Mood } from "../components/ui/Astronaut";
 import { Counter, EASE, GlyphTile, Kicker, Magnetic, WordCycler } from "../components/ui/kit";
@@ -252,7 +252,7 @@ function Numbers() {
     { n: 80206, d: 0, s: "", label: "land areas measured", note: "every 55 km square of land on Earth", icon: Globe },
     { n: 24, d: 0, s: "", label: "measurements each", note: "slopes, cold, heat, rain, plants, volcanoes, craters", icon: Layers },
     { n: 38, d: 0, s: "", label: "known sites learned from", note: "used by NASA, ESA, CSA and universities", icon: Target },
-    { n: 0.8, d: 1, s: "%", label: "where hidden Moon sites rank", note: "the model finds them in the top 0.8% of land", icon: Radar },
+    { n: 0.9, d: 1, s: "%", label: "where hidden Moon sites rank", note: "the model finds them in the top 0.9% of land", icon: Radar },
   ];
   return (
     <Section>
@@ -379,12 +379,34 @@ function MiniGame() {
   );
 }
 
+function MiniTwins() {
+  return (
+    <div className="relative flex h-36 items-center justify-center gap-10 overflow-hidden rounded-xl border border-line bg-void">
+      <motion.span className="block size-16 rounded-full bg-[url(/textures/mars_viking_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: ["0%", "-200%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
+      <span className="absolute top-1/2 left-1/2 h-px w-16 -translate-x-1/2 bg-gradient-to-r from-mars/60 via-flare to-earth/60" />
+      <motion.span className="absolute top-1/2 left-1/2 size-1.5 -translate-y-1/2 rounded-full bg-flare shadow-[0_0_10px_#f2c879]" animate={{ x: [-34, 30] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }} />
+      <motion.span className="block size-16 rounded-full bg-[url(/textures/earth_day_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: ["0%", "-200%"] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} />
+    </div>
+  );
+}
+
+function MiniLearn() {
+  return (
+    <div className="relative flex h-36 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border border-line bg-void">
+      <span className="text-[26px] font-medium text-platinum">Practise on Earth.</span>
+      <span className="font-bn text-[22px] text-flare">পৃথিবীতে অনুশীলন।</span>
+    </div>
+  );
+}
+
 function TryIt() {
   const cards = [
     { to: "/discover", t: "Find new test sites", d: "See the whole Earth ranked live for the job you pick. Click any place to see why it scores.", cta: "Open the finder", visual: <MiniHeat />, icon: Globe },
     { to: "/lab", t: "Compare two places in 3D", d: "Real ground from Earth and the Moon or Mars, cut to the same size, with a Sun you can move.", cta: "Open compare", visual: <MiniRidges />, icon: Layers },
     { to: "#town", t: "Check your town", d: "Type any town. See how Moon-like and Mars-like it is, and the nearest strong site.", cta: "Check a town", visual: <MiniTown />, icon: MapPin },
     { to: "#play", t: "Play: Earth or Mars?", d: "Two real images at the same scale, colour off. Can you spot which one is not Earth?", cta: "Play now", visual: <MiniGame />, icon: Gamepad2 },
+    { to: "/atlas?body=mars", t: "Earth twins of any spot", d: "Tap anywhere on the Moon or Mars. We find the places on Earth with the same ground.", cta: "Open the map", visual: <MiniTwins />, icon: Orbit },
+    { to: "/learn", t: "Learn, in English or Bangla", d: "Short lessons, a quiz scored with real NASA data, and a worksheet to print for class.", cta: "Start learning", visual: <MiniLearn />, icon: GraduationCap },
   ];
   return (
     <Section ink>
@@ -392,12 +414,12 @@ function TryIt() {
         <div>
           <Kicker n="02">Things to try</Kicker>
           <H2 className="mt-8 max-w-[860px]">
-            Four ways in. <Em>Pick one and start exploring.</Em>
+            Six ways in. <Em>Pick one and start exploring.</Em>
           </H2>
         </div>
         <Guide mood="happy" action="point" size={104} className="hidden md:block" />
       </div>
-      <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c, i) => {
           const inner = (
             <>
@@ -884,7 +906,7 @@ function Progress() {
   const done = [
     "Global data engine: 80,206 land areas measured from NASA POWER, MODIS, SRTM terrain, volcanoes and craters",
     "Full-precision Moon and Mars terrain (LRO LOLA 118 m, MGS MOLA 463 m)",
-    "A learned model, tested by hiding known sites: hidden Moon sites come back in the top 0.8% of land",
+    "A learned model, tested by hiding known sites: hidden Moon sites come back in the top 0.9% of land, and 28 sites it never saw rank in the top 21%",
     "Find new sites: the whole planet ranked live, with search, filters and saved places",
     "Compare any place in 3D, with a movable Sun, a shadow map, best months and travel CO₂",
     "Astra reacts to cold, heat and match scores; badges, a game and search for everything",
