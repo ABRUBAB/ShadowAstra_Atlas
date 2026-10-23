@@ -892,7 +892,7 @@ function Progress() {
   const next = [
     "Add the official 2026 challenge datasets as soon as NASA releases them (28 Oct)",
     "Minerals from NASA EMIT and Moon surface temperature from LRO Diviner",
-    "A terrain neural network trained on Kaggle GPUs to compare ground shape directly",
+    "A bigger terrain neural network on Kaggle GPUs (our first one is tested, but does not beat the formula yet)",
     "A field test plan you can download as a PDF for any place",
     "A Bangla mode for schools in Dhaka",
   ];

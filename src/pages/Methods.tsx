@@ -355,7 +355,7 @@ function ModelTest() {
     { icon: Database, t: "Learn from known sites", d: "38 sites used by NASA, ESA, CSA and universities are the examples. The rest of the land is the unlabelled background.", tag: "Done" },
     { icon: BrainCircuit, t: "A careful model", d: "Gradient-boosted trees (LightGBM) trained 4 times on fresh background samples, then averaged. Only physical measurements: no cities or farms.", tag: "Done" },
     { icon: Crosshair, t: "A fair test", d: "Hide one site and every other known site within 300 km, retrain, then see where the hidden site ranks among all land.", tag: "Done" },
-    { icon: Layers, t: "Terrain encoder", d: "A neural network that learns the shape of the ground from Earth, Moon and Mars heights, trained on Kaggle GPUs.", tag: "Next" },
+    { icon: Layers, t: "Terrain encoder (test)", d: "A neural network trained on 86,000 height patches from Earth, the Moon and Mars. On 49 expert pairs it did not beat the formula yet (top 44% vs 34%), so the formula stays the default. Try it in Find new sites.", tag: "Tested" },
   ];
   return (
     <section className="border-b border-line px-4 py-28 sm:px-6">
@@ -380,10 +380,10 @@ function ModelTest() {
           {steps.map((m, i) => (
             <motion.li key={m.t} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="surface lift flex flex-col rounded-2xl p-6">
               <div className="flex items-center justify-between">
-                <GlyphTile tone={m.tag === "Done" ? "var(--color-earth)" : "var(--color-chrome)"}>
+                <GlyphTile tone={m.tag === "Done" ? "var(--color-earth)" : "var(--color-partial)"}>
                   <m.icon size={18} strokeWidth={1.5} />
                 </GlyphTile>
-                <span className={clsx("rounded-full border px-2 py-0.5 text-[11px]", m.tag === "Done" ? "border-strong/40 bg-strong/10 text-strong" : "border-dashed border-line-2 text-chrome")}>{m.tag}</span>
+                <span className={clsx("rounded-full border px-2 py-0.5 text-[11px]", m.tag === "Done" ? "border-strong/40 bg-strong/10 text-strong" : m.tag === "Tested" ? "border-partial/40 bg-partial/10 text-partial" : "border-dashed border-line-2 text-chrome")}>{m.tag}</span>
               </div>
               <h3 className="mt-8 text-[18px] font-medium tracking-tight">{m.t}</h3>
               <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-chrome">{m.d}</p>

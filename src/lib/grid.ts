@@ -319,6 +319,10 @@ export interface ScoreOptions {
   weights?: Weights;
   /** 0 = only the mission formula, 1 = only the learned model. */
   modelMix?: number;
+  /** Neural ground-shape similarity for this target (one byte per cell), if loaded. */
+  shape?: Uint8Array | null;
+  /** Share of the ground-shape score taken from the neural network (0 to 1). */
+  shapeMix?: number;
 }
 
 export interface CellScore {
@@ -326,6 +330,9 @@ export interface CellScore {
   mission: number;
   model: number;
   dims: Record<Dim, number>;
+  /** Ground shape from the hand-made formula and from the neural network (null if not loaded). */
+  formula: number;
+  neural: number | null;
 }
 
 /** Full breakdown for one cell. */
@@ -333,8 +340,11 @@ export function scoreCell(g: Grid, k: number, o: ScoreOptions): CellScore {
   const w = o.weights ?? TASK_WEIGHTS[o.task];
   const world = o.target.body;
   const I = (n: Indicator) => g.ind(n, k);
+  const formula = topoSimilarity(g.hist(k), g.value("f_relief", k) ?? 0, o.target);
+  const sm = o.shape ? (o.shapeMix ?? 0.5) : 0;
+  const neural = o.shape ? o.shape[k] / 254 : null;
   const dims: Record<Dim, number> = {
-    topography: topoSimilarity(g.hist(k), g.value("f_relief", k) ?? 0, o.target),
+    topography: neural === null ? formula : (1 - sm) * formula + sm * neural,
     geology: geology(world, o.task, I("volcanic"), I("impact"), I("bare"), I("dry")),
     temperature: temperature(world, o.task, I("cold"), I("swing"), I("airdry"), I("ice")),
     lighting: o.target.light[g.row[k]] / 100,
@@ -349,7 +359,7 @@ export function scoreCell(g: Grid, k: number, o: ScoreOptions): CellScore {
   const mission = ws ? s / ws : 0;
   const model = g.model(world, k);
   const m = o.modelMix ?? 0.3;
-  return { total: (1 - m) * mission + m * model, mission, model, dims };
+  return { total: (1 - m) * mission + m * model, mission, model, dims, formula, neural };
 }
 
 /** Scores for every land cell (fast typed-array loop). */
@@ -368,6 +378,8 @@ export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
   const th = o.target.terrain.hist;
   const tRel = Math.max(o.target.terrain.relief, 1);
   const light = o.target.light;
+  const shape = o.shape ?? null;
+  const sm = shape ? (o.shapeMix ?? 0.5) : 0;
   const out = new Float32Array(g.n);
   const K = 1 / 254;
   for (let k = 0; k < g.n; k++) {
@@ -375,7 +387,7 @@ export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
     for (let b = 0; b < 8; b++) ov += Math.min(H[b][k] * K, th[b]);
     const r = relief[k] === reliefNod ? 1 : Math.max(relief[k], 1);
     const rel = Math.min(1, Math.max(0, 1 - Math.abs(Math.log10(r / tRel))));
-    const topo = 0.65 * ov + 0.35 * rel;
+    const topo = shape ? (1 - sm) * (0.65 * ov + 0.35 * rel) + sm * shape[k] * K : 0.65 * ov + 0.35 * rel;
     const geo = geology(world, o.task, volc[k] * K, imp[k] * K, bare[k] * K, dry[k] * K);
     const tem = temperature(world, o.task, cold[k] * K, swing[k] * K, airdry[k] * K, ice[k] * K);
     const lit = light[g.row[k]] / 100;
@@ -570,3 +582,58 @@ export function paintScores(g: Grid, scores: Float32Array, canvas: HTMLCanvasEle
 }
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/* ------------------------------------------------------------------ neural ground shape */
+
+export interface ShapeEval {
+  pairs: number;
+  learned_median_top_pct: number;
+  formula_median_top_pct: number;
+  both_median_top_pct: number;
+  learned_top20_pct: number;
+  formula_top20_pct: number;
+  epochs: number;
+}
+
+export interface ShapeData {
+  ids: string[];
+  n: number;
+  data: Uint8Array;
+  eval: ShapeEval;
+  /** The similarity row for one target, or null if that target has none. */
+  row: (targetId: string) => Uint8Array | null;
+}
+
+let shapeCache: Promise<ShapeData> | null = null;
+
+/** Similarity of every land cell to every target, from our terrain encoder (loaded on demand). */
+export function loadShape(): Promise<ShapeData> {
+  if (!shapeCache) {
+    shapeCache = (async () => {
+      const meta = await (await fetch("/data/shape.json")).json();
+      const data = new Uint8Array(await (await fetch("/data/shape.bin")).arrayBuffer());
+      const ids: string[] = meta.targets;
+      const n: number = meta.count;
+      return { ids, n, data, eval: meta.eval, row: (id: string) => (ids.includes(id) ? data.subarray(ids.indexOf(id) * n, (ids.indexOf(id) + 1) * n) : null) };
+    })();
+    shapeCache.catch(() => {
+      shapeCache = null;
+    });
+  }
+  return shapeCache;
+}
+
+export function useShape(enabled: boolean) {
+  const [shape, setShape] = useState<ShapeData | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    loadShape()
+      .then((s) => alive && setShape(s))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [enabled]);
+  return enabled ? shape : null;
+}

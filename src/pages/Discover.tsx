@@ -44,6 +44,7 @@ import {
   scoreCell,
   searchGrid,
   useGrid,
+  useShape,
   type Candidate,
   type Dim,
   type Grid,
@@ -84,6 +85,9 @@ const TIPS = [
   "Hollow rings are places teams already use. We hide them from the list.",
 ];
 
+type ShapeMode = "formula" | "both" | "neural";
+type ShapeOpt = { shape: Uint8Array | null; shapeMix: number };
+
 type Within = { field: "n_country" | "n_region"; value: number; label: string } | null;
 
 /* ===================================================================== page */
@@ -105,6 +109,8 @@ export default function Discover() {
   const [focus, setFocus] = useState<{ lat: number; lon: number; key: number } | null>(null);
   const [within, setWithin] = useState<Within>(null);
   const [tab, setTab] = useState<"best" | "saved">("best");
+  const [shapeMode, setShapeMode] = useState<ShapeMode>("formula");
+  const shapeData = useShape(shapeMode !== "formula");
 
   useEffect(() => setWeights(TASK_WEIGHTS[task]), [task]);
   const target = TARGET_BY_ID[targetId];
@@ -112,7 +118,13 @@ export default function Discover() {
   const dWeights = useDeferredValue(weights);
   const dMix = useDeferredValue(modelMix);
 
-  const scores = useMemo(() => (grid && gt ? scoreAll(grid, { target: gt, task, weights: dWeights, modelMix: dMix }) : null), [grid, gt, task, dWeights, dMix]);
+  const shapeRow = shapeData && shapeData.n === grid?.n ? shapeData.row(targetId) : null;
+  const shapeMix = shapeMode === "neural" ? 1 : 0.5;
+  const sopt = { shape: shapeRow, shapeMix };
+  const scores = useMemo(
+    () => (grid && gt ? scoreAll(grid, { target: gt, task, weights: dWeights, modelMix: dMix, shape: shapeRow, shapeMix }) : null),
+    [grid, gt, task, dWeights, dMix, shapeRow, shapeMix],
+  );
 
   const heat = useMemo(() => (typeof document === "undefined" ? null : document.createElement("canvas")), []);
   const [heatVersion, setHeatVersion] = useState(0);
@@ -268,7 +280,20 @@ export default function Discover() {
             </Step>
 
             <Step n={3} title="Fine-tune (optional)" icon={<SlidersHorizontal size={13} />}>
-              <Tuning weights={weights} setWeights={setWeights} task={task} modelMix={modelMix} setModelMix={setModelMix} onlyNew={onlyNew} setOnlyNew={setOnlyNew} skipAnt={skipAnt} setSkipAnt={setSkipAnt} />
+              <Tuning
+                weights={weights}
+                setWeights={setWeights}
+                task={task}
+                modelMix={modelMix}
+                setModelMix={setModelMix}
+                onlyNew={onlyNew}
+                setOnlyNew={setOnlyNew}
+                skipAnt={skipAnt}
+                setSkipAnt={setSkipAnt}
+                shapeMode={shapeMode}
+                setShapeMode={setShapeMode}
+                shapeReady={!!shapeRow}
+              />
             </Step>
           </aside>
 
@@ -336,7 +361,7 @@ export default function Discover() {
             <AnimatePresence mode="wait" initial={false}>
               {grid && scores && gt && sel !== null ? (
                 <motion.div key={`r${sel}`} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }} transition={{ duration: 0.4, ease: EASE }}>
-                  <PlaceReport grid={grid} k={sel} scores={scores} gt={gt} task={task} weights={weights} modelMix={modelMix} onBack={() => setSel(null)} />
+                  <PlaceReport grid={grid} k={sel} scores={scores} gt={gt} task={task} weights={weights} modelMix={modelMix} sopt={sopt} onBack={() => setSel(null)} />
                 </motion.div>
               ) : (
                 <motion.div key="list" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.35, ease: EASE }} className="p-5">
@@ -369,7 +394,7 @@ export default function Discover() {
                       </p>
                       <ol className="mt-3 space-y-2">
                         {grid && gt
-                          ? places.map((c, i) => <PlaceRow key={c.k} grid={grid} c={c} rank={i + 1} gt={gt} task={task} weights={weights} modelMix={modelMix} onClick={() => selectCell(c.k)} />)
+                          ? places.map((c, i) => <PlaceRow key={c.k} grid={grid} c={c} rank={i + 1} gt={gt} task={task} weights={weights} modelMix={modelMix} sopt={sopt} onClick={() => selectCell(c.k)} />)
                           : Array.from({ length: 6 }, (_, i) => <li key={i} className="shimmer h-[86px] rounded-xl" />)}
                       </ol>
                     </>
@@ -455,7 +480,13 @@ function Tuning({
   setOnlyNew,
   skipAnt,
   setSkipAnt,
+  shapeMode,
+  setShapeMode,
+  shapeReady,
 }: {
+  shapeMode: ShapeMode;
+  setShapeMode: (m: ShapeMode) => void;
+  shapeReady: boolean;
   weights: Weights;
   setWeights: (w: Weights) => void;
   task: TaskId;
@@ -493,6 +524,25 @@ function Tuning({
         <button onClick={() => setWeights(TASK_WEIGHTS[task])} className="text-[11px] text-dim hover:text-chrome">
           Reset to the preset for this job
         </button>
+      </div>
+      <div className="rounded-xl border border-line bg-ink p-3 text-[12px]">
+        <div className="flex items-center justify-between text-chrome">
+          <span className="flex items-center gap-1.5">
+            Ground shape measured by <Tip text="Formula: slope histograms and height range (default). Neural net: our terrain encoder, trained on 86,000 height patches from Earth, the Moon and Mars. It is a test: on expert pairs it does not beat the formula yet. Both: the average." />
+          </span>
+          {shapeMode !== "formula" && !shapeReady && <span className="font-mono text-[10px] text-dim">loading…</span>}
+        </div>
+        <Seg
+          size="sm"
+          className="mt-2"
+          value={shapeMode}
+          onChange={setShapeMode}
+          options={[
+            { id: "formula", label: "Formula" },
+            { id: "both", label: "Both" },
+            { id: "neural", label: "Neural net (test)" },
+          ]}
+        />
       </div>
       <label className="block rounded-xl border border-line bg-ink p-3 text-[12px]">
         <span className="flex items-center justify-between text-chrome">
@@ -697,8 +747,8 @@ function StageLoader({ progress, label }: { progress: number; label: string }) {
 
 /* ================================================================ results */
 
-function reasons(grid: Grid, k: number, gt: GridTarget, task: TaskId, weights: Weights, modelMix: number) {
-  const cs = scoreCell(grid, k, { target: gt, task, weights, modelMix });
+function reasons(grid: Grid, k: number, gt: GridTarget, task: TaskId, weights: Weights, modelMix: number, sopt?: ShapeOpt) {
+  const cs = scoreCell(grid, k, { target: gt, task, weights, modelMix, ...sopt });
   const ranked = (Object.keys(cs.dims) as Dim[]).filter((d) => weights[d] > 0).sort((a, b) => cs.dims[b] * weights[b] - cs.dims[a] * weights[a]);
   const label = (d: Dim) => {
     if (d === "geology") {
@@ -714,9 +764,9 @@ function reasons(grid: Grid, k: number, gt: GridTarget, task: TaskId, weights: W
   return { cs, top: ranked.slice(0, 2).map((d) => ({ d, label: label(d), v: cs.dims[d] })) };
 }
 
-function PlaceRow({ grid, c, rank, gt, task, weights, modelMix, onClick }: { grid: Grid; c: Candidate; rank: number; gt: GridTarget; task: TaskId; weights: Weights; modelMix: number; onClick: () => void }) {
+function PlaceRow({ grid, c, rank, gt, task, weights, modelMix, sopt, onClick }: { grid: Grid; c: Candidate; rank: number; gt: GridTarget; task: TaskId; weights: Weights; modelMix: number; sopt: ShapeOpt; onClick: () => void }) {
   const nm = grid.name(c.k);
-  const { top } = reasons(grid, c.k, gt, task, weights, modelMix);
+  const { top } = reasons(grid, c.k, gt, task, weights, modelMix, sopt);
   return (
     <motion.li layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE, delay: rank * 0.025 }}>
       <button onClick={onClick} className="surface lift group flex w-full gap-3 rounded-xl p-3 text-left">
@@ -783,11 +833,11 @@ function plantWord(ndvi: number | null) {
   return "Green";
 }
 
-function PlaceReport({ grid, k, scores, gt, task, weights, modelMix, onBack }: { grid: Grid; k: number; scores: Float32Array; gt: GridTarget; task: TaskId; weights: Weights; modelMix: number; onBack: () => void }) {
+function PlaceReport({ grid, k, scores, gt, task, weights, modelMix, sopt, onBack }: { grid: Grid; k: number; scores: Float32Array; gt: GridTarget; task: TaskId; weights: Weights; modelMix: number; sopt: ShapeOpt; onBack: () => void }) {
   const lat = grid.lat(k);
   const lon = grid.lon(k);
   const nm = grid.name(k);
-  const { cs } = reasons(grid, k, gt, task, weights, modelMix);
+  const { cs } = reasons(grid, k, gt, task, weights, modelMix, sopt);
   const pct = percentileOf(scores, scores[k]);
   const topPct = Math.max(0.1, (1 - pct) * 100);
   const topText = `top ${topPct < 1 ? topPct.toFixed(1) : Math.round(topPct)}%`;
@@ -872,7 +922,17 @@ function PlaceReport({ grid, k, scores, gt, task, weights, modelMix, onBack }: {
       <h3 className="mt-7 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Why it scores {cs.total.toFixed(2)}</h3>
       <div className="mt-3 space-y-3.5">
         {DIMS.map((d) => (
-          <Meter key={d} value={cs.dims[d]} label={DIM_INFO[d].label} kind="computed" hint={`${DIM_INFO[d].plain} Weight ${Math.round(weights[d] * 100)}.`} />
+          <Meter
+            key={d}
+            value={cs.dims[d]}
+            label={DIM_INFO[d].label}
+            kind={d === "topography" && cs.neural !== null ? "model" : "computed"}
+            hint={
+              d === "topography" && cs.neural !== null
+                ? `Formula ${cs.formula.toFixed(2)} · neural net ${cs.neural.toFixed(2)}. ${DIM_INFO[d].plain} Weight ${Math.round(weights[d] * 100)}.`
+                : `${DIM_INFO[d].plain} Weight ${Math.round(weights[d] * 100)}.`
+            }
+          />
         ))}
         <Meter
           value={cs.model}

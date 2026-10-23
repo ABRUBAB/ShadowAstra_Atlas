@@ -202,7 +202,8 @@ src/
 - [x] Every land area on Earth measured; full-precision LOLA and MOLA targets
 - [x] Learned model with a spatial hold-out test
 - [x] Find new sites, town checker, game, badges, search, Astra's live answers
-- [ ] Terrain encoder (self-supervised CNN on height patches from all three worlds)
+- [x] Terrain encoder, first test: a self-supervised CNN on 86,000 height patches from all three worlds. On 49 expert pairs it ranks them in the top 44% vs 34% for the formula, so it stays optional
+- [ ] A bigger encoder on Kaggle GPUs with higher-resolution heights
 - [ ] Official 2026 challenge datasets, EMIT minerals, Diviner temperatures
 - [ ] Field test plan export (PDF) and a Bangla classroom mode
 
