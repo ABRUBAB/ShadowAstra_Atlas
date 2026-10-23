@@ -1,0 +1,15 @@
+{
+ "res": 0.5,
+ "rows_per_band": 10,
+ "cols": 720,
+ "bands": 36,
+ "fields": [
+  "hist:uint8:8:254",
+  "relief:uint16:1:1",
+  "slope:uint8:1:8"
+ ],
+ "source": {
+  "moon": "LRO LOLA LDEM 118 m (USGS Astrogeology), measured on Kaggle (K1)",
+  "mars": "MGS MOLA DEM 463 m (USGS Astrogeology), measured on Kaggle (K1)"
+ }
+}

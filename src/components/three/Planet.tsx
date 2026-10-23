@@ -30,6 +30,8 @@ interface PlanetProps {
   atmosphere?: boolean;
   /** Highest texture size to stream in after the 1K placeholder. */
   lod?: "1k" | "2k" | "4k";
+  /** Click (not drag) anywhere on the surface. */
+  onPick?: (lat: number, lon: number) => void;
 }
 
 const earthVertex = /* glsl */ `
@@ -109,8 +111,10 @@ export function Planet({
   tilt = 0,
   atmosphere = true,
   lod,
+  onPick,
 }: PlanetProps) {
   const tiltRef = useRef<THREE.Group>(null);
+  const downAt = useRef<{ x: number; y: number } | null>(null);
   const spinRef = useRef<THREE.Group>(null);
   const target = lod ?? bestLod();
   const day = useProgressiveTexture(body, target);
@@ -165,7 +169,26 @@ export function Planet({
   return (
     <group ref={tiltRef}>
       <group ref={spinRef}>
-        <mesh material={body === "earth" ? earthMat : undefined}>
+        <mesh
+          material={body === "earth" ? earthMat : undefined}
+          onPointerDown={(e) => (downAt.current = { x: e.clientX, y: e.clientY })}
+          onPointerUp={(e: ThreeEvent<PointerEvent>) => {
+            const d = downAt.current;
+            downAt.current = null;
+            if (!onPick || !d || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6) return;
+            e.stopPropagation();
+            const p = e.object.worldToLocal(e.point.clone()).normalize();
+            const lat = 90 - (Math.acos(Math.min(1, Math.max(-1, p.y))) * 180) / Math.PI;
+            const lon = ((((Math.atan2(p.z, -p.x) * 180) / Math.PI - 180 + 540) % 360) + 360) % 360 - 180;
+            onPick(lat, lon);
+          }}
+          onPointerMove={() => {
+            if (onPick) document.body.style.cursor = "crosshair";
+          }}
+          onPointerOut={() => {
+            if (onPick) document.body.style.cursor = "";
+          }}
+        >
           <sphereGeometry args={[radius, 128, 96]} />
           {body !== "earth" && <meshStandardMaterial map={day} roughness={1} metalness={0} />}
         </mesh>
@@ -234,6 +257,7 @@ function Marker({
     <group position={pos} quaternion={quat}>
       <mesh
         onClick={click}
+        onPointerUp={(e) => e.stopPropagation()}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHover(true);

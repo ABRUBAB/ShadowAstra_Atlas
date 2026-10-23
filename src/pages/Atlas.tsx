@@ -22,7 +22,9 @@ import {
 } from "../data/sites";
 import { DEFAULT_LAYER, LAYERS, LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord } from "../lib/geo";
-import { useGrid } from "../lib/grid";
+import { useGrid, type Candidate, type Grid } from "../lib/grid";
+import { findTwins, spotTerrain, type SpotTerrain } from "../lib/twins";
+import { useEarthThumb } from "../lib/thumbs";
 import { EASE, Meter } from "../components/ui/kit";
 
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
@@ -61,6 +63,12 @@ export default function Atlas() {
     initialSite && EARTH_BY_ID[initialSite] ? { kind: "earth", id: initialSite } : null,
   );
   const mapRef = useRef<BodyMapHandle>(null);
+  const [spot, setSpot] = useState<{ lat: number; lon: number } | null>(null);
+  const [earthFocus, setEarthFocus] = useState<{ lat: number; lon: number } | null>(null);
+  useEffect(() => {
+    if (body === "earth") setSpot(null);
+    else setEarthFocus(null);
+  }, [body]);
 
   useEffect(() => {
     const next = new URLSearchParams();
@@ -82,7 +90,7 @@ export default function Atlas() {
   }, [sel]);
 
   const selectedBody: Body | null = sel ? (sel.kind === "target" ? TARGET_BY_ID[sel.id].body : "earth") : null;
-  const focus = selected && selectedBody === body ? { lat: selected.lat, lon: selected.lon } : null;
+  const focus = selected && selectedBody === body ? { lat: selected.lat, lon: selected.lon } : spot && body !== "earth" ? spot : earthFocus && body === "earth" ? earthFocus : null;
 
   const markers = useMemo(() => {
     const out: (MapMarker & GlobeMarker)[] = [];
@@ -100,15 +108,19 @@ export default function Atlas() {
             dashed: true,
             dim: world !== "both" && !r.worlds.includes(world),
           });
+      if (earthFocus) out.push({ id: "twin", lat: earthFocus.lat, lon: earthFocus.lon, color: "#f2c879", label: "Earth twin" });
     } else {
       for (const t of TARGETS.filter((t) => t.body === body))
         out.push({ id: t.id, lat: t.lat, lon: t.lon, color: "#edeae4", label: t.name, dim: !matchTarget(t) });
+      if (spot) out.push({ id: "spot", lat: spot.lat, lon: spot.lon, color: "#f2c879", label: "Your spot" });
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [body, world, task, showScreening]);
+  }, [body, world, task, showScreening, spot, earthFocus]);
 
   const onSelect = (id: string) => {
+    if (id === "spot" || id === "twin") return;
+    setSpot(null);
     if (id.startsWith("screen:")) setSel({ kind: "screen", id: id.slice(7) });
     else if (body === "earth") setSel({ kind: "earth", id });
     else setSel({ kind: "target", id });
@@ -155,7 +167,22 @@ export default function Atlas() {
             >
               {view === "3d" ? (
                 <Suspense fallback={<StageLoading />}>
-                  <GlobeView body={body} markers={markers} activeId={sel?.id ?? null} onSelect={onSelect} focus={focus} />
+                  <GlobeView
+                    body={body}
+                    markers={markers}
+                    activeId={spot ? "spot" : earthFocus && body === "earth" && !sel ? "twin" : (sel?.id ?? null)}
+                    onSelect={onSelect}
+                    focus={focus}
+                    onPick={
+                      body === "earth"
+                        ? undefined
+                        : (lat, lon) => {
+                            setSel(null);
+                            setSpot({ lat, lon });
+                            setPanels((p) => ({ ...p, right: true }));
+                          }
+                    }
+                  />
                 </Suspense>
               ) : (
                 <BodyMap
@@ -196,7 +223,7 @@ export default function Atlas() {
               size={76}
               mood={sel ? "happy" : task ? "focused" : "thinking"}
               action={sel ? "sample" : task ? "scan" : "idle"}
-              say={sel ? null : task ? "Dim pins don't fit this task." : "Pick a pin, or choose a mission task."}
+              say={sel || spot ? null : body !== "earth" ? `Tap anywhere on ${body === "moon" ? "the Moon" : "Mars"}. I'll find its twins on Earth.` : task ? "Dim pins don't fit this task." : "Pick a pin, or choose a mission task."}
             />
           </div>
           <div className="pointer-events-none absolute bottom-4 left-1/2 z-[600] hidden -translate-x-1/2 items-center gap-4 rounded-full border border-line bg-void/75 px-4 py-2 text-[11px] whitespace-nowrap text-chrome backdrop-blur-xl md:flex">
@@ -316,8 +343,21 @@ export default function Atlas() {
         {/* ------------------------------------------------ right panel */}
         <Panel side="right" open={panels.right} onToggle={() => setPanels((p) => ({ ...p, right: !p.right }))} label="Places">
           <AnimatePresence mode="wait">
-            <motion.div key={sel ? `${sel.kind}:${sel.id}` : `none-${body}`} initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.28, ease: EASE }}>
-              {!sel && <Overview body={body} world={world} task={task} onEarth={goEarth} onTarget={goTarget} />}
+            <motion.div key={spot && body !== "earth" ? `spot:${spot.lat.toFixed(2)},${spot.lon.toFixed(2)}` : sel ? `${sel.kind}:${sel.id}` : `none-${body}`} initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.28, ease: EASE }}>
+              {spot && body !== "earth" && (
+                <SpotTwins
+                  body={body}
+                  spot={spot}
+                  onClose={() => setSpot(null)}
+                  onEarth={(lat, lon) => {
+                    setBody("earth");
+                    setSel(null);
+                    setView("3d");
+                    setEarthFocus({ lat, lon });
+                  }}
+                />
+              )}
+              {!sel && !(spot && body !== "earth") && <Overview body={body} world={world} task={task} onEarth={goEarth} onTarget={goTarget} />}
               {sel?.kind === "earth" && <EarthDetail id={sel.id} world={world} onTarget={goTarget} onClose={() => setSel(null)} />}
               {sel?.kind === "target" && <TargetDetail id={sel.id} onEarth={goEarth} onClose={() => setSel(null)} />}
               {sel?.kind === "screen" && <ScreenDetail id={sel.id} onClose={() => setSel(null)} />}
@@ -326,6 +366,91 @@ export default function Atlas() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/* --------------------------------------------------------------- twins */
+
+function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; spot: { lat: number; lon: number }; onClose: () => void; onEarth: (lat: number, lon: number) => void }) {
+  const { grid, progress } = useGrid();
+  const [terrain, setTerrain] = useState<SpotTerrain | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    setTerrain(null);
+    setFailed(false);
+    spotTerrain(body, spot.lat, spot.lon)
+      .then((t) => alive && setTerrain(t))
+      .catch(() => alive && setFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [body, spot.lat, spot.lon]);
+  const [alsoLike, setAlsoLike] = useState(true);
+  const twins = useMemo(() => (grid && terrain ? findTwins(grid, terrain, 8, alsoLike) : null), [grid, terrain, alsoLike]);
+  const name = body === "moon" ? "the Moon" : "Mars";
+  return (
+    <div className="space-y-6 p-5">
+      <PanelHeader eyebrow={`Your spot on ${name}`} title="Earth twins" sub={formatCoord(spot.lat, spot.lon)} onClose={onClose} />
+      {terrain ? (
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line text-center">
+          <div className="bg-panel p-3">
+            <div className="text-[10.5px] text-dim">Average slope</div>
+            <div className="font-mono text-[15px] text-platinum">{terrain.slope.toFixed(1)}°</div>
+          </div>
+          <div className="bg-panel p-3">
+            <div className="text-[10.5px] text-dim">Height range, 50 km</div>
+            <div className="font-mono text-[15px] text-platinum">{(terrain.relief / 1000).toFixed(2)} km</div>
+          </div>
+        </div>
+      ) : (
+        <div className="shimmer h-[62px] rounded-xl" />
+      )}
+      <div className="relative grid grid-cols-2 gap-1 rounded-xl border border-line bg-ink p-1 text-[12px]">
+        {([true, false] as const).map((v) => (
+          <button key={String(v)} onClick={() => setAlsoLike(v)} aria-pressed={alsoLike === v} className={clsx("relative rounded-lg py-1.5 transition-colors", alsoLike === v ? "text-platinum" : "text-dim hover:text-chrome")}>
+            {alsoLike === v && <motion.span layoutId="twin-mode" className="absolute inset-0 rounded-lg bg-platinum/[0.08]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+            <span className="relative">{v ? `Same ground, ${body === "moon" ? "Moon" : "Mars"}-like place` : "Same ground only"}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-[12.5px] leading-relaxed text-chrome">
+        {alsoLike
+          ? `Places on Earth with the same slopes and height range as this spot, that are also like the places experts use to practise for ${name} (half and half).`
+          : `Places on Earth whose 50 km of ground has the same slopes and height range as this spot, measured the same way from ${body === "moon" ? "LRO LOLA 118 m" : "MGS MOLA 463 m"} heights.`}
+      </p>
+      {failed && <p className="text-[12.5px] text-weak">This spot's data could not be loaded.</p>}
+      {!grid && <div className="text-[12px] text-dim">Loading Earth · {Math.round(progress * 100)}%</div>}
+      {twins && (
+        <ol className="space-y-2">
+          {twins.map((c, i) => (
+            <TwinRow key={c.k} grid={grid!} c={c} rank={i + 1} onShow={() => onEarth(c.lat, c.lon)} />
+          ))}
+        </ol>
+      )}
+      <p className="text-[11px] leading-relaxed text-dim">Rocks, cold and light are scored in Find new sites for the 18 named targets.</p>
+    </div>
+  );
+}
+
+function TwinRow({ grid, c, rank, onShow }: { grid: Grid; c: Candidate; rank: number; onShow: () => void }) {
+  const thumb = useEarthThumb(c.lat, c.lon, 160);
+  const nm = grid.name(c.k);
+  return (
+    <motion.li initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE, delay: rank * 0.04 }}>
+      <button onClick={onShow} className="surface lift group flex w-full items-center gap-3 rounded-xl p-2 text-left">
+        <span className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-ink">
+          {thumb ? <img src={thumb} alt="" className="size-full object-cover" /> : <span className="shimmer block size-full" />}
+          <span className="absolute top-0.5 left-0.5 grid size-5 place-items-center rounded-full bg-void/80 font-mono text-[10px] text-platinum">{rank}</span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] text-platinum">{nm.title}</span>
+          <span className="block truncate text-[11px] text-dim">{nm.subtitle || formatCoord(c.lat, c.lon)}</span>
+        </span>
+        <span className="font-mono text-[13px] text-flare">{c.score.toFixed(2)}</span>
+        <ChevronRight size={14} className="text-dim group-hover:text-platinum" />
+      </button>
+    </motion.li>
   );
 }
 
