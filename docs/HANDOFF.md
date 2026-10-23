@@ -1,8 +1,23 @@
 # ShadowAstra Atlas: handoff for the next person or AI agent
 
-_Last updated: 23 Oct 2026 (v0.4). First build session 10–14 Oct 2026; second session 23 Oct 2026._
+_Last updated: 23 Oct 2026, evening (v0.5). First build session 10–14 Oct 2026; second session 23 Oct 2026._
 
 Read this first. With this file, `../CLAUDE.md`, `PROJECT_PLAN.md` and `../DESIGN.md` you have the full context. The complete chat history is in `D:\NASA_space_apps_challenge_2026\_claude_history\` (outside the repo, because it is private).
+
+---
+
+## v0.5 in one page (23 Oct 2026, evening), newest first
+
+- **Find new sites (`/discover`, `src/pages/Find.tsx`) is a mission builder:** start screen with presets, then Destination, Job, Needs (sentence form: home city, max distance, town, altitude, month, Antarctica, only new) and Results. Logic in `src/lib/mission.ts` (`screen`, `runSearch`, relaxation hints, month light). Ten results, unique names, satellite thumbnails (`src/lib/thumbs.ts`), a compare tray for up to four places (`CompareSheet`), place report with confidence badge and rock type, printable report `/report` (`src/pages/Report.tsx`). Shared links (`?at=lat,lon`) open the place.
+- **How it works (`/methods`) rebuilt:** dot-globe hero (`components/methods/DotGlobe.tsx`: every land cell is a point, layers sweep in), four factor cards with real numbers, sticky scroll story (Jezero), proof charts (`components/methods/Charts.tsx`: RankStrip, MixCurve, JobSlope, Ablation; chart colours `--color-chart-1..4`, validated for colour blindness), failure gallery, datasets.
+- **Validation (`pipeline/s14_validate.py` → `public/data/validation.json`):** NumPy twin of `scoreAll`; 28 independent published sites (`catalogue.VALIDATION_SITES`, never used in training; model retrained without known sites within 300 km of each); known sites scored with their real jobs (`catalogue.KNOWN_JOBS`); model-share curve chosen on known sites only; job test; ±25% weight and data-noise robustness; ablations; bootstrap CIs. Key results: hidden known sites top 2.2% (default), independent top 21% (Moon top 5.2%), factors alone top 41% vs simple rule 40%, job test 78% of 78 sites (p < 0.001).
+- **Default model share is 60%** (`MODEL_MIX` in `src/lib/grid.ts`), chosen on the known-site curve before looking at the independent sites.
+- **Grid v3 (`s06_build.py` refactored into `features()` + `main()`):** adds `f_lith` (GLiM rock class, `grid.json.lithology`), `q_cover` (share of real, not gap-filled measurements), `u_moon`/`u_mars` (spread of the 8 model bags). Targets carry `rock` (family and GLiM affinity). Rock types are shown, not scored: scoring them ranked known sites worse at 0.5° (see validation `ablation.rocks`). `Grid.confidence()` → high/medium/low ("Not enough evidence").
+- **Maps (`/atlas`):** floating glass panels, world switcher with spinning planet thumbs, world title, layer cards with tile previews. **Twin finder:** tap the Moon or Mars → `src/lib/twins.ts` loads one 5° band of `public/data/terrain/{moon,mars}/bNN.bin` (from `pipeline/s15_planet_grids.py`, K1 output) and ranks Earth by ground shape, optionally 50/50 with the learned model.
+- **Compare (`/lab`):** seam medallion with the live match score, viewfinder corners. **Learn (`/learn`):** English and Bangla (`?lang=bn`, Noto Sans Bengali), quiz scored live, printable worksheet. Bangla text should be proofread by the team.
+- **App shell:** route light beam, scroll-progress hairline, page fade (`src/App.tsx`).
+- **Kaggle (`kaggle/run.py`):** tokens live outside the repo in `D:\NASA_space_apps_challenge_2026\_secrets\kaggle1\access_token` (account abdullahrubab1) and `…\kaggle2\access_token` (account absanim, which also holds the owner's own research notebooks: never touch those). The runner passes the token *path* through `KAGGLE_API_TOKEN`. Commands: `push`, `status`, `files`, `fetch --only "*.json"`, `output`, `cli …`. GPU kernels use `"machine_shape": "NvidiaTeslaT4"` (2 × T4). Kernels: K1 Moon/Mars DEM grids and patches (done, 62 min), K1b PDS context (Diviner path broken, GRS 5×5 fetched), K2 Earth patches (`k2_earth.py`), K3 three-world SSL ViT (`k3_ssl.py`, needs K1+K2 outputs, time-boxed, checkpoints `k3_ckpt.pt`), K5 PU model zoo with Optuna (`k5_models.py`, account 2, uses the private dataset `absanim/shadowastra-features` built from `s06.features()`).
+- **Network gotcha:** this PC sometimes cannot reach kaggle.com (DNS fine, TCP to 35.244.233.98 hangs); the owner's VPN fixes it. Kaggle `datasets create` needs an absolute folder path on Windows.
 
 ---
 

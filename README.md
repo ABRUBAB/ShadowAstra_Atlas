@@ -51,20 +51,26 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | **80,206** | land areas measured (every 0.5° cell, about 55 km wide) |
 | **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters… |
 | **18** | Moon and Mars targets measured at full precision (LRO LOLA 118 m, MGS MOLA 463 m) |
-| **38** | known analog sites used to teach and test the model |
-| **top 0.8%** | where hidden Moon test sites rank among all land in a fair hold-out test (a simple rule: top 35%) |
-| **top 4.9%** | the same for Mars sites (simple rule: top 31%) |
+| **38 + 28** | known analog sites to teach and test the model, plus 28 published sites kept out of training as an untouched test |
+| **top 2.2%** | where hidden known sites rank among all land, as the site shows them (hold-out: each site and its neighbours within 300 km hidden, model retrained) |
+| **top 21%** | where the 28 never-seen sites rank (Moon sites: top 5%); a simple rule manages top 40% |
+| **78%** | of 78 sites rank higher when scored for the job they were really used for (sign test p < 0.001) |
+| **9 of 10** | top places that stay put when every weight shifts by ±25% |
 
 ## ✨ What you can do
 
 | | Feature | What it does |
 |---|---|---|
-| 🌍 | **Find new sites** | Pick a job (base life, rover drive, ice hunt, lava tubes, life search, craters, low Sun) and a Moon or Mars place. All 80,206 land areas are re-scored live on a 3D globe or flat map. Click any land for a full report. |
+| 🌍 | **Find new sites** | A mission builder: pick a Moon or Mars destination, the job (landing, base life, rover drive, ice, lava tubes, life search, craters, low Sun) and your team's needs in plain words (how far from home, near a town, altitude, month). All 80,206 land areas are searched live; you get ten distinct new places with satellite views, reasons and hints about which rule hides better sites. |
+| ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
+| 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth. |
+| 🎓 | **Learn, in English or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
+| 📄 | **Site report** | A printable one-page dossier for any place: the four factors on Earth and the target, field tests, planning, permission and what Earth can't copy. |
 | 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
 | ⛰️ | **Compare in 3D** | Any Earth place next to its Moon or Mars target: real heights, real imagery, a movable Sun, a shadow map, best months to go and travel CO₂. |
 | 🎮 | **Earth or Mars?** | A game with real orbital images of known look-alike pairs, same scale, colour off. |
 | 🧑‍🚀 | **Astra** | Our field-test astronaut shivers in the cold, sweats in the heat, cheers good matches and answers questions from the real data. |
-| 🏷️ | **Honest labels** | Every value is **Computed**, **Learned** or **Earth can't copy**. Gravity, air and radiation are never hidden. |
+| 🏷️ | **Honest labels** | Every value is **Computed**, **Learned** or **Earth can't copy**, and every place has a confidence badge (real measurements and model agreement); thin evidence says **Not enough evidence**. |
 | ⌨️ | **Search everything** | `Ctrl K` or `/` searches pages, Moon and Mars places, known sites and any town on Earth. |
 
 ## 🔭 Tour
@@ -79,7 +85,7 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
     <td><img src="docs/readme/game.jpg" alt="Earth or Mars game"/><br/><sub><b>Earth or Mars?</b> Real Sentinel-2, Viking and LROC images of known look-alike pairs.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/methods.jpg" alt="Model test results"/><br/><sub><b>The model had to prove itself.</b> Hidden Moon sites land in the top 0.8% of land; a hand-made rule only reaches the top 35%.</sub></td>
+    <td><img src="docs/readme/methods.jpg" alt="Model test results"/><br/><sub><b>The model had to prove itself.</b> Hidden known sites land in the top 2.2% of land; 28 sites it never saw land in the top 21%.</sub></td>
     <td><img src="docs/readme/light-mode.jpg" alt="Light mode"/><br/><sub><b>Light mode.</b> A warm paper theme with its own colours. Space scenes stay dark.</sub></td>
   </tr>
   <tr>
@@ -109,22 +115,22 @@ flowchart LR
 | **Cold & heat** | coldest monthly night and the day-to-night swing (ice jobs add snow and ice) | MODIS land surface temperature, NASA POWER |
 | **Sunlight angle** | `1 − W₁(Sun heights) / 25°`, earth-mover distance in Earth's best month | our solar geometry |
 | **Bare, dry ground** | little rain and few plants | NASA POWER rain, MODIS NDVI |
-| **Learned model** | LightGBM trained on 38 known sites (positive-unlabelled), 30% of the total by default | all of the above |
+| **Learned model** | LightGBM trained on 38 known sites (positive-unlabelled, 8 bags), 60% of the total by default (the share was chosen on the known sites only) | all of the above, plus GLiM rock groups |
 | Gravity · Air · Radiation | shown next to every score, never added in | Earth can't copy |
 
 Total = `(1 − m) · Σ wᵢ·vᵢ / Σ wᵢ + m · model`, with weights `wᵢ` from the job. Every slider re-ranks the planet live.
 
 ### A fair test
 
-For every known test site we hid it **and every other known site within 300 km**, retrained the model, and checked where the hidden site ranked among all 80,206 places.
+For every known test site we hid it **and every other known site within 300 km**, retrained the model, and checked where the hidden site ranked among all 80,206 places. Then we checked **28 more published sites that were never used for anything** (Austrian Space Forum, ISRO HOPE, Europlanet, NASA teams, Apollo training). `pipeline/s14_validate.py` reruns all of it from the website's own data files.
 
-| | Moon sites (22) | Mars sites (28) |
-|---|---|---|
-| Learned model, typical rank | **top 0.8%** | **top 4.9%** |
-| Simple hand-made rule | top 35.3% | top 31.1% |
-| Hidden sites found in the top 10% | **82%** (rule 14%) | **71%** (rule 14%) |
+| | Learned model | What the site shows (60% model) | Mission factors only | Simple rule |
+|---|---|---|---|---|
+| Hidden known sites, typical rank | top 2.6% | **top 2.2%** | top 19% | top 31 to 35% |
+| 28 never-seen sites, typical rank | top 18% | **top 21%** | top 41% | top 40% |
+| Never-seen Moon sites | top 1.1% | **top 5.2%** | top 48% | top 36% |
 
-Honest limits: the known-site list is small and biased toward reachable places, and volcano and crater distance help the model a lot. That is why the mission formula counts most and every place shows its raw data.
+More tests: choosing the job a site was really used for ranks it higher for 78% of 78 sites (p < 0.001); shifting every weight by ±25% keeps 8 to 10 of the top 10 places; taking out *Rocks & craters* hurts most. Honest limits: the mission factors alone find known sites only about as well as a simple rule, because many analog sites were chosen for something smaller than our 55 km cells (an ice cave, a small lake, hot springs). Their job is to explain why a place matches and to tune it to your target and job; the learned model finds them. The How it works page shows where it fails and why.
 
 ## 🛰️ Open data
 
@@ -203,7 +209,10 @@ src/
 - [x] Learned model with a spatial hold-out test
 - [x] Find new sites, town checker, game, badges, search, Astra's live answers
 - [x] Terrain encoder, first test: a self-supervised CNN on 86,000 height patches from all three worlds. On 49 expert pairs it ranks them in the top 44% vs 34% for the formula, so it stays optional
-- [ ] A bigger encoder on Kaggle GPUs with higher-resolution heights
+- [x] Mission builder, compare up to four, Earth twins of any Moon or Mars spot, Learn page in English and Bangla
+- [x] Independent validation on 28 published sites, model-share curve, job test, robustness and ablations
+- [x] Kaggle K1: full-precision LOLA and MOLA measured everywhere; K2: Earth patches; K5: model zoo with Optuna
+- [ ] Kaggle K3: a self-supervised terrain transformer for three worlds on 2 × T4
 - [ ] Official 2026 challenge datasets, EMIT minerals, Diviner temperatures
 - [ ] Field test plan export (PDF) and a Bangla classroom mode
 
