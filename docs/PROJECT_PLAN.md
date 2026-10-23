@@ -1,142 +1,120 @@
-# ShadowAstra Atlas: master plan (v2)
+# ShadowAstra Atlas: master plan v3
 
-**Team ShadowAstra · Dhaka, Bangladesh · NASA Space Apps Challenge 2026**
-Challenge: *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*
+**Team ShadowAstra · Dhaka · NASA Space Apps Challenge 2026** · written 23 Oct 2026 · replaces v2 (see git history)
 
-> **One line:** ShadowAstra Atlas tells a mission team *where* on Earth to rehearse a specific Moon or Mars task, *when* to go, *how close* a credible site is, and *what the rehearsal can never prove*. It does this with open NASA data compared at the same physical scale and under the same Sun.
+> **One line:** tell us your mission and your limits; we search every place on Earth, compare it with the exact Moon or Mars spot you care about using NASA data from all three worlds, and hand you a field-ready report on the best new test sites, with the evidence and the doubts.
 
 ---
 
-## 1. The problem, precisely
+## 1. What the challenge actually asks (re-read 23 Oct)
 
-The challenge text names four selection factors (**topography, geology, environment, resources**) and one gap:
+> "Selecting future landing sites and lunar base locations depends on many factors, including **topography, geology, environment, and available resources**… use open **Earth, Moon, and Mars** data from NASA and other space agencies to **identify and characterize new terrestrial analogs for future bases or landing sites**, drawing on **deserts, polar regions, volcanic and arid terrains, caves**, and other environments…"
 
-> "…terrestrial analog sites are not entirely well characterized. Your challenge is to use open Earth, Moon, and Mars data from NASA and other space agencies to identify and characterize new terrestrial analogs…"
-
-That gap has three parts:
-
-| Gap | What happens today | Consequence |
-|---|---|---|
-| **Characterization** | Analogs are chosen by reputation ("Atacama is Mars-like"). | A site can look right and still test the wrong thing. We call this the *false friend*. |
-| **Discovery** | New regions aren't screened systematically against today's targets (Artemis south-pole regions, ice-rich Mars plains, cave skylights). | Better or closer sites stay unknown. |
-| **Access** | The famous sites are far from most of the world's students and researchers. | Analog science stays concentrated, and every trip has a carbon cost. |
-
-## 2. What makes us different (novelty)
-
-| # | Idea | Why it is new | Status |
+| The challenge needs | v0.4 had | Gap | v5 answer |
 |---|---|---|---|
-| 1 | **Mission-conditioned matching** | The same Earth site scores differently for *traverse*, *ice prospecting*, *ISRU*, *caves* and so on. Weights are explicit and adjustable. There is no universal "Mars-likeness". | ✅ live |
-| 2 | **Terrain Twins** | Real Earth (SRTM), Moon (LRO LOLA) and Mars (MGS MOLA) elevation resampled onto **one shared grid** at the coarser native spacing, then compared in 3D at the same scale. | ✅ live (preview DEMs) |
-| 3 | **Shadow Lab** | A horizon-method illumination model turns a lunar-polar Sun (≈1–2° elevation) around *both* terrains and maps never-lit ground, a proxy for cold traps. The name ShadowAstra is the method. | ✅ live |
-| 4 | **Light Twin calendar** | Solar geometry finds the months when an Earth site's Sun-angle distribution best matches the target (earth-mover distance). Example: McMurdo Dry Valleys in **August**, as the Sun returns from polar night and skims the horizon the way it does at Shackleton. | ✅ live |
-| 5 | **Rehearse closer** | From any team's home city, the tool ranks the nearest *credible* analogs and shows distance and an indicative CO₂e estimate. This makes analog science global and lower-carbon. | ✅ live |
-| 6 | **Honest evidence** | Every parameter is tagged **Computed**, **Demo** or **Reality gap**. Gravity, vacuum and radiation are shown next to every score and never folded into it. | ✅ live |
-| 7 | **Astra, the field-test astronaut** | A mascot whose visor works as a HUD. It reacts to results (happy at a high match, sad at a low one, scanning while loading) to make the uncertainty easy to feel. | ✅ live |
-| 8 | **Stewardship flags** | Protection status (Antarctic Treaty, national parks, sacred and Indigenous land) is shown before any trip planning. | ✅ live |
+| Topography | 50 km slope/relief stats, Earth vs 18 targets | targets are single points | Moon and Mars **global grids**; any spot can be a target; a 10 km "pinpoint" inside each candidate |
+| Geology | distance to volcanoes and craters | no rock types, no minerals | Earth **GLiM rock types**, **EMIT minerals** (hematite, gypsum, clays, carbonates), salt flats; Moon mare/highland + FeO; Mars basalt, sulfate, clay, iron-oxide context; crater density on all three |
+| Environment | cold, heat swing, dryness, Sun angle | Moon/Mars side not measured | Moon Diviner temperatures, Mars TES thermal inertia and albedo; month-by-month light and cold |
+| Resources | none | missing factor | water ice (Earth permafrost/glaciers ↔ Mars SWIM ice ↔ Moon hydrogen/shadow), regolith materials, sunlight for power |
+| Moon and Mars data | 18 points of LOLA/MOLA | thin | global grids from LOLA, MOLA, TES, Diviner, Kaguya, Lunar Prospector, SWIM, cave and crater catalogues |
+| Bases **or landing sites** | jobs only for bases and science | landing missing | new job "Test a landing" (hazard detection, terrain navigation, plume and dust) |
+| Caves | lava-tube job, no cave data | missing | Mars cave candidates (USGS MGC³, 1,000+), lunar pits (LROC), Earth karst and young basalt fields |
+| **Characterize** | short place report | no full dossier | **Site report**: the four factors side by side with real values on both worlds, confidence, best months, access, permits, limits; **PDF download** |
+| New analogs | ranked list | no user requirements | **Mission builder**: the user's own requirements filter and rank the planet |
 
-## 3. Product map
+## 2. Honest diagnosis of v0.4 (owner review, 23 Oct)
 
-| Page | Purpose | Status |
-|---|---|---|
-| **Home** | Ten-chapter story from Earth to Moon to Mars, with Astra in every chapter. | ✅ |
-| **Atlas** | 3D globes plus 12 live NASA map layers for three bodies; task filters; site detail; screening queue. | ✅ |
-| **Analog Lab** | Flagship: Terrain Twins, Shadow Lab, Analog Fit, Light Twin, imagery swipe, sustainability, reality gaps, auto-summary. | ✅ |
-| **Data & Method** | Pipeline, scoring model, task weights, source registry (NASA, ESA, JAXA, ISRO). | ✅ |
-| **About** | Team, the meaning of the name, mapping to all 10 award categories, timeline. | ✅ |
-| Site Passport (export) | One-page field protocol with best season, gaps, permits and lineage. | ⏳ hackathon |
-| Screening results | New candidates in the 8 queued regions, with abstention. | ⏳ hackathon |
-| Classroom mode (Bangla/English) | Guided lessons on the "false friend" and the Shadow Lab. | ⏳ after hackathon |
+1. **Find new sites is confusing.** It opens with results already computed, so a visitor doesn't know what was searched or what to do. It must start from the user's needs and *show* the search.
+2. **Not enough science.** A single tabular model and one CPU-trained encoder that lost to the formula. No independent test set, no uncertainty, no ablations.
+3. **Pages look plain.** Maps, Compare and How it works lack hero moments, real imagery in cards, and motion where it matters.
+4. **Planned features never shipped:** site passport (now "Site report"), screening with abstention, Bangla classroom mode, expert-pair labels, uncertainty.
 
-## 4. Scoring model
+## 3. Product v5: what a normal visitor does
 
-Six parameters, taken from our methodology sheet:
+### 3.1 Find a test site (the core flow, rebuilt as a guided mission builder)
 
-| Parameter | Measured from (target) | Measured from (Earth) | Today | Hackathon |
+1. **Start screen, no results yet.** "Where should we test? Tell us your mission, we search the whole Earth." Six ready-made missions with pictures (Artemis base camp, Mars rover drive, ice drilling, lava-tube shelter, search for life, crater training) or "Build my own".
+2. **Destination.** A 3D Moon or Mars. Official targets as pins (the 9 Artemis III regions, rover and human landing sites, ice plains, cave skylights), or **click any spot**. A card explains what it is like there in plain words.
+3. **The job.** Illustrated cards: live at a base, test a landing, drive a rover, use local soil, find ice, explore caves, search for life, study craters, work in low Sun.
+4. **Your requirements** (from ESA's CAFE field-site criteria): team home city and maximum distance, travel month, reachable by road, avoid Antarctica, altitude limit, what must match (ground, rocks, climate, ice). Each control shows live "**12,431 places still possible**".
+5. **The search, shown.** The globe scans, cells light up, counters run: *80,206 checked → 9,318 meet your needs → 10 best new sites*. Astra narrates.
+6. **Results.** Cards with a real satellite picture, match ring, ✓ requirement checklist, top reasons, confidence. **"What is holding back better sites?"**: e.g. *"The best match is in Antarctica (0.91). Allow Antarctica to see it."*
+7. **Site report.** The four factors side by side (Earth value vs target value), radar chart, **pinpoint the exact spot** (10 km search inside the cell), best months, travel and CO₂, protection, what Earth can't copy, suggested field tests, data sources. **Download PDF.** Compare in 3D. Save.
+
+### 3.2 Other pages
+
+| Page | v5 |
+|---|---|
+| Home | Clear entry points: Plan a test mission · Check your town · Play Earth or Mars · Meet Astra. The story: Dhaka → Earth's analogs → Moon and Mars. |
+| Explore worlds (Maps) | Three globes with **our data as layers** (Earth cold/dry/rock types/minerals; Moon ice/craters/pits; Mars ice/caves/thermal inertia). Click any Moon/Mars spot → "Find Earth sites for this spot". |
+| Compare | Hero split view, the four factors as animated cards with values on both worlds, radar chart, 3D twins, shadow map, best months. |
+| How it works | **Hero** with the planet gaining data layers as you scroll; the pipeline as an animation; validation as interactive charts; datasets as visual cards. Short text. |
+| Learn (new) | Four short interactive lessons for schools (What is an analog? Why the lunar south pole? Looks alike is not enough. Find your own analog). **English and বাংলা.** |
+| Team | As now. |
+
+### 3.3 Novel ideas (what nobody has put together)
+
+1. **Requirement-driven global analog search**: mission + destination + the team's real limits, over every land area on Earth, live in the browser.
+2. **One shared feature space for three worlds** built from open NASA data at a matched 50 km scale: ground shape, rocks and minerals, thermal behaviour, ice, light.
+3. **Any-spot targeting**: pick any point on the Moon or Mars, not a fixed list.
+4. **Coarse-to-fine pinpoint**: from a 55 km candidate to the best 10 km spot inside it.
+5. **"What's holding back better sites?"**: constraint-relaxation hints.
+6. **Robustness and confidence**: a site that stays on top when the weights change is marked robust; uncertainty from model ensembles.
+7. **Your town's twin on Mars**: reverse search from any Earth place to its most similar Moon and Mars spots.
+8. **Site report PDF**: a characterization dossier a field team can use.
+9. **An open benchmark**: literature analog pairs (ESA Catalogue of Planetary Analogues and others) to test any analog-finding method.
+10. **Astra + Bangla**: a character-led, bilingual experience for the public and schools in Dhaka.
+
+## 4. Science v5
+
+### 4.1 Data (all open)
+
+| World | Topography | Geology | Environment | Resources |
 |---|---|---|---|---|
-| Topography | LOLA / MOLA DEM → slope histogram + relief | SRTM / NASADEM | **Computed** (8-bit preview DEMs) | Full-precision LOLA 5–20 m polar, HiRISE 1 m, NASADEM 30 m |
-| Lighting | Solar geometry at target latitude, plus horizon shadows | Solar geometry, plus horizon shadows | **Computed** | Add LOLA illumination maps for validation |
-| Geology | LROC / CRISM / THEMIS products | EMIT minerals, HLS, geologic maps | Demo | Feature vectors from EMIT + CRISM where sensor-compatible |
-| Temperature | Diviner (Moon), THEMIS / MCS (Mars) | MODIS LST day and night | Demo | Day–night range and minimums |
-| Regolith | Diviner rock abundance, THEMIS thermal inertia | Soil and grain proxies, EMIT | Demo | Thermal-inertia analogs |
-| Radiation | — | — | **Reality gap** (never scored) | Shown with measured numbers |
+| Earth | SRTM terrain tiles at 50 km and 10 km | GLiM rock types (0.5°), EMIT L3 minerals (0.5°, needs Earthdata login), GVP volcanoes, impact craters, Natural Earth salt flats and glaciers, karst (WOKAM) | MODIS ground temperature and NDVI, NASA POWER climate, snow | permafrost/glaciers, basaltic ground, evaporites and clays (EMIT), sunlight |
+| Moon | LRO LOLA 118 m (global grid) | mare vs highland (FeO, Kaguya), crater density (Robbins 2018), lunar pits (LROC) | Diviner temperatures and rock abundance, solar geometry | Lunar Prospector hydrogen, permanently shadowed regions, sunlight |
+| Mars | MGS MOLA 463 m (global grid) | crater density (Robbins 2012), cave candidates (MGC³), mineral context per target | TES thermal inertia and albedo, solar geometry | SWIM subsurface ice (0–60°N), GRS hydrogen |
 
-- **Topography** = 0.65 × slope-histogram overlap + 0.35 × relief agreement (log-ratio). Both are computed on the shared grid after identical smoothing.
-- **Lighting** = 1 − W₁ / 25°, where W₁ is the Wasserstein distance between daylight Sun-elevation distributions in the best month.
-- **Analog Fit** = Σ wᵢ·vᵢ / Σ wᵢ over available parameters, with weights from the mission task. We also report the share of the score that is computed.
-- Bands: ≥ 0.75 high · 0.50–0.74 medium · < 0.50 low.
+Downloads that this network can't reach (PDS Geosciences) run on Kaggle.
 
-## 5. AI / ML plan (what we will train)
+### 4.2 Models (each must beat a simple baseline in the tests below, or stay optional)
 
-1. **Physical baseline** (must be beaten): multi-scale slope, curvature, roughness and relief distributions, then a distance plus a LightGBM LambdaRank ranker.
-2. **Terrain encoder**: a small CNN/ViT on matched-scale DEM patches from all three bodies (Earth NASADEM, Moon LOLA, Mars HiRISE/CTX/HRSC). It is pre-trained self-supervised (SimCLR / masked-patch) so geometry becomes body-agnostic, then fine-tuned on task-specific pairs.
-3. **Mission-conditioned ranker**: terrain embedding + Earth context (EMIT, HLS, LST; optional frozen Prithvi-EO-2.0 features) + mission token → relevance score.
-4. **Uncertainty and abstention**: deep ensembles plus conformal prediction. If coverage is missing, the output is "insufficient evidence".
-5. **Labels**: known analog–target pairs from the literature (positives), hard negatives (looks right, tests wrong), and expert pairwise judgements. Splits are by region, with buffers, so there is no leakage.
-6. **Evaluation**: nDCG@5/10, expert agreement, coverage–abstention curves and per-domain breakdown (desert, polar, volcanic). Compute runs on Kaggle T4 ×2, with versioned notebooks.
-
-## 6. Data sources (open)
-
-**NASA**: GIBS (Blue Marble, MODIS, ASTER GDEM, VIIRS Black Marble, LST), Solar System Treks (LROC WAC, LOLA DEM/shade, Viking MDIM, MOLA, THEMIS), SRTM/NASADEM, EMIT, HLS, LRO Diviner, MRO HiRISE/CTX/CRISM.
-**Other agencies**: ESA Copernicus DEM, Mars Express HRSC; JAXA SELENE/Kaguya; ISRO Chandrayaan-2 OHRC/DFSAR. Elevation tiles come from AWS Open Data Terrain Tiles (SRTM-derived).
-
-## 7. Sustainability and ethics
-
-- **Fewer trips**: screen remotely, then send people only to the shortlist. The Lab shows each trip's footprint (indicative 0.15 kg CO₂e per passenger-km).
-- **Closest credible analog**: the default city is Dhaka, and any team can pick its own.
-- **Stewardship**: protected, sacred and Indigenous land is flagged. Consent comes before coordinates, and sensitive sites can be blurred.
-- **Open science**: code, method and data lineage are public, so the tools reach places that can't fund expeditions.
-
-## 8. How we meet every award category
-
-| Award | Evidence a judge can open |
-|---|---|
-| Best Use of Science | Mission-conditioned scoring, matched-scale terrain stats, shadow model, reality gaps |
-| Best Use of Data | 12 live NASA layers plus LOLA, MOLA and SRTM elevation; ESA, JAXA and ISRO in the pipeline; per-value provenance |
-| Best Use of Technology | WebGL Terrain Twins, browser-side illumination, three-body GIS, trainable ranker |
-| Galactic Impact | A reusable where / when / what-not answer for analog field campaigns |
-| Best Mission Concept | "What mission can we test here?", turned into a passport with a best season |
-| Most Inspirational | Astra's journey: success and honest failure |
-| Best Storytelling | Earth → Moon → Mars; the false friend; light and shadow |
-| Global Connection | Rehearse-closer from any city; search anywhere on Earth |
-| Art & Technology | NASA-mosaic globes, sunlight-and-shadow palette, premium motion |
-| Local Impact | Dhaka STEM workshop, Bangla classroom mode, a university pilot |
-
-## 9. Roadmap
-
-| Phase | When | Deliverables | Done when |
+| # | Model | Where | Purpose |
 |---|---|---|---|
-| 0 Preliminary | Oct 2026 | Film ✅, this prototype ✅ | Judges can open Lab, Atlas and Method |
-| 1 Data | Before the hackathon | Download full-precision DEMs for 6 targets and 12 regions; feature pipeline | Slope stats reproducible from a notebook |
-| 2 Hackathon | Nov 2026 | Baseline ranker, screening of the queued regions, passport export, Video 2 | One new candidate fully characterized, or honestly rejected |
-| 3 Model | After baseline | Terrain encoder plus ranker; benchmark against baseline | Beats baseline on held-out regions |
-| 4 Impact | Ongoing | Expert review, Dhaka workshop, open dataset | Feedback is recorded and claims are revised |
+| M0 | Mission formula (transparent baseline) | browser | per-factor similarity × job weights |
+| M1 | Analog-likeness, PU ensemble (LightGBM, CatBoost, logistic, RF), tuned with Optuna | local + Kaggle CPU | "does this place look like places teams already use?" |
+| M2 | Pair ranker (LambdaMART) on cross-world feature differences, trained on literature feature→site pairs | local | learns how much each factor matters per feature type |
+| M3 | Terrain encoder v2: multi-scale hillshade + height patches (128 px, 3 scales) from all three worlds, contrastive + domain alignment | **Kaggle T4×2** | learned ground-shape similarity |
+| M4 | DINOv2 / DINOv3-SAT zero-shot embeddings of matched-scale hillshades | **Kaggle GPU** | foundation-model shape similarity |
+| M5 | Fusion and uncertainty: bootstrap ensembles, conformal intervals, rank robustness | local | confidence and "robust site" badges |
 
-## 10. Risks and mitigations
+### 4.3 Validation (shown on How it works as charts)
 
-| Risk | Mitigation |
-|---|---|
-| 8-bit preview DEMs quantize relief | Labelled as preview. Full-precision PDS DEMs come in Phase 1, and stats are re-computed. |
-| Demo values mistaken for results | Tagged "Demo" everywhere; the computed share of each score is shown. |
-| Tile services slow during judging | Static texture fallbacks, cached tiles, a poster image before WebGL loads. |
-| Over-claiming discovery | Known sites are calibration controls. New candidates need evidence or get abstention. |
-| Site sensitivity | Stewardship flags and location blurring where needed. |
+1. **Spatial hold-out** on the 38 training sites (done in v0.4), now with bootstrap confidence intervals, AUC and average precision.
+2. **Independent sites never used for training** (~25): CPA-only sites (Central Australia, Barberton, Columbia River Basalts, Golden Deposit, Kamchatka, Etna, Pavilion Lake, Turpan, Yellowstone), Europlanet sites (Kangerlussuaq, Makgadikgadi, Argentinian Andes), OeWF AMADEE sites (Dhofar, Ramon crater, Armenia, Dachstein), ISRO HOPE Tso Kar (Ladakh), Kutch (Matanomadh), West Clearwater, Wadi Rum, Badain Jaran. Measure: share in the top 10% of land, median rank, vs baseline.
+3. **Feature-type benchmark** from the ESA Catalogue of Planetary Analogues: for each Moon/Mars feature type (lava tubes, deltas, dunes, sulfates, impact melt…), does the method rank that feature's Earth sites above others? AUC and nDCG per method (M0–M4).
+4. **Robustness**: rank stability (Kendall τ) of the top 50 under ±30% weight noise.
+5. **Ablations**: remove each factor or data source; report the change.
+6. **Sanity checks**: known extremes (driest, coldest) reproduced.
+7. **Expert review**: Md. Tanvir Hasan reviews the top 20 candidates with a written rubric.
 
-## 11. Team responsibilities
+## 5. Phases
 
-| Member | Owns |
-|---|---|
-| Abdullah Rubab | Leads the team: scope, architecture, integration, submission |
-| Tanvir Hossin | Researches planetary terrain: Moon/Mars targets and products |
-| Md. Tanvir Hasan | Validates the science: splits, baselines, checks |
-| Mohammad Saniul Alam | Designs the experience: maps, Lab and interaction |
-| Tasnuva Arif | Development and testing; narration |
-| Mohammed Mahmud Parvez | Edits the film; motion language |
+| Phase | Deliverables | Needs |
+|---|---|---|
+| **A. UX rebuild** | Mission builder, search animation, results with relaxation hints, site report + PDF, How it works hero and scrollytelling, Compare and Maps redesign, Home entry points | nothing |
+| **B. Data v2** | Earth: GLiM, salt flats, glaciers, full crater list, karst, accessibility. Mars global grid: MOLA terrain, TES, MGC³ caves, craters, SWIM. Moon global grid: LOLA terrain, pits, craters, Kaguya FeO. Four-factor scoring in browser and Python | downloads (local) |
+| **C. Science v2** | Independent and CPA benchmarks, model zoo (M1, M2), bootstrap, robustness, ablations | local CPU |
+| **D. Deep models** | M3 encoder v2, M4 DINOv2/DINOv3 embeddings, PDS data (Diviner, Lunar Prospector, GRS) | **Kaggle keys** |
+| **E. Story & reach** | Learn page, Bangla, Astra expedition animation, Your town's twin on Mars | nothing |
+| **F. Official data** | Add the 28 Oct challenge datasets to the pipeline | release |
 
-## 12. v0.3 additions (preliminary round)
+## 6. What the team needs to provide
 
-- **Ask Astra:** an on-page assistant that answers from our catalogue, Sun maths and distance maths (no language model, no invented facts). It is page-aware and links straight into the Lab.
-- **Guided Lab:** numbered steps (① Earth site, ② target, ③ task), one-click quick pairs, a floating section dock, coach tips, deep links (`/lab#geology`) and a badge legend.
-- **Light mode:** a warm paper theme with its own accent colours. Space scenes stay dark. Dark is the default.
-- **Branded loading:** an orbit-mark splash on first visit and a compact orbit loader between pages.
-- **Plain English:** simpler copy across the site.
-- **Real team portraits** on Home and About.
+- **Kaggle:** `kaggle.json` for account 1 at `C:\Users\user\.kaggle\kaggle.json`, account 2 at `D:\NASA_space_apps_challenge_2026\_secrets\kaggle2\kaggle.json`. Never paste keys in chat or commit them.
+- **NASA Earthdata login** (free, for EMIT minerals): create `C:\Users\user\_netrc` with `machine urs.earthdata.nasa.gov login <user> password <pass>`.
+- **Expert review:** Md. Tanvir Hasan, 1 to 2 hours on the top candidates.
+
+## 7. Sources consulted (23 Oct)
+
+Challenge page (spaceappschallenge.org) · ESA CAFE TN2 *Catalogue of Planetary Analogues* (Preston, Grady, Barber 2012) · ESA CAFE executive summary (site criteria) · MarsOz site-selection criteria · Europlanet 2024 RI field sites · OeWF AMADEE campaigns · ISRO HOPE (Tso Kar) · EMIT L3ASA user guide (LP DAAC) · USGS MGC³ cave catalogue · LROC lunar pit shapefile · SWIM ice products (PSI) · Putzig & Mellon 2007 thermal inertia · Diviner GDR · Kaguya MI FeO (USGS) · Lunar Prospector neutron maps · GLiM (PANGAEA) · Malaria Atlas Project accessibility (Weiss 2018) · Robbins crater databases · NASA Artemis III regions (Oct 2024) · arXiv 2501.08584 (Siamese network analogs, Qaidam) · findmars.space and MarScope (CTX embeddings) · DINOv2/DINOv3.

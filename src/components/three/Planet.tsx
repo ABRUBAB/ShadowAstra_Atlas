@@ -182,6 +182,16 @@ export function Planet({
   );
 }
 
+/** Shown while the NASA mosaic streams in, so the stage is never empty. */
+export function PlanetPlaceholder({ body, radius = 1 }: { body: Body; radius?: number }) {
+  return (
+    <mesh>
+      <sphereGeometry args={[radius, 64, 48]} />
+      <meshStandardMaterial color={body === "mars" ? "#7a4a33" : body === "moon" ? "#6b6862" : "#22324a"} roughness={1} metalness={0} />
+    </mesh>
+  );
+}
+
 function Marker({
   marker,
   radius,

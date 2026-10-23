@@ -1,0 +1,14 @@
+{
+  "slug": "shadowastra-k1-worlds",
+  "title": "ShadowAstra K1 Worlds",
+  "code_file": "k1_worlds.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": []
+}

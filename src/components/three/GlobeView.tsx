@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Planet, SUN_DIR, type GlobeMarker } from "./Planet";
+import { Planet, PlanetPlaceholder, SUN_DIR, type GlobeMarker } from "./Planet";
 import { Starfield } from "./Starfield";
 import { Orbit } from "./Controls";
 import type { Body } from "../../data/sites";
@@ -23,7 +23,7 @@ export default function GlobeView({ body, markers, activeId, onSelect, focus, lo
       <ambientLight intensity={body === "earth" ? 0.06 : 0.22} />
       <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={body === "earth" ? 2.2 : 2.4} />
       {stars && <Starfield count={1800} />}
-      <Suspense fallback={null}>
+      <Suspense fallback={<PlanetPlaceholder body={body} />}>
         <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus} spin={0.035} lod={lod} />
       </Suspense>
       <Orbit />

@@ -1,0 +1,14 @@
+{
+  "slug": "shadowastra-k1b-context",
+  "title": "ShadowAstra K1b Context",
+  "code_file": "k1b_context.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": []
+}

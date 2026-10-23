@@ -11,3 +11,8 @@ shots/
 
 # data pipeline downloads (rebuild with pipeline/s01..s06)
 pipeline/.cache/
+
+# Kaggle build folders and any local credentials
+kaggle/_build/
+kaggle/_out/
+kaggle.json

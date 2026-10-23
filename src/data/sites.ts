@@ -22,7 +22,8 @@ export type TaskId =
   | "caves"
   | "astrobio"
   | "impact"
-  | "polar";
+  | "polar"
+  | "landing";
 
 export interface MissionTask {
   id: TaskId;
@@ -33,6 +34,13 @@ export interface MissionTask {
 }
 
 export const TASKS: MissionTask[] = [
+  {
+    id: "landing",
+    label: "Test a landing",
+    short: "Landing",
+    question: "Where can a lander practise finding a safe spot and touching down on ground like the target's?",
+    evidence: ["Slopes under 15°", "Rocks and craters to avoid", "Loose dust blown by the engine", "Navigation by terrain"],
+  },
   {
     id: "base",
     label: "Live at a base",

@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-/** Thin OrbitControls wrapper (avoids pulling in a whole helper library). */
+/** Thin OrbitControls wrapper (avoids pulling in a whole helper library). Updated inside the R3F frame loop. */
 export function Orbit({
   min = 1.6,
   max = 6,
@@ -16,7 +16,8 @@ export function Orbit({
   target?: [number, number, number];
   maxPolar?: number;
 }) {
-  const { camera, gl, invalidate } = useThree();
+  const { camera, gl } = useThree();
+  const ctl = useRef<OrbitControls | null>(null);
   useEffect(() => {
     const c = new OrbitControls(camera, gl.domElement);
     c.enableDamping = true;
@@ -27,19 +28,16 @@ export function Orbit({
     c.minDistance = min;
     c.maxDistance = max;
     if (maxPolar !== undefined) c.maxPolarAngle = maxPolar;
-    c.target.set(...target);
-    let raf = 0;
-    const loop = () => {
-      c.update();
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
-    c.addEventListener("change", () => invalidate());
+    c.target.set(target[0], target[1], target[2]);
+    ctl.current = c;
     return () => {
-      cancelAnimationFrame(raf);
       c.dispose();
+      ctl.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera, gl, min, max, pan, maxPolar]);
+  useFrame(() => {
+    ctl.current?.update();
+  });
   return null;
 }

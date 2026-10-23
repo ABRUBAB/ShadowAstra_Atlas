@@ -291,6 +291,8 @@ function geology(world: World, task: TaskId, volc: number, imp: number, bare: nu
       return 0.85 * volc + 0.15 * bare;
     case "impact":
       return 0.85 * imp + 0.15 * bare;
+    case "landing":
+      return 0.5 * imp + 0.2 * volc + 0.3 * bare;
     case "astrobio":
       return 0.5 * dry + 0.3 * bare + 0.2 * hard;
     case "isru":

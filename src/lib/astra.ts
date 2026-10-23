@@ -74,6 +74,7 @@ const TASK_WORDS: Record<TaskId, string[]> = {
   astrobio: ["life", "astrobio", "fossil", "biosignature", "microb"],
   impact: ["impact", "crater geology", "meteor", "breccia"],
   polar: ["polar", "low sun", "shadow", "dark", "cold", "light"],
+  landing: ["landing", "land", "lander", "touchdown", "touch down", "descent"],
 };
 
 function findSite(q: string): EarthSite | undefined {

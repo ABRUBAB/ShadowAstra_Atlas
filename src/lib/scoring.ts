@@ -32,6 +32,7 @@ export const TASK_WEIGHTS: Record<TaskId, Weights> = {
   astrobio: { topography: 0.05, geology: 0.45, temperature: 0.25, lighting: 0.05, regolith: 0.2 },
   impact: { topography: 0.4, geology: 0.45, temperature: 0.05, lighting: 0.05, regolith: 0.05 },
   polar: { topography: 0.2, geology: 0.05, temperature: 0.3, lighting: 0.4, regolith: 0.05 },
+  landing: { topography: 0.5, geology: 0.15, temperature: 0.05, lighting: 0.1, regolith: 0.2 },
 };
 
 const FIT_VALUE: Record<Fit, number | null> = { strong: 0.84, partial: 0.62, weak: 0.36, unknown: null };

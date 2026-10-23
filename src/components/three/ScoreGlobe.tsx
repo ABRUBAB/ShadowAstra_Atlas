@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { latLonToVec3 } from "../../lib/geo";
 import { Starfield } from "./Starfield";
+import { PlanetPlaceholder } from "./Planet";
 import { bestLod, useProgressiveTexture } from "./textures";
 
 export interface GlobePin {
@@ -11,7 +12,7 @@ export interface GlobePin {
   lat: number;
   lon: number;
   color: string;
-  kind: "candidate" | "known" | "pick";
+  kind: "candidate" | "known" | "pick" | "home";
   rank?: number;
 }
 
@@ -26,6 +27,12 @@ interface Props {
   onPick: (lat: number, lon: number) => void;
   onHover?: (p: { lat: number; lon: number } | null) => void;
   onPin?: (id: string) => void;
+  /** 0 → 1: the search sweep that uncovers the score map (1 = fully shown). */
+  reveal?: number;
+  /** The team's home and how far it can travel. */
+  home?: { lat: number; lon: number; rangeKm: number | null } | null;
+  /** A flight path from home to a chosen place. */
+  arc?: { from: { lat: number; lon: number }; to: { lat: number; lon: number }; key: number } | null;
 }
 
 const vertex = /* glsl */ `
@@ -42,6 +49,7 @@ const fragment = /* glsl */ `
   uniform sampler2D day;
   uniform sampler2D heat;
   uniform float heatOn;
+  uniform float reveal;
   varying vec2 vUv;
   varying vec3 vN;
   void main() {
@@ -51,7 +59,12 @@ const fragment = /* glsl */ `
     float facing = max(vN.z, 0.0);
     c *= 0.5 + 0.6 * pow(facing, 0.6);
     vec4 h = texture2D(heat, vUv);
-    c = mix(c, h.rgb, h.a * heatOn);
+    // the search sweep travels from north to south; a thin bright front leads it
+    float front = 1.0 - vUv.y;
+    float shown = smoothstep(reveal - 0.02, reveal, front) < 0.5 ? 1.0 : 0.0;
+    float edge = exp(-pow((front - reveal) * 60.0, 2.0)) * step(0.001, reveal) * step(reveal, 0.999);
+    c = mix(c, h.rgb, h.a * heatOn * shown);
+    c += vec3(0.95, 0.78, 0.47) * edge * 0.55;
     c += vec3(0.55, 0.7, 0.95) * pow(1.0 - facing, 3.0) * 0.28;
     gl_FragColor = vec4(c, 1.0);
     #include <colorspace_fragment>
@@ -66,7 +79,7 @@ function toLatLon(p: THREE.Vector3) {
   return { lat, lon };
 }
 
-function Earth({ heat, heatVersion, heatOn = true, onPick, onHover }: Pick<Props, "heat" | "heatVersion" | "heatOn" | "onPick" | "onHover">) {
+function Earth({ heat, heatVersion, heatOn = true, onPick, onHover, reveal = 1.02 }: Pick<Props, "heat" | "heatVersion" | "heatOn" | "onPick" | "onHover" | "reveal">) {
   const day = useProgressiveTexture("earth", bestLod() === "4k" ? "4k" : "2k");
   const heatTex = useMemo(() => {
     const t = new THREE.CanvasTexture(heat ?? document.createElement("canvas"));
@@ -77,7 +90,7 @@ function Earth({ heat, heatVersion, heatOn = true, onPick, onHover }: Pick<Props
   const mat = useMemo(
     () =>
       new THREE.ShaderMaterial({
-        uniforms: { day: { value: day }, heat: { value: heatTex }, heatOn: { value: 1 } },
+        uniforms: { day: { value: day }, heat: { value: heatTex }, heatOn: { value: 1 }, reveal: { value: 1 } },
         vertexShader: vertex,
         fragmentShader: fragment,
       }),
@@ -92,6 +105,7 @@ function Earth({ heat, heatVersion, heatOn = true, onPick, onHover }: Pick<Props
   useFrame((_, dt) => {
     const u = mat.uniforms.heatOn;
     u.value += ((heatOn ? 1 : 0) - u.value) * Math.min(1, dt * 5);
+    mat.uniforms.reveal.value = reveal;
   });
 
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -185,12 +199,26 @@ function Pin({ pin, active, onPin }: { pin: GlobePin; active: boolean; onPin?: (
       </group>
     );
   }
+  if (pin.kind === "home") {
+    return (
+      <group position={pos} quaternion={quat}>
+        <mesh>
+          <circleGeometry args={[0.011, 24]} />
+          <meshBasicMaterial color="#f2c879" toneMapped={false} />
+        </mesh>
+        <mesh ref={ring}>
+          <ringGeometry args={[0.015, 0.019, 40]} />
+          <meshBasicMaterial color="#f2c879" transparent depthWrite={false} toneMapped={false} />
+        </mesh>
+      </group>
+    );
+  }
   const size = pin.kind === "pick" ? 0.014 : 0.008;
   return (
     <group position={pos} quaternion={quat} onClick={click}>
       <mesh>
         <circleGeometry args={[size, 24]} />
-        <meshBasicMaterial color={pin.kind === "known" ? "#07080a" : color} toneMapped={false} />
+        <meshBasicMaterial color={color} transparent opacity={pin.kind === "known" ? 0.35 : 1} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh ref={ring}>
         <ringGeometry args={[size * (pin.kind === "known" ? 0.8 : 1.4), size * (pin.kind === "known" ? 1.25 : 1.7), 40]} />
@@ -198,6 +226,58 @@ function Pin({ pin, active, onPin }: { pin: GlobePin; active: boolean; onPin?: (
       </mesh>
     </group>
   );
+}
+
+/** Small circle on the sphere: every point `km` away from the centre. */
+function RangeRing({ lat, lon, km }: { lat: number; lon: number; km: number }) {
+  const line = useMemo(() => {
+    const ang = km / 6371;
+    const c = new THREE.Vector3(...latLonToVec3(lat, lon, 1)).normalize();
+    const a = Math.abs(c.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const u = new THREE.Vector3().crossVectors(c, a).normalize();
+    const v = new THREE.Vector3().crossVectors(c, u).normalize();
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 160; i++) {
+      const t = (i / 160) * Math.PI * 2;
+      const p = c.clone().multiplyScalar(Math.cos(ang)).add(u.clone().multiplyScalar(Math.sin(ang) * Math.cos(t))).add(v.clone().multiplyScalar(Math.sin(ang) * Math.sin(t)));
+      pts.push(p.multiplyScalar(1.006));
+    }
+    const g = new THREE.BufferGeometry().setFromPoints(pts);
+    const m = new THREE.LineDashedMaterial({ color: "#f2c879", dashSize: 0.012, gapSize: 0.01, transparent: true, opacity: 0.85 });
+    const l = new THREE.Line(g, m);
+    l.computeLineDistances();
+    return l;
+  }, [lat, lon, km]);
+  return <primitive object={line} />;
+}
+
+/** Great-circle flight path that draws itself from home to the chosen place. */
+function Arc({ from, to, k }: { from: { lat: number; lon: number }; to: { lat: number; lon: number }; k: number }) {
+  const progress = useRef(0);
+  const { line, count } = useMemo(() => {
+    const a = new THREE.Vector3(...latLonToVec3(from.lat, from.lon, 1)).normalize();
+    const b = new THREE.Vector3(...latLonToVec3(to.lat, to.lon, 1)).normalize();
+    const ang = a.angleTo(b);
+    const n = 96;
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const p = ang < 1e-4 ? a.clone() : a.clone().multiplyScalar(Math.sin((1 - t) * ang) / Math.sin(ang)).add(b.clone().multiplyScalar(Math.sin(t * ang) / Math.sin(ang)));
+      pts.push(p.normalize().multiplyScalar(1.004 + Math.sin(Math.PI * t) * Math.min(0.25, ang * 0.18)));
+    }
+    const g = new THREE.BufferGeometry().setFromPoints(pts);
+    g.setDrawRange(0, 0);
+    return { line: new THREE.Line(g, new THREE.LineBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.9 })), count: pts.length };
+  }, [from.lat, from.lon, to.lat, to.lon]);
+  useEffect(() => {
+    progress.current = 0;
+  }, [k]);
+  useFrame((_, dt) => {
+    progress.current = Math.min(1, progress.current + dt / 1.4);
+    const e = 1 - Math.pow(1 - progress.current, 3);
+    line.geometry.setDrawRange(0, Math.max(2, Math.floor(e * count)));
+  });
+  return <primitive object={line} />;
 }
 
 /** Orbit controls with idle auto-spin and a smooth fly-to for a chosen point. */
@@ -258,8 +338,11 @@ export default function ScoreGlobe(p: Props) {
     <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0.9, 2.9], fov: 40 }} aria-label="Earth globe coloured by match score">
       <color attach="background" args={["#07080a"]} />
       <Starfield count={1400} />
-      <Suspense fallback={null}>
-        <Earth heat={p.heat} heatVersion={p.heatVersion} heatOn={p.heatOn} onPick={p.onPick} onHover={p.onHover} />
+      <ambientLight intensity={0.5} />
+      <Suspense fallback={<PlanetPlaceholder body="earth" />}>
+        <Earth heat={p.heat} heatVersion={p.heatVersion} heatOn={p.heatOn} onPick={p.onPick} onHover={p.onHover} reveal={p.reveal} />
+        {p.home && p.home.rangeKm !== null && p.home.rangeKm < 19000 && <RangeRing lat={p.home.lat} lon={p.home.lon} km={p.home.rangeKm} />}
+        {p.arc && <Arc from={p.arc.from} to={p.arc.to} k={p.arc.key} />}
         {p.pins.map((pin) => (
           <Pin key={pin.id} pin={pin} active={pin.id === p.activeId} onPin={p.onPin} />
         ))}
