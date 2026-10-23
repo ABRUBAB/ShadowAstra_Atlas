@@ -200,12 +200,12 @@ export default function Atlas() {
           </AnimatePresence>
           <div className="pointer-events-none absolute inset-0 z-[500] bg-[radial-gradient(120%_80%_at_50%_50%,transparent_55%,rgba(7,8,10,0.55))]" />
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[600] flex items-start justify-center gap-3 p-4 lg:pt-5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[600] flex flex-wrap items-start justify-center gap-2 p-3 sm:gap-3 sm:p-4 lg:pt-5">
             <div className="pointer-events-auto flex gap-1 rounded-full border border-line-2 bg-void/70 p-1 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
               {BODIES.map((b) => (
-                <button key={b.id} onClick={() => setBody(b.id)} aria-pressed={body === b.id} className={clsx("relative flex items-center gap-2 rounded-full py-1.5 pr-4 pl-1.5 text-[13px] transition-colors", body === b.id ? "text-platinum" : "text-dim hover:text-chrome")}>
+                <button key={b.id} onClick={() => setBody(b.id)} aria-pressed={body === b.id} className={clsx("relative flex items-center gap-1.5 rounded-full py-1 pr-2.5 pl-1 text-[12px] transition-colors sm:gap-2 sm:py-1.5 sm:pr-4 sm:pl-1.5 sm:text-[13px]", body === b.id ? "text-platinum" : "text-dim hover:text-chrome")}>
                   {body === b.id && <motion.span layoutId="world-pill" className="absolute inset-0 rounded-full bg-platinum/[0.09] ring-1 ring-platinum/15" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-                  <PlanetThumb body={b.id} on={body === b.id} />
+                  <PlanetThumb body={b.id} on={body === b.id} size={22} />
                   <span className="relative">{b.label}</span>
                 </button>
               ))}

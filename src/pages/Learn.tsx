@@ -64,7 +64,6 @@ const T = {
       "Open shadowastra-atlas.vercel.app, choose “Find new sites”, and find the best new place near Dhaka to practise living at a Moon base. Write its name and score.",
     ],
     cta: "Find a place near you",
-    review: "",
   },
   bn: {
     kicker: "শ্রেণিকক্ষ",
@@ -106,7 +105,6 @@ const T = {
       "shadowastra-atlas.vercel.app খোলো, “Find new sites” বেছে নাও, আর ঢাকার কাছে চাঁদের ঘাঁটিতে থাকার অনুশীলনের জন্য সবচেয়ে ভালো নতুন জায়গাটি খুঁজে বের করো। জায়গার নাম আর স্কোর লেখো।",
     ],
     cta: "তোমার কাছের জায়গা খোঁজো",
-    review: "",
   },
 } as const;
 
@@ -199,7 +197,12 @@ export default function Learn() {
               </div>
             </div>
             <div className="flex justify-center lg:justify-end">
-              <Astronaut size={190} mood="happy" action="wave" say={t.astra} sayAlign="left" />
+              <div className="hidden lg:block">
+                <Astronaut size={190} mood="happy" action="wave" say={t.astra} sayAlign="left" />
+              </div>
+              <div className="lg:hidden">
+                <Astronaut size={140} mood="happy" action="wave" />
+              </div>
             </div>
           </div>
         </section>
