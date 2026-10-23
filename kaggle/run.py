@@ -63,6 +63,23 @@ def kaggle(args: list[str], account: str) -> int:
     return subprocess.call([sys.executable, "-m", "kaggle.cli", *args], env=env_for(account))
 
 
+# The CLI's push ignores machine_shape (e.g. NvidiaTeslaT4 for 2 x T4), so set it on the request.
+PUSH = r"""
+import sys, kaggle
+from kagglesdk.kernels.types import kernels_api_service as K
+folder, shape = sys.argv[1], sys.argv[2]
+orig = K.ApiSaveKernelRequest.__init__
+def init(self, *a, **k):
+    orig(self, *a, **k)
+    self.machine_shape = shape
+K.ApiSaveKernelRequest.__init__ = init
+r = kaggle.api.kernels_push(folder, None)
+if r is None or r.error:
+    sys.exit(f"push failed: {getattr(r, 'error', 'no response')}")
+print("pushed", r.url, "on", shape)
+"""
+
+
 # Lists a kernel's output files and downloads only those matching the patterns
 # (the CLI's `kernels output` always downloads everything, which can be many GB).
 FETCH = r"""
@@ -127,6 +144,9 @@ def main() -> None:
     ref = f"{username(a.account)}/{slug}"
     if a.cmd == "push":
         folder = build(a.name, a.account)
+        shape = json.loads((folder / "kernel-metadata.json").read_text(encoding="utf-8")).get("machine_shape")
+        if shape:
+            sys.exit(subprocess.call([sys.executable, "-c", PUSH, str(folder), shape], env=env_for(a.account)))
         extra = ["--timeout", str(a.timeout)] if a.timeout else []
         sys.exit(kaggle(["kernels", "push", "-p", str(folder), *extra], a.account))
     if a.cmd == "status":

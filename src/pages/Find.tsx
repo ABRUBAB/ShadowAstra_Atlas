@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Copy, FileText, LocateFixed, MapPin, Plane, RotateCcw, Search, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
 import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, climateReaction, reactionFor, type Reaction } from "../components/ui/Astronaut";
-import { Chip, Counter, EASE, GlyphTile, KindBadge, Meter, Ring, Seg, Tip, toast } from "../components/ui/kit";
+import { Chip, ConfidenceChip, Counter, EASE, GlyphTile, KindBadge, Meter, Ring, Seg, Tip, toast } from "../components/ui/kit";
 import { Pick, StepRail, StepTitle, TargetImage, TASK_ICON, TASK_LINE, type StepId } from "../components/find/pieces";
 import type { GlobePin } from "../components/three/ScoreGlobe";
 import type { GlobeMarker } from "../components/three/Planet";
@@ -152,11 +152,13 @@ export default function Find() {
   }, [step, sel]);
 
   /* ---------- the search sweep */
-  const runScan = () => {
+  const runScan = (keepPlace = false) => {
     setScanning(true);
     setScan(0);
-    setSel(null);
-    setFocus({ lat: m.home.lat, lon: m.home.lon, key: Date.now() });
+    if (!keepPlace) {
+      setSel(null);
+      setFocus({ lat: m.home.lat, lon: m.home.lon, key: Date.now() });
+    }
     const c = animate(0, 1, { duration: 2.6, ease: [0.45, 0, 0.2, 1], onUpdate: setScan, onComplete: () => setTimeout(() => setScanning(false), 900) });
     return () => c.stop();
   };
@@ -169,7 +171,7 @@ export default function Find() {
   useEffect(() => {
     if (firstScan.current && grid) {
       firstScan.current = false;
-      runScan();
+      runScan(!!init.at); // a shared link opens its place; the sweep plays behind it
     }
   }, [grid]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -813,6 +815,11 @@ function ResultCard({ grid, c, rank, m, onOpen }: { grid: Grid; c: Candidate; ra
                 </Chip>
               ))}
             {c.known && <Chip tone="moon" className="!px-2 !py-0.5 !text-[10.5px]">Known: {c.known.name.split(",")[0]}</Chip>}
+            {grid.confidence(c.k, t.body).level === "low" && (
+              <Chip tone="weak" className="!px-2 !py-0.5 !text-[10.5px]">
+                Not enough evidence
+              </Chip>
+            )}
           </div>
         </div>
       </button>
@@ -906,6 +913,10 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
   const volc = grid.volcano(k);
   const crater = grid.crater(k);
   const bestMonth = MONTHS[t.light_month?.[grid.row[k]] ?? 0];
+  const rock = grid.rock(k);
+  const rm = grid.rockMatch(k, t);
+  const rockWord = !rock ? "unknown" : rm >= 0.75 ? "close" : rm >= 0.45 ? "partly alike" : "different";
+  const conf = grid.confidence(k, T.body);
   useEffect(() => logBadge("find"), []);
 
   const factor = (dims: readonly string[]) => dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / dims.length;
@@ -927,8 +938,13 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         ["Volcano", volc && volc.km < 300 ? `${volc.name}, ${Math.round(volc.km)} km` : "none near"],
         ["Impact crater", crater && crater.score > 0.2 ? crater.name : "none near"],
         ["Bare ground", v("f_barren") === null ? "n/a" : `${Math.round(v("f_barren")! * 100)}%`],
+        ["Main rock", rock?.label ?? "unknown"],
       ],
-      target: [["Type", T.kind]],
+      target: [
+        ["Type", T.kind],
+        ["Main rocks", t.rock?.label ?? "n/a"],
+        ["Rock match", rockWord],
+      ],
     },
     {
       f: FACTORS[2],
@@ -964,6 +980,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         <div className="absolute inset-x-0 bottom-0 p-4">
           <div className="flex flex-wrap gap-1.5">
             {knownKm(grid)[k] >= 150 ? <Chip tone="flare">New candidate</Chip> : <Chip tone="moon">Known site nearby</Chip>}
+            <ConfidenceChip {...conf} />
             {lat < -60 && <Chip>Antarctic Treaty area</Chip>}
           </div>
           <h2 className="mt-2 text-[26px] leading-tight font-medium tracking-[-0.02em] text-white">{nm.title}</h2>

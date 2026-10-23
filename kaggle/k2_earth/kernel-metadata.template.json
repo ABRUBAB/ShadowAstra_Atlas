@@ -1,0 +1,14 @@
+{
+  "slug": "shadowastra-k2-earth",
+  "title": "ShadowAstra K2 Earth",
+  "code_file": "k2_earth.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": []
+}

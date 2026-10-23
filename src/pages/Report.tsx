@@ -42,6 +42,7 @@ export default function Report() {
   const fmt = (x: number | null, u: string, d = 0) => (x === null ? "n/a" : `${x.toFixed(d)}${u}`);
   const volc = grid.volcano(k);
   const crater = grid.crater(k);
+  const conf = grid.confidence(k, T.body);
   const today = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 
   return (
@@ -84,6 +85,9 @@ export default function Report() {
             <div className="mt-4 text-[12px] text-[#888275]">Match score</div>
             <div className="font-mono text-[44px] leading-none font-light">{cs.total.toFixed(2)}</div>
             <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with 60% from a model trained on 38 known test sites.</div>
+            <div className="mt-2 text-[12px] text-[#55514a]">
+              Confidence: <b>{conf.level === "high" ? "high" : conf.level === "medium" ? "medium" : "not enough evidence"}</b> ({Math.round(conf.cover * 100)}% of measurements real, model runs agree within {Math.round(conf.spread * 100)} points)
+            </div>
             <table className="mt-4 w-full text-[12.5px]">
               <tbody>
                 {FACTORS.map((x) => (
@@ -124,9 +128,12 @@ export default function Report() {
               <tr className="border-t border-[#eee8dc]">
                 <td className="py-2">Rocks & craters</td>
                 <td className="py-2">
-                  {volc && volc.km < 300 ? `volcano ${volc.name} ${Math.round(volc.km)} km` : "no volcano near"}; {crater && crater.score > 0.2 ? `crater ${crater.name}` : "no crater near"}; bare ground {fmt(v("f_barren") === null ? null : v("f_barren")! * 100, "%")}
+                  {volc && volc.km < 300 ? `volcano ${volc.name} ${Math.round(volc.km)} km` : "no volcano near"}; {crater && crater.score > 0.2 ? `crater ${crater.name}` : "no crater near"}; bare ground {fmt(v("f_barren") === null ? null : v("f_barren")! * 100, "%")}; main rock {grid.rock(k)?.label.toLowerCase() ?? "unknown"} (GLiM)
                 </td>
-                <td className="py-2">{T.kind}</td>
+                <td className="py-2">
+                  {T.kind}
+                  {t.rock ? `; main rocks: ${t.rock.label.toLowerCase()}` : ""}
+                </td>
               </tr>
               <tr className="border-t border-[#eee8dc]">
                 <td className="py-2">Cold & light</td>

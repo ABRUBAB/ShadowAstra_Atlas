@@ -1,0 +1,15 @@
+{
+  "slug": "shadowastra-k3-ssl",
+  "title": "ShadowAstra K3 SSL",
+  "code_file": "k3_ssl.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "kernel_sources": ["{user}/shadowastra-k1-worlds", "{user}/shadowastra-k2-earth"],
+  "competition_sources": []
+}

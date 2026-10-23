@@ -173,6 +173,8 @@ const CHIP = {
   moon: "border-moon/35 bg-moon/10 text-moon",
   mars: "border-mars/35 bg-mars/10 text-mars",
   earth: "border-earth/35 bg-earth/10 text-earth",
+  partial: "border-partial/35 bg-partial/10 text-partial",
+  weak: "border-weak/35 bg-weak/10 text-weak",
 };
 
 export function Chip({ children, tone = "default", className }: { children: ReactNode; tone?: keyof typeof CHIP; className?: string }) {
@@ -417,6 +419,21 @@ export function GlyphTile({ children, tone = "var(--color-flare)", className }: 
         <circle cx="24" cy="7" r="1.6" style={{ fill: tone }} />
       </svg>
       <span className="relative">{children}</span>
+    </span>
+  );
+}
+
+/** How sure we are about one place: real (not gap-filled) measurements and model agreement. */
+export function ConfidenceChip({ level, cover, spread, className }: { level: "high" | "medium" | "low"; cover: number; spread: number; className?: string }) {
+  const text = level === "high" ? "High confidence" : level === "medium" ? "Medium confidence" : "Not enough evidence";
+  const tone = level === "high" ? "strong" : level === "medium" ? "partial" : "weak";
+  const why = `${Math.round(cover * 100)}% of the measurements here are real, not filled in. The learned model's 8 runs agree to within ${Math.round(spread * 100)} points.`;
+  return (
+    <span title={why} className={className}>
+      <Chip tone={tone}>
+        <span className={clsx("size-1.5 rounded-full", level === "high" ? "bg-strong" : level === "medium" ? "bg-partial" : "bg-weak")} />
+        {text}
+      </Chip>
     </span>
   );
 }
