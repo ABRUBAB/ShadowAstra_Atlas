@@ -485,3 +485,8 @@ input[type="range"].range:active::-webkit-slider-thumb {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Bangla text (Learn page): a Bengali face with the site's fallbacks */
+.font-bn {
+  font-family: "Noto Sans Bengali", var(--font-sans);
+}

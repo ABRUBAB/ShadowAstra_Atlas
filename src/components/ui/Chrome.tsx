@@ -96,6 +96,7 @@ export const LINKS = [
   { to: "/lab", label: "Compare" },
   { to: "/atlas", label: "Maps" },
   { to: "/methods", label: "How it works" },
+  { to: "/learn", label: "Learn" },
   { to: "/about", label: "Team" },
 ];
 

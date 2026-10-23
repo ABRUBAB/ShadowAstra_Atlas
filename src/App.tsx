@@ -14,6 +14,7 @@ const Find = lazy(() => import("./pages/Find"));
 const Report = lazy(() => import("./pages/Report"));
 const Methods = lazy(() => import("./pages/Methods"));
 const About = lazy(() => import("./pages/About"));
+const Learn = lazy(() => import("./pages/Learn"));
 
 // Warm the likely next routes while the visitor reads the landing page.
 const prefetch = () => {
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="/compare" element={<CompareRedirect />} />
             <Route path="/methods" element={<Methods />} />
             <Route path="/about" element={<About />} />
+            <Route path="/learn" element={<Learn />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </PageFade>
