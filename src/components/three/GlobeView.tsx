@@ -14,10 +14,12 @@ interface Props {
   lod?: "1k" | "2k" | "4k";
   stars?: boolean;
   onPick?: (lat: number, lon: number) => void;
+  /** Mouse wheel: "ctrl" inside scrolling pages, "zoom" for full-screen maps. */
+  wheel?: "ctrl" | "zoom";
 }
 
 /** Interactive single-body globe used in the Atlas and the Analog Lab. */
-export default function GlobeView({ body, markers, activeId, onSelect, focus, lod, stars = true, onPick }: Props) {
+export default function GlobeView({ body, markers, activeId, onSelect, focus, lod, stars = true, onPick, wheel = "ctrl" }: Props) {
   return (
     <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0, 3.4], fov: 40 }} aria-label={`${body} globe`}>
       <color attach="background" args={["#07080a"]} />
@@ -27,7 +29,7 @@ export default function GlobeView({ body, markers, activeId, onSelect, focus, lo
       <Suspense fallback={<PlanetPlaceholder body={body} />}>
         <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus} spin={0.035} lod={lod} onPick={onPick} />
       </Suspense>
-      <Orbit />
+      <Orbit wheel={wheel} />
     </Canvas>
   );
 }

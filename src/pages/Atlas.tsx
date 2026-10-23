@@ -168,6 +168,7 @@ export default function Atlas() {
               {view === "3d" ? (
                 <Suspense fallback={<StageLoading />}>
                   <GlobeView
+                    wheel="zoom"
                     body={body}
                     markers={markers}
                     activeId={spot ? "spot" : earthFocus && body === "earth" && !sel ? "twin" : (sel?.id ?? null)}
@@ -186,6 +187,7 @@ export default function Atlas() {
                 </Suspense>
               ) : (
                 <BodyMap
+                  wheelZoom="always"
                   ref={mapRef}
                   body={body}
                   layerId={layerId}

@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { latLonToVec3 } from "../../lib/geo";
+import { ctrlWheelZoom } from "../../lib/wheel";
 import { Starfield } from "./Starfield";
 import { PlanetPlaceholder } from "./Planet";
 import { bestLod, useProgressiveTexture } from "./textures";
@@ -296,10 +297,12 @@ function Rig({ focus }: { focus: Props["focus"] }) {
     c.maxDistance = 5;
     c.autoRotate = true;
     c.autoRotateSpeed = 0.35;
+    const offWheel = ctrlWheelZoom(gl.domElement, (on) => (c.enableZoom = on));
     const stop = () => (c.autoRotate = false);
     c.addEventListener("start", stop);
     ctl.current = c;
     return () => {
+      offWheel();
       c.removeEventListener("start", stop);
       c.dispose();
     };

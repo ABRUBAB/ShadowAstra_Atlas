@@ -18,10 +18,10 @@ import { useSmoothScroll } from "../lib/useSmoothScroll";
  * scored live from the real data, what Earth can't copy, and a printable worksheet.
  */
 
-type Lang = "en" | "bn";
+type Lang = "en" | "bn" | "es";
 
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
-const num = (s: string, lang: Lang) => (lang === "bn" ? s.replace(/\d/g, (d) => BN_DIGITS[+d]) : s);
+const num = (s: string, lang: Lang) => (lang === "bn" ? s.replace(/\d/g, (d) => BN_DIGITS[+d]) : lang === "es" ? s.replace(".", ",") : s);
 
 const T = {
   en: {
@@ -106,29 +106,74 @@ const T = {
     ],
     cta: "তোমার কাছের জায়গা খোঁজো",
   },
+  es: {
+    kicker: "Aula",
+    h1a: "Practicar en la Tierra.",
+    h1b: "Y después, ir.",
+    intro: "Antes de que las personas vivan en la Luna o en Marte, practican aquí, en lugares de la Tierra que se les parecen mucho. Estos lugares se llaman análogos. Veamos cómo los elegimos.",
+    astra: "¡Hola! Soy Astra. Primero pruebo mi equipo en la Tierra.",
+    l1t: "¿Qué es un análogo?",
+    l1d: "Un análogo es un lugar de la Tierra que se parece en algunas cosas a un lugar de la Luna o de Marte: el terreno, las rocas, el frío o la luz. Los equipos prueban allí primero los róvers, los trajes espaciales y las herramientas.",
+    l2t: "Cuatro preguntas para cada lugar",
+    l2: ["Forma del terreno: ¿qué tan empinado y qué tan irregular?", "Rocas y cráteres: ¿roca volcánica, cráteres, piedra desnuda?", "Frío y luz: ¿cuánto frío hace y qué tan alto sube el Sol?", "Hielo y suelo suelto: lluvia, plantas, nieve y lo que se podría excavar"],
+    l3t: "Tu turno: ¿qué lugar se parece más?",
+    l3d: "Toca el lugar que creas que se parece más al objetivo. Los datos reales de la NASA dan la respuesta.",
+    round: "Ronda",
+    target: "Objetivo",
+    job: "Tarea",
+    which: "¿Qué lugar se parece más?",
+    right: "¡Correcto!",
+    wrong: "Esta vez no.",
+    next: "Siguiente ronda",
+    finish: "Ver mi puntuación",
+    got: "Acertaste",
+    of: "de",
+    again: "Jugar otra vez",
+    best: "lo mejor",
+    loading: "Cargando datos de la NASA…",
+    l4t: "Lo que la Tierra no puede copiar",
+    l4d: "Algunas cosas son iguales en toda la Tierra. Aquí la gravedad es 6 veces más fuerte que en la Luna y 2,6 veces más fuerte que en Marte. Tenemos aire para respirar y un campo magnético que bloquea la radiación del espacio. Los análogos no pueden cambiar eso.",
+    gaps: ["Gravedad", "Aire", "Radiación espacial"],
+    print: "Imprimir una ficha",
+    wsTitle: "Ficha: análogos terrestres de la Luna y de Marte",
+    wsName: "Nombre",
+    wsClass: "Curso",
+    ws: [
+      "Con tus propias palabras, ¿qué es un sitio análogo?",
+      "Escribe dos lugares de la Tierra que se parezcan a Marte. ¿En qué se parece cada uno?",
+      "Estás manejando un róver. ¿Cuál de las cuatro preguntas importa más? ¿Por qué?",
+      "Nombra tres cosas que la Tierra no puede copiar.",
+      "Abre shadowastra-atlas.vercel.app, elige “Find new sites” y busca el mejor lugar nuevo cerca de tu ciudad para practicar la vida en una base lunar. Escribe su nombre y su puntuación.",
+    ],
+    cta: "Busca un lugar cerca de ti",
+  },
 } as const;
 
-const FACTOR_BN: Record<string, string> = { ground: "মাটির গঠন", rocks: "পাথর ও গর্ত", climate: "ঠান্ডা ও আলো", resources: "বরফ ও আলগা মাটি" };
-const JOB: Record<string, { en: string; bn: string }> = {
-  astrobio: { en: "Look for signs of life", bn: "জীবনের চিহ্ন খোঁজা" },
-  base: { en: "Live and work at a base", bn: "ঘাঁটিতে থাকা ও কাজ করা" },
-  caves: { en: "Explore lava tubes", bn: "লাভা সুড়ঙ্গ অনুসন্ধান" },
-  traverse: { en: "Drive a rover", bn: "রোভার চালানো" },
-  ice: { en: "Find and drill ice", bn: "বরফ খুঁজে খোঁড়া" },
+const FACTOR_NAME: Record<"bn" | "es", Record<string, string>> = {
+  bn: { ground: "মাটির গঠন", rocks: "পাথর ও গর্ত", climate: "ঠান্ডা ও আলো", resources: "বরফ ও আলগা মাটি" },
+  es: { ground: "forma del terreno", rocks: "rocas y cráteres", climate: "frío y luz", resources: "hielo y suelo suelto" },
+};
+const JOB: Record<string, Record<Lang, string>> = {
+  astrobio: { en: "Look for signs of life", bn: "জীবনের চিহ্ন খোঁজা", es: "Buscar señales de vida" },
+  base: { en: "Live and work at a base", bn: "ঘাঁটিতে থাকা ও কাজ করা", es: "Vivir y trabajar en una base" },
+  caves: { en: "Explore lava tubes", bn: "লাভা সুড়ঙ্গ অনুসন্ধান", es: "Explorar tubos de lava" },
+  traverse: { en: "Drive a rover", bn: "রোভার চালানো", es: "Manejar un róver" },
+  ice: { en: "Find and drill ice", bn: "বরফ খুঁজে খোঁড়া", es: "Encontrar y perforar hielo" },
 };
 
 interface Place {
   en: string;
   bn: string;
+  es: string;
   lat: number;
   lon: number;
 }
-const ROUNDS: { target: string; task: TaskId; tbn: string; a: Place; b: Place }[] = [
-  { target: "jezero", task: "astrobio", tbn: "জেজেরো খাদ, মঙ্গল", a: { en: "Atacama Desert, Chile", bn: "আতাকামা মরুভূমি, চিলি", lat: -24.08, lon: -70.0 }, b: { en: "Sundarbans, Bangladesh", bn: "সুন্দরবন, বাংলাদেশ", lat: 21.95, lon: 89.18 } },
-  { target: "shackleton", task: "base", tbn: "শ্যাকলটন খাদের কিনারা, চাঁদ", a: { en: "Dhaka, Bangladesh", bn: "ঢাকা, বাংলাদেশ", lat: 23.81, lon: 90.41 }, b: { en: "Dry Valleys, Antarctica", bn: "ড্রাই ভ্যালিস, অ্যান্টার্কটিকা", lat: -77.5, lon: 161.8 } },
-  { target: "marius-pit", task: "caves", tbn: "মারিয়াস পাহাড়ের গর্ত, চাঁদ", a: { en: "Lanzarote, Spain", bn: "লানজারোটে, স্পেন", lat: 29.16, lon: -13.43 }, b: { en: "Bandarban hills, Bangladesh", bn: "বান্দরবানের পাহাড়, বাংলাদেশ", lat: 22.0, lon: 92.3 } },
-  { target: "gale", task: "traverse", tbn: "গেল খাদ, মঙ্গল", a: { en: "Amazon rainforest, Brazil", bn: "আমাজন বন, ব্রাজিল", lat: -3.4, lon: -62.2 }, b: { en: "Death Valley, USA", bn: "ডেথ ভ্যালি, যুক্তরাষ্ট্র", lat: 36.25, lon: -116.83 } },
-  { target: "arcadia", task: "ice", tbn: "আর্কেডিয়া সমভূমি, মঙ্গল", a: { en: "Svalbard, Norway", bn: "স্ভালবার্ড, নরওয়ে", lat: 79.4, lon: 13.3 }, b: { en: "Cox's Bazar, Bangladesh", bn: "কক্সবাজার, বাংলাদেশ", lat: 21.43, lon: 92.0 } },
+const ROUNDS: { target: string; task: TaskId; tbn: string; tes: string; a: Place; b: Place }[] = [
+  { target: "jezero", task: "astrobio", tbn: "জেজেরো খাদ, মঙ্গল", tes: "Cráter Jezero, Marte", a: { en: "Atacama Desert, Chile", bn: "আতাকামা মরুভূমি, চিলি", es: "Desierto de Atacama, Chile", lat: -24.08, lon: -70.0 }, b: { en: "Sundarbans, Bangladesh", bn: "সুন্দরবন, বাংলাদেশ", es: "Sundarbans, Bangladés", lat: 21.95, lon: 89.18 } },
+  { target: "shackleton", task: "base", tbn: "শ্যাকলটন খাদের কিনারা, চাঁদ", tes: "Borde del cráter Shackleton, Luna", a: { en: "Dhaka, Bangladesh", bn: "ঢাকা, বাংলাদেশ", es: "Daca, Bangladés", lat: 23.81, lon: 90.41 }, b: { en: "Dry Valleys, Antarctica", bn: "ড্রাই ভ্যালিস, অ্যান্টার্কটিকা", es: "Valles Secos, Antártida", lat: -77.5, lon: 161.8 } },
+  { target: "marius-pit", task: "caves", tbn: "মারিয়াস পাহাড়ের গর্ত, চাঁদ", tes: "Fosa de las colinas Marius, Luna", a: { en: "Lanzarote, Spain", bn: "লানজারোটে, স্পেন", es: "Lanzarote, España", lat: 29.16, lon: -13.43 }, b: { en: "Bandarban hills, Bangladesh", bn: "বান্দরবানের পাহাড়, বাংলাদেশ", es: "Colinas de Bandarban, Bangladés", lat: 22.0, lon: 92.3 } },
+  { target: "gale", task: "traverse", tbn: "গেল খাদ, মঙ্গল", tes: "Cráter Gale, Marte", a: { en: "Amazon rainforest, Brazil", bn: "আমাজন বন, ব্রাজিল", es: "Selva amazónica, Brasil", lat: -3.4, lon: -62.2 }, b: { en: "Death Valley, USA", bn: "ডেথ ভ্যালি, যুক্তরাষ্ট্র", es: "Valle de la Muerte, EE. UU.", lat: 36.25, lon: -116.83 } },
+  { target: "arcadia", task: "ice", tbn: "আর্কেডিয়া সমভূমি, মঙ্গল", tes: "Arcadia Planitia, Marte", a: { en: "Svalbard, Norway", bn: "স্ভালবার্ড, নরওয়ে", es: "Svalbard, Noruega", lat: 79.4, lon: 13.3 }, b: { en: "Cox's Bazar, Bangladesh", bn: "কক্সবাজার, বাংলাদেশ", es: "Cox's Bazar, Bangladés", lat: 21.43, lon: 92.0 } },
 ];
 
 function score(grid: Grid, p: Place, target: string, task: TaskId) {
@@ -144,9 +189,11 @@ export default function Learn() {
   useSmoothScroll();
   const [params, setParams] = useSearchParams();
   const [lang, setLang] = useState<Lang>(() => {
-    if (params.get("lang") === "bn" || params.get("lang") === "en") return params.get("lang") as Lang;
+    const q = params.get("lang");
+    if (q === "bn" || q === "en" || q === "es") return q;
     try {
-      return localStorage.getItem("sa-lang") === "bn" ? "bn" : "en";
+      const saved = localStorage.getItem("sa-lang");
+      return saved === "bn" || saved === "es" ? saved : "en";
     } catch {
       return "en";
     }
@@ -157,13 +204,13 @@ export default function Learn() {
     } catch {
       /* private mode */
     }
-    setParams(lang === "bn" ? { lang: "bn" } : {}, { replace: true, preventScrollReset: true });
-    document.title = lang === "bn" ? "শিখি · ShadowAstra Atlas" : "Learn · ShadowAstra Atlas";
+    setParams(lang !== "en" ? { lang } : {}, { replace: true, preventScrollReset: true });
+    document.title = lang === "bn" ? "শিখি · ShadowAstra Atlas" : lang === "es" ? "Aprender · ShadowAstra Atlas" : "Learn · ShadowAstra Atlas";
   }, [lang, setParams]);
   const t = T[lang];
   const bn = lang === "bn";
   return (
-    <div className={clsx("bg-void", bn && "font-bn")} lang={bn ? "bn" : "en"}>
+    <div className={clsx("bg-void", bn && "font-bn")} lang={lang}>
       <style>{`@media print { .no-print { display: none !important } .print-only { display: block !important } body::before { display: none } } .print-only { display: none }`}</style>
       <div className="no-print">
         <Nav />
@@ -276,10 +323,10 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
   return (
     <div className="flex items-center gap-1 rounded-full border border-line-2 bg-void/60 p-1 backdrop-blur" role="group" aria-label="Language">
       <Languages size={14} className="mx-1.5 text-dim" />
-      {(["en", "bn"] as const).map((l) => (
+      {(["en", "es", "bn"] as const).map((l) => (
         <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={clsx("relative rounded-full px-3 py-1 text-[12.5px] transition-colors", lang === l ? "text-void" : "text-chrome hover:text-platinum")}>
           {lang === l && <motion.span layoutId="lang-pill" className="absolute inset-0 rounded-full bg-platinum" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-          <span className={clsx("relative", l === "bn" && "font-bn")}>{l === "en" ? "English" : "বাংলা"}</span>
+          <span className={clsx("relative", l === "bn" && "font-bn")}>{l === "en" ? "English" : l === "es" ? "Español" : "বাংলা"}</span>
         </button>
       ))}
     </div>
@@ -363,7 +410,7 @@ function Quiz({ lang }: { lang: Lang }) {
                   <TargetImage t={target} className="h-48 w-full" span={18} />
                   <div className="p-5">
                     <div className="text-[11px] tracking-[0.2em] text-dim uppercase">{t.target}</div>
-                    <div className="mt-1 text-[22px] font-medium">{bn ? R.tbn : `${target.name}, ${target.body === "moon" ? "Moon" : "Mars"}`}</div>
+                    <div className="mt-1 text-[22px] font-medium">{bn ? R.tbn : lang === "es" ? R.tes : `${target.name}, ${target.body === "moon" ? "Moon" : "Mars"}`}</div>
                     <div className="mt-3 text-[11px] tracking-[0.2em] text-dim uppercase">{t.job}</div>
                     <div className="mt-1 text-[15px] text-chrome">{JOB[R.task][lang]}</div>
                   </div>
@@ -433,7 +480,7 @@ function Choice({ place, lang, onPick, state, result }: { place: Place; lang: La
           {result && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-1 flex items-center justify-between gap-2 text-[13px] text-white/80">
               <span>
-                {t.best}: {lang === "bn" ? FACTOR_BN[result.best.id] : result.best.label.toLowerCase()}
+                {t.best}: {lang === "en" ? result.best.label.toLowerCase() : FACTOR_NAME[lang][result.best.id]}
               </span>
               <span className="font-mono text-[18px] text-white">{num(result.total.toFixed(2), lang)}</span>
             </motion.div>

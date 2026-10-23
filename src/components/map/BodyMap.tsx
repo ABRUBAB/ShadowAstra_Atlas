@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import L from "leaflet";
+import { zoomHint, zoomKey } from "../../lib/wheel";
 import type { Body } from "../../data/sites";
 import { LAYERS, type MapLayer } from "../../data/layers";
 import {
@@ -46,6 +47,8 @@ interface Props {
   onViewChange?: (v: MapView) => void;
   initial?: { lat: number; lon: number; zoom: number };
   className?: string;
+  /** "ctrl" (default): the wheel scrolls the page and Ctrl or ⌘ + wheel zooms. "always": a full-screen map. */
+  wheelZoom?: "ctrl" | "always";
 }
 
 const LAYER_BY_ID = Object.fromEntries(LAYERS.map((l) => [l.id, l])) as Record<string, MapLayer>;
@@ -77,7 +80,7 @@ function pinIcon(m: MapMarker, active: boolean) {
 }
 
 export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
-  { body, layerId, overlayIds = [], markers, activeId, onSelect, onViewChange, initial, className },
+  { body, layerId, overlayIds = [], markers, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl" },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -105,6 +108,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
       zoomSnap: 0,
       zoomDelta: 0.5,
       wheelPxPerZoomLevel: 90,
+      scrollWheelZoom: wheelZoom === "always",
       minZoom: projection === "polar-south" ? -1.5 : projection === "mercator" ? 1.5 : 0.5,
       maxZoom: projection === "polar-south" ? 3 : 12,
       maxBounds:
@@ -146,11 +150,22 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
     });
     const ro = new ResizeObserver(() => alive && map.invalidateSize());
     ro.observe(host.current);
+    // inside a scrolling page: plain wheel scrolls, Ctrl or ⌘ + wheel (or a trackpad pinch) zooms
+    const el = host.current;
+    const onWheel = (e: WheelEvent) => {
+      if (wheelZoom === "always") return;
+      if (!zoomKey(e)) return zoomHint();
+      e.preventDefault();
+      const z = Math.min(map.getMaxZoom(), Math.max(map.getMinZoom(), map.getZoom() - e.deltaY / 180));
+      map.setZoomAround(map.mouseEventToContainerPoint(e as unknown as MouseEvent), z, { animate: false });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      el.removeEventListener("wheel", onWheel);
       map.off();
       map.remove();
       mapRef.current = null;

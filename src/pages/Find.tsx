@@ -237,7 +237,13 @@ export default function Find() {
       <Nav />
       <section className="relative xl:h-[calc(100dvh-64px)] xl:min-h-[700px]">
         {/* stage: a window into space */}
-        <div data-theme="dark" className="relative h-[48vh] min-h-[360px] overflow-hidden bg-void xl:absolute xl:inset-0 xl:h-auto">
+        <div
+          data-theme="dark"
+          className={clsx(
+            "relative h-[48vh] min-h-[360px] overflow-hidden bg-void transition-[left] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:absolute xl:inset-y-0 xl:right-0 xl:h-auto",
+            sel !== null && step === "results" ? "xl:left-[612px]" : "xl:left-[472px]",
+          )}
+        >
           <Suspense fallback={<StageLoading label="Starting the globe" progress={1} />}>
             {earthStage ? (
               grid && heat ? (
