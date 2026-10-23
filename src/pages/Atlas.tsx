@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
-import { ArrowRight, Box, ChevronRight, CircleDashed, ExternalLink, Layers, Map as MapIcon, Radar, X } from "lucide-react";
+import { ArrowRight, Box, ChevronLeft, ChevronRight, ExternalLink, Map as MapIcon, Radar, X } from "lucide-react";
 import { Nav, FitBadge, WorldDot, WORLD_COLOR } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
 import { BodyMap, type BodyMapHandle, type MapMarker } from "../components/map/BodyMap";
@@ -23,7 +23,7 @@ import {
 import { DEFAULT_LAYER, LAYERS, LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord } from "../lib/geo";
 import { useGrid } from "../lib/grid";
-import { Meter } from "../components/ui/kit";
+import { EASE, Meter } from "../components/ui/kit";
 
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
 
@@ -135,26 +135,97 @@ export default function Atlas() {
   const layerId = layerByBody[body];
   const visibleCount = markers.filter((m) => !m.dim && !m.dashed).length;
 
+  const [panels, setPanels] = useState({ left: true, right: true });
+  const layer = LAYERS.find((l) => l.id === layerId);
+
   return (
-    <div className="flex min-h-dvh flex-col bg-void lg:h-dvh">
+    <div className="bg-void">
       <Nav />
-      <div className="grid flex-1 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_380px]">
-        {/* ------------------------------------------------ left rail */}
-        <aside className="scrollbar-thin order-2 border-line lg:order-1 lg:overflow-y-auto lg:border-r">
+      <div className="relative lg:h-[calc(100dvh-64px)] lg:min-h-[680px]">
+        {/* ------------------------------------------------ stage */}
+        <main data-theme="dark" className="relative h-[62vh] min-h-[420px] overflow-hidden border-b border-line bg-void lg:absolute lg:inset-0 lg:h-auto lg:border-b-0">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={`${body}-${view}`}
+              className="absolute inset-0"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.06 }}
+              transition={{ duration: 0.8, ease: EASE }}
+            >
+              {view === "3d" ? (
+                <Suspense fallback={<StageLoading />}>
+                  <GlobeView body={body} markers={markers} activeId={sel?.id ?? null} onSelect={onSelect} focus={focus} />
+                </Suspense>
+              ) : (
+                <BodyMap
+                  ref={mapRef}
+                  body={body}
+                  layerId={layerId}
+                  overlayIds={body === "earth" && lst ? ["earth-lst"] : []}
+                  markers={markers}
+                  activeId={sel ? (sel.kind === "screen" ? `screen:${sel.id}` : sel.id) : null}
+                  onSelect={onSelect}
+                  initial={focus ? { ...focus, lat: focus.lat, lon: focus.lon, zoom: body === "earth" ? 5 : 4 } : undefined}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+          <div className="pointer-events-none absolute inset-0 z-[500] bg-[radial-gradient(120%_80%_at_50%_50%,transparent_55%,rgba(7,8,10,0.55))]" />
+
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[600] flex items-start justify-center gap-3 p-4 lg:pt-5">
+            <div className="pointer-events-auto flex gap-1 rounded-full border border-line-2 bg-void/70 p-1 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+              {BODIES.map((b) => (
+                <button key={b.id} onClick={() => setBody(b.id)} aria-pressed={body === b.id} className={clsx("relative flex items-center gap-2 rounded-full py-1.5 pr-4 pl-1.5 text-[13px] transition-colors", body === b.id ? "text-platinum" : "text-dim hover:text-chrome")}>
+                  {body === b.id && <motion.span layoutId="world-pill" className="absolute inset-0 rounded-full bg-platinum/[0.09] ring-1 ring-platinum/15" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                  <PlanetThumb body={b.id} on={body === b.id} />
+                  <span className="relative">{b.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="pointer-events-auto flex gap-1 rounded-full border border-line-2 bg-void/70 p-1 backdrop-blur-xl lg:absolute lg:top-5 lg:right-[412px]">
+              <ViewBtn on={view === "3d"} onClick={() => setView("3d")} icon={<Box size={14} />} label="3D" />
+              <ViewBtn on={view === "2d"} onClick={() => setView("2d")} icon={<MapIcon size={14} />} label="2D" />
+            </div>
+          </div>
+
+          <WorldTitle body={body} shown={visibleCount} layer={view === "2d" ? (layer?.name ?? null) : null} left={panels.left} />
+
+          <div className={clsx("pointer-events-none absolute bottom-16 z-[600] hidden md:block", panels.left ? "left-4 lg:left-[336px]" : "left-4")}>
+            <Astronaut
+              size={76}
+              mood={sel ? "happy" : task ? "focused" : "thinking"}
+              action={sel ? "sample" : task ? "scan" : "idle"}
+              say={sel ? null : task ? "Dim pins don't fit this task." : "Pick a pin, or choose a mission task."}
+            />
+          </div>
+          <div className="pointer-events-none absolute bottom-4 left-1/2 z-[600] hidden -translate-x-1/2 items-center gap-4 rounded-full border border-line bg-void/75 px-4 py-2 text-[11px] whitespace-nowrap text-chrome backdrop-blur-xl md:flex">
+            {body === "earth" ? (
+              <>
+                <Key color={WORLD_COLOR.moon} label="Moon analog" />
+                <Key color={WORLD_COLOR.mars} label="Mars analog" />
+                <Key color={WORLD_COLOR.earth} label="Both" />
+                {showScreening && <Key color="#a197cf" label="Regions we checked" dashed />}
+              </>
+            ) : (
+              <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
+            )}
+            <span className="font-mono text-dim">{visibleCount} shown</span>
+          </div>
+        </main>
+
+        {/* ------------------------------------------------ left panel */}
+        <Panel side="left" open={panels.left} onToggle={() => setPanels((p) => ({ ...p, left: !p.left }))} label="Filters and layers">
           <div className="space-y-8 p-5">
             <Section title="Practising for">
-              <div className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-ink p-1">
+              <div className="relative grid grid-cols-3 gap-1 rounded-xl border border-line bg-ink p-1">
                 {(["moon", "both", "mars"] as WorldFilter[]).map((w) => (
-                  <button
-                    key={w}
-                    onClick={() => setWorld(w)}
-                    className={clsx(
-                      "flex items-center justify-center gap-2 rounded-lg py-2 text-[13px] capitalize transition-colors duration-150",
-                      world === w ? "bg-platinum/[0.08] text-platinum" : "text-dim hover:text-chrome",
-                    )}
-                  >
-                    {w !== "both" && <WorldDot world={w} />}
-                    {w}
+                  <button key={w} onClick={() => setWorld(w)} aria-pressed={world === w} className={clsx("relative flex items-center justify-center gap-2 rounded-lg py-2 text-[13px] capitalize transition-colors duration-150", world === w ? "text-platinum" : "text-dim hover:text-chrome")}>
+                    {world === w && <motion.span layoutId="practise-pill" className="absolute inset-0 rounded-lg bg-platinum/[0.08]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                    <span className="relative flex items-center gap-2">
+                      {w !== "both" && <WorldDot world={w} />}
+                      {w}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -163,35 +234,27 @@ export default function Atlas() {
             <Section title="Mission task" hint={task ? "clear" : undefined} onHint={() => setTask(null)}>
               <div className="flex flex-wrap gap-1.5">
                 {TASKS.map((t) => (
-                  <button
+                  <motion.button
                     key={t.id}
+                    whileTap={{ scale: 0.96 }}
                     onClick={() => setTask((cur) => (cur === t.id ? null : t.id))}
                     title={t.question}
-                    className={clsx(
-                      "rounded-full border px-3 py-1.5 text-[12px] transition-colors duration-150",
-                      task === t.id ? "border-earth bg-earth/15 text-platinum" : "border-line-2 text-chrome hover:border-chrome",
-                    )}
+                    aria-pressed={task === t.id}
+                    className={clsx("rounded-full border px-3 py-1.5 text-[12px] transition-colors duration-150", task === t.id ? "border-flare/60 bg-flare/10 text-platinum" : "border-line-2 text-chrome hover:border-chrome")}
                   >
                     {t.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
               <AnimatePresence mode="wait">
                 {task && (
-                  <motion.div
-                    key={task}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-3 rounded-xl border border-line bg-ink p-3"
-                  >
+                  <motion.div key={task} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="mt-3 rounded-xl border border-line bg-ink p-3">
                     <p className="text-[13px] leading-relaxed text-platinum">{TASKS.find((t) => t.id === task)!.question}</p>
                     <div className="mt-3 font-mono text-[10px] tracking-widest text-dim uppercase">What to compare</div>
                     <ul className="mt-1.5 space-y-1">
                       {TASKS.find((t) => t.id === task)!.evidence.map((e) => (
                         <li key={e} className="flex items-center gap-2 text-[12px] text-chrome">
-                          <ChevronRight size={12} className="text-earth" /> {e}
+                          <ChevronRight size={12} className="text-flare" /> {e}
                         </li>
                       ))}
                     </ul>
@@ -201,31 +264,20 @@ export default function Atlas() {
             </Section>
 
             <Section title={`${BODIES.find((b) => b.id === body)!.label} map layers`}>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {LAYERS_BY_BODY[body]
                   .filter((l) => !l.overlay)
-                  .map((l) => {
-                    const on = view === "2d" && layerId === l.id;
-                    return (
-                      <button
-                        key={l.id}
-                        onClick={() => {
-                          setLayerByBody((s) => ({ ...s, [body]: l.id }));
-                          setView("2d");
-                        }}
-                        className={clsx(
-                          "w-full rounded-xl border px-3 py-2.5 text-left transition-colors duration-150",
-                          on ? "border-earth/60 bg-earth/[0.08]" : "border-line hover:border-line-2",
-                        )}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[13px] text-platinum">{l.name}</span>
-                          <span className="font-mono text-[10px] text-dim">{l.resolution}</span>
-                        </div>
-                        <div className="mt-0.5 text-[11px] text-dim">{l.instrument}</div>
-                      </button>
-                    );
-                  })}
+                  .map((l) => (
+                    <LayerCard
+                      key={l.id}
+                      layer={l}
+                      on={view === "2d" && layerId === l.id}
+                      onClick={() => {
+                        setLayerByBody((s) => ({ ...s, [body]: l.id }));
+                        setView("2d");
+                      }}
+                    />
+                  ))}
                 {body === "earth" && (
                   <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-line-2 px-3 py-2.5">
                     <span>
@@ -244,116 +296,150 @@ export default function Atlas() {
                   </label>
                 )}
               </div>
-              <p className="mt-3 text-[11px] leading-relaxed text-dim">
-                The 3D globe uses a 4K NASA mosaic; choosing a layer opens the live 2D tile map.
-              </p>
+              <p className="mt-3 text-[11px] leading-relaxed text-dim">The 3D globe uses a NASA mosaic; a layer opens the live 2D tile map.</p>
             </Section>
 
             {body === "earth" && (
               <Section title="Regions we checked">
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3">
-                  <input
-                    type="checkbox"
-                    checked={showScreening}
-                    onChange={(e) => setShowScreening(e.target.checked)}
-                    className="mt-0.5 size-4 accent-[#a197cf]"
-                  />
+                  <input type="checkbox" checked={showScreening} onChange={(e) => setShowScreening(e.target.checked)} className="mt-0.5 size-4 accent-[#a197cf]" />
                   <span>
                     <span className="block text-[13px] text-platinum">Show the regions we checked</span>
-                    <span className="block text-[11px] leading-relaxed text-dim">
-                      {SCREENING_REGIONS.length} regions we picked by hand, now measured with the global data. For the whole planet, use Find new sites.
-                    </span>
+                    <span className="block text-[11px] leading-relaxed text-dim">{SCREENING_REGIONS.length} regions we picked by hand, now measured with the global data. For the whole planet, use Find new sites.</span>
                   </span>
                 </label>
               </Section>
             )}
           </div>
-        </aside>
+        </Panel>
 
-        {/* ------------------------------------------------ stage */}
-        <main data-theme="dark" className="relative order-1 h-[62vh] min-h-[420px] overflow-hidden border-b border-line lg:order-2 lg:h-auto lg:border-b-0">
-          {view === "3d" ? (
-            <Suspense fallback={<StageLoading />}>
-              <GlobeView body={body} markers={markers} activeId={sel?.id ?? null} onSelect={onSelect} focus={focus} />
-            </Suspense>
-          ) : (
-            <BodyMap
-              ref={mapRef}
-              body={body}
-              layerId={layerId}
-              overlayIds={body === "earth" && lst ? ["earth-lst"] : []}
-              markers={markers}
-              activeId={sel ? (sel.kind === "screen" ? `screen:${sel.id}` : sel.id) : null}
-              onSelect={onSelect}
-              initial={focus ? { ...focus, lat: focus.lat, lon: focus.lon, zoom: body === "earth" ? 5 : 4 } : undefined}
-            />
-          )}
-
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[600] flex flex-wrap items-start justify-between gap-3 p-4">
-            <div className="pointer-events-auto flex gap-1 rounded-full border border-line bg-void/75 p-1 backdrop-blur-xl">
-              {BODIES.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => setBody(b.id)}
-                  className={clsx(
-                    "flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] transition-colors duration-150",
-                    body === b.id ? "bg-platinum/[0.08] text-platinum" : "text-dim hover:text-chrome",
-                  )}
-                >
-                  <WorldDot world={b.id} /> {b.label}
-                </button>
-              ))}
-            </div>
-            <div className="pointer-events-auto flex gap-1 rounded-full border border-line bg-void/75 p-1 backdrop-blur-xl">
-              <ViewBtn on={view === "3d"} onClick={() => setView("3d")} icon={<Box size={14} />} label="3D globe" />
-              <ViewBtn on={view === "2d"} onClick={() => setView("2d")} icon={<MapIcon size={14} />} label="2D map" />
-            </div>
-          </div>
-
-          <div className="pointer-events-none absolute bottom-16 left-4 z-[600] hidden md:block">
-            <Astronaut
-              size={76}
-              mood={sel ? "happy" : task ? "focused" : "thinking"}
-              action={sel ? "sample" : task ? "scan" : "idle"}
-              say={sel ? null : task ? "Dim pins don't fit this task." : "Pick a pin, or choose a mission task."}
-            />
-          </div>
-          <div className="pointer-events-none absolute bottom-4 left-1/2 z-[600] hidden -translate-x-1/2 items-center gap-4 whitespace-nowrap rounded-full border border-line bg-void/75 px-4 py-2 text-[11px] text-chrome backdrop-blur-xl md:flex">
-            {body === "earth" ? (
-              <>
-                <Key color={WORLD_COLOR.moon} label="Moon analog" />
-                <Key color={WORLD_COLOR.mars} label="Mars analog" />
-                <Key color={WORLD_COLOR.earth} label="Both" />
-                {showScreening && <Key color="#a197cf" label="Regions we checked" dashed />}
-              </>
-            ) : (
-              <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
-            )}
-            <span className="font-mono text-dim">{visibleCount} shown</span>
-          </div>
-        </main>
-
-        {/* ------------------------------------------------ detail */}
-        <aside className="scrollbar-thin order-3 border-line lg:overflow-y-auto lg:border-l">
+        {/* ------------------------------------------------ right panel */}
+        <Panel side="right" open={panels.right} onToggle={() => setPanels((p) => ({ ...p, right: !p.right }))} label="Places">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={sel ? `${sel.kind}:${sel.id}` : "none"}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-            >
+            <motion.div key={sel ? `${sel.kind}:${sel.id}` : `none-${body}`} initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.28, ease: EASE }}>
               {!sel && <Overview body={body} world={world} task={task} onEarth={goEarth} onTarget={goTarget} />}
-              {sel?.kind === "earth" && (
-                <EarthDetail id={sel.id} world={world} onTarget={goTarget} onClose={() => setSel(null)} />
-              )}
+              {sel?.kind === "earth" && <EarthDetail id={sel.id} world={world} onTarget={goTarget} onClose={() => setSel(null)} />}
               {sel?.kind === "target" && <TargetDetail id={sel.id} onEarth={goEarth} onClose={() => setSel(null)} />}
               {sel?.kind === "screen" && <ScreenDetail id={sel.id} onClose={() => setSel(null)} />}
             </motion.div>
           </AnimatePresence>
-        </aside>
+        </Panel>
       </div>
     </div>
+  );
+}
+
+/* --------------------------------------------------------------- stage pieces */
+
+const TEX: Record<Body, string> = { earth: "/textures/earth_day_1k.webp", moon: "/textures/moon_lroc_1k.webp", mars: "/textures/mars_viking_1k.webp" };
+
+/** A tiny spinning planet made from the real NASA mosaic. */
+function PlanetThumb({ body, on, size = 24 }: { body: Body; on: boolean; size?: number }) {
+  return (
+    <motion.span
+      aria-hidden
+      className="relative block shrink-0 rounded-full"
+      style={{ width: size, height: size, backgroundImage: `url(${TEX[body]})`, backgroundSize: "200% 100%", boxShadow: "inset -6px -2px 8px rgba(0,0,0,0.85), inset 2px 1px 3px rgba(255,255,255,0.12)" }}
+      animate={{ backgroundPositionX: on ? ["0%", "-200%"] : "0%", scale: on ? 1.08 : 1, opacity: on ? 1 : 0.65 }}
+      transition={{ backgroundPositionX: { duration: 18, repeat: Infinity, ease: "linear" }, scale: { type: "spring", stiffness: 300, damping: 20 }, opacity: { duration: 0.3 } }}
+    />
+  );
+}
+
+const WORLD_FACTS: Record<Body, { kicker: string; line: string }> = {
+  earth: { kicker: "Practice ground", line: "38 known analog sites · live NASA GIBS and ESA layers" },
+  moon: { kicker: "Destination", line: "10 targets · LRO LOLA 118 m heights · LROC images" },
+  mars: { kicker: "Destination", line: "8 targets · MGS MOLA 463 m heights · Viking colour" },
+};
+
+function WorldTitle({ body, shown, layer, left }: { body: Body; shown: number; layer: string | null; left: boolean }) {
+  const name = BODIES.find((b) => b.id === body)!.label;
+  return (
+    <div className={clsx("pointer-events-none absolute top-24 z-[550] hidden transition-[left] duration-500 lg:block", left ? "left-[336px]" : "left-8")}>
+      <AnimatePresence mode="wait">
+        <motion.div key={body} initial="hide" animate="show" exit="hide" variants={{ show: { transition: { staggerChildren: 0.05 } }, hide: {} }}>
+          <motion.div variants={{ hide: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }} className="font-mono text-[10.5px] tracking-[0.26em] text-chrome uppercase">
+            {WORLD_FACTS[body].kicker}
+          </motion.div>
+          <div className="mt-1 flex overflow-hidden text-[clamp(56px,6.4vw,104px)] leading-[0.9] font-medium tracking-[-0.05em] text-platinum">
+            {name.split("").map((ch, i) => (
+              <motion.span key={i} variants={{ hide: { y: "100%", opacity: 0 }, show: { y: "0%", opacity: 1 } }} transition={{ duration: 0.7, ease: EASE }}>
+                {ch}
+              </motion.span>
+            ))}
+          </div>
+          <motion.div variants={{ hide: { opacity: 0 }, show: { opacity: 1 } }} transition={{ delay: 0.3 }} className="mt-2 max-w-[340px] text-[12.5px] leading-relaxed text-chrome">
+            {WORLD_FACTS[body].line}
+            <span className="block font-mono text-[11px] text-dim">
+              {shown} places shown{layer ? ` · ${layer}` : ""}
+            </span>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Floating glass panel on wide screens; a normal block below the stage on small ones. */
+function Panel({ side, open, onToggle, label, children }: { side: "left" | "right"; open: boolean; onToggle: () => void; label: string; children: React.ReactNode }) {
+  const left = side === "left";
+  return (
+    <>
+      <aside
+        style={{ ["--px" as string]: left ? "-24px" : "24px" }}
+        className={clsx(
+          "scrollbar-thin relative z-[700] border-line bg-void transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:absolute lg:top-4 lg:bottom-4 lg:overflow-y-auto lg:rounded-3xl lg:border lg:bg-panel/80 lg:shadow-[0_40px_120px_-40px_rgba(0,0,0,0.85)] lg:backdrop-blur-xl",
+          left ? "lg:left-4 lg:w-[304px]" : "lg:right-4 lg:w-[384px]",
+          !open && "lg:pointer-events-none lg:translate-x-[var(--px)] lg:opacity-0",
+        )}
+        aria-label={label}
+      >
+        <button onClick={onToggle} className={clsx("absolute top-3 z-10 hidden size-8 place-items-center rounded-full border border-line-2 bg-void/70 text-chrome hover:text-platinum lg:grid", left ? "right-3" : "left-3")} aria-label={`Hide ${label.toLowerCase()}`}>
+          {left ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        </button>
+        <div className={clsx(left ? "lg:pr-8" : "lg:pl-8")}>{children}</div>
+      </aside>
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            initial={{ opacity: 0, x: left ? -10 : 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            onClick={onToggle}
+            className={clsx("absolute top-1/2 z-[700] hidden -translate-y-1/2 items-center gap-2 rounded-full border border-line-2 bg-void/80 px-3 py-2 text-[12px] text-chrome backdrop-blur-xl hover:text-platinum lg:flex", left ? "left-4" : "right-4")}
+          >
+            {left ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {label}
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function previewUrl(l: (typeof LAYERS)[number]) {
+  if (l.projection === "polar-south") return l.url;
+  const merc = l.projection === "mercator";
+  return l.url
+    .replace("{z}", merc ? "2" : "1")
+    .replace("{x}", merc ? "2" : "1")
+    .replace("{y}", merc ? "1" : "0");
+}
+
+function LayerCard({ layer: l, on, onClick }: { layer: (typeof LAYERS)[number]; on: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} aria-pressed={on} className={clsx("group flex w-full items-center gap-3 rounded-xl border p-2 text-left transition-colors duration-150", on ? "border-flare/50 bg-flare/[0.06]" : "border-line hover:border-line-2")}>
+      <span className="relative h-11 w-16 shrink-0 overflow-hidden rounded-lg bg-ink">
+        <span className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${previewUrl(l)})` }} />
+        {on && <span className="absolute inset-0 rounded-lg ring-2 ring-flare/70 ring-inset" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-2">
+          <span className="truncate text-[12.5px] text-platinum">{l.name}</span>
+          <span className="shrink-0 font-mono text-[10px] text-dim">{l.resolution}</span>
+        </span>
+        <span className="mt-0.5 block truncate text-[11px] text-dim">{l.instrument}</span>
+      </span>
+    </button>
   );
 }
 

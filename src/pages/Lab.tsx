@@ -208,6 +208,7 @@ export default function Lab() {
           setTargetId(q.target);
           setTask(q.task);
         }}
+        score={loading ? null : fit.score}
         panel={<EvidencePanel results={results} fit={fit} weights={weights} setWeights={setWeights} task={task} loading={loading} light={light} earthName={earthName} learned={learned} world={target.body} gridReady={!!cs} grid={grid} cell={cell} />}
       />
 
@@ -598,7 +599,9 @@ function CompareStage({
   pairedTargets,
   panel,
   onQuick,
+  score,
 }: {
+  score: number | null;
   earthId: string;
   earth: EarthSite;
   targetId: string;
@@ -757,13 +760,14 @@ function CompareStage({
       <div className="grid lg:h-[calc(100dvh-64px-104px)] lg:min-h-[620px] lg:grid-cols-[minmax(0,1fr)_400px]">
         <div className="relative min-h-[520px]">
           {mode === "split" ? (
-            <div className="grid h-full md:grid-cols-2">
-              <MapPane title={earth.name} world="earth" coord={formatCoord(earth.lat, earth.lon)} layer={earthLayer} onLayer={setEarthLayer} layers={earthLayers} view={eView}>
+            <div className="relative grid h-full md:grid-cols-2">
+              <MapPane pairKey={`${earthId}|${targetId}`} title={earth.name} world="earth" coord={formatCoord(earth.lat, earth.lon)} layer={earthLayer} onLayer={setEarthLayer} layers={earthLayers} view={eView}>
                 {earthMap}
               </MapPane>
-              <MapPane title={target.name} world={target.body} coord={formatCoord(target.lat, target.lon)} layer={targetLayer} onLayer={setTargetLayer} layers={targetLayers} view={tView} border>
+              <MapPane pairKey={`${earthId}|${targetId}`} title={target.name} world={target.body} coord={formatCoord(target.lat, target.lon)} layer={targetLayer} onLayer={setTargetLayer} layers={targetLayers} view={tView} border>
                 {targetMap}
               </MapPane>
+              <Seam score={score} world={target.body} />
             </div>
           ) : (
             <SwipeStage className="h-[70vh] lg:h-full" value={swipe} onChange={setSwipe} left={earthMap} right={targetMap} leftLabel={earth.name.split(",")[0]} rightLabel={target.name} rightWorld={target.body} />
@@ -779,7 +783,43 @@ function CompareStage({
   );
 }
 
+/** The glowing seam between the two worlds, with the live match score in the middle. */
+function Seam({ score, world }: { score: number | null; world: World }) {
+  const R = 30;
+  const CIRC = 2 * Math.PI * R;
+  return (
+    <div className="pointer-events-none absolute inset-y-0 left-1/2 z-[650] hidden w-0 md:block">
+      <div className="absolute inset-y-0 -left-px w-[2px] bg-[linear-gradient(180deg,transparent,rgba(242,200,121,0.55)_30%,rgba(242,200,121,0.55)_70%,transparent)]" />
+      <motion.div className="absolute -left-[3px] h-24 w-[8px] rounded-full bg-[radial-gradient(closest-side,rgba(255,236,200,0.9),transparent)] blur-[2px]" animate={{ top: ["-10%", "105%"] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }} />
+      <a href="#evidence" className="pointer-events-auto absolute top-1/2 left-0 grid size-[84px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line-2 bg-void/80 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-transform hover:scale-105" aria-label="Match score, see the evidence">
+        <svg viewBox="0 0 72 72" className="absolute inset-0 m-auto size-[72px] -rotate-90">
+          <circle cx="36" cy="36" r={R} fill="none" style={{ stroke: "var(--color-line-2)" }} strokeWidth="3" />
+          <motion.circle cx="36" cy="36" r={R} fill="none" style={{ stroke: `var(--color-${world})` }} strokeWidth="3" strokeLinecap="round" strokeDasharray={CIRC} initial={{ strokeDashoffset: CIRC }} animate={{ strokeDashoffset: score === null ? CIRC : CIRC * (1 - score) }} transition={{ duration: 1.2, ease: EASE }} />
+        </svg>
+        <span className="relative text-center leading-none">
+          <span className="block font-mono text-[17px] text-platinum">{score === null ? "…" : <CountUp value={score} />}</span>
+          <span className="mt-1 block text-[9px] tracking-[0.18em] text-dim uppercase">match</span>
+        </span>
+      </a>
+    </div>
+  );
+}
+
+/** Viewfinder corners that snap in whenever the pair changes. */
+function Corners({ k }: { k: string }) {
+  const c = "absolute size-5 border-platinum/50";
+  return (
+    <motion.div key={k} className="pointer-events-none absolute inset-3 z-[590]" initial={{ opacity: 0, scale: 1.06 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: EASE }}>
+      <span className={clsx(c, "top-12 left-0 border-t border-l")} />
+      <span className={clsx(c, "top-12 right-0 border-t border-r")} />
+      <span className={clsx(c, "bottom-8 left-0 border-b border-l")} />
+      <span className={clsx(c, "right-0 bottom-8 border-r border-b")} />
+    </motion.div>
+  );
+}
+
 function MapPane({
+  pairKey,
   title,
   world,
   coord,
@@ -799,11 +839,13 @@ function MapPane({
   view: MapView | null;
   children: React.ReactNode;
   border?: boolean;
+  pairKey?: string;
 }) {
   const l = layers.find((x) => x.id === layer);
   return (
     <div className={clsx("relative h-[46vh] min-h-[320px] md:h-full", border && "border-t border-line md:border-t-0 md:border-l")}>
       {children}
+      {pairKey && <Corners k={pairKey} />}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[600] flex items-start justify-between gap-2 p-3">
         <div className="panel pointer-events-auto rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 text-[13px] font-medium">
