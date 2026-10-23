@@ -86,6 +86,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
   const host = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const baseRef = useRef<L.Layer | null>(null);
+  const detailRef = useRef<L.Layer | null>(null);
   const overlayRef = useRef<L.Layer[]>([]);
   const markerLayer = useRef<L.LayerGroup | null>(null);
   const silent = useRef(false);
@@ -110,7 +111,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
       wheelPxPerZoomLevel: 90,
       scrollWheelZoom: wheelZoom === "always",
       minZoom: projection === "polar-south" ? -1.5 : projection === "mercator" ? 1.5 : 0.5,
-      maxZoom: projection === "polar-south" ? 3 : 12,
+      maxZoom: projection === "polar-south" ? 3 : projection === "mercator" ? 18.5 : 14,
       maxBounds:
         projection === "equirect"
           ? L.latLngBounds([-90, -180], [90, 180])
@@ -180,6 +181,8 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
     const map = mapRef.current;
     if (!map) return;
     if (baseRef.current) map.removeLayer(baseRef.current);
+    if (detailRef.current) map.removeLayer(detailRef.current);
+    detailRef.current = null;
     const attribution = `${layer.provider} · ${layer.instrument}`;
     if (layer.projection === "polar-south") {
       baseRef.current = L.imageOverlay(layer.url, [[-POLAR_IMAGE_SIZE, 0], [0, POLAR_IMAGE_SIZE]], {
@@ -187,15 +190,22 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
         className: "polar-image",
       }).addTo(map);
     } else {
-      baseRef.current = L.tileLayer(layer.url, {
-        attribution,
-        tileSize: 256,
-        maxNativeZoom: layer.maxNativeZoom,
-        maxZoom: 12,
-        noWrap: layer.projection === "equirect",
-        bounds: layer.projection === "equirect" ? L.latLngBounds([-90, -180], [90, 180]) : undefined,
-        crossOrigin: true,
-      }).addTo(map);
+      const tiles = (l: MapLayer, extra: L.TileLayerOptions = {}) =>
+        L.tileLayer(l.url, {
+          attribution: `${l.provider} · ${l.instrument}`,
+          tileSize: l.tileSize ?? 256,
+          zoomOffset: l.zoomOffset ?? 0,
+          maxNativeZoom: l.maxNativeZoom,
+          maxZoom: 20,
+          noWrap: l.projection === "equirect",
+          bounds: l.projection === "equirect" ? L.latLngBounds([-90, -180], [90, 180]) : undefined,
+          crossOrigin: true,
+          ...extra,
+        });
+      baseRef.current = tiles(layer).addTo(map);
+      // past the base layer's native detail, a sharper layer takes over
+      const d = layer.detail ? LAYER_BY_ID[layer.detail] : null;
+      if (d) detailRef.current = tiles(d, { minZoom: layer.maxNativeZoom + 0.5, className: "detail-tiles" }).addTo(map);
     }
     baseRef.current && (baseRef.current as L.GridLayer).bringToBack?.();
   }, [layer, projection]);
