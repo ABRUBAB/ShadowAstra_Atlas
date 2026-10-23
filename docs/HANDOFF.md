@@ -1,179 +1,103 @@
-# ShadowAstra Atlas: handoff for the next person or AI agent
+# ShadowAstra Atlas: handoff
 
-_Last updated: 23 Oct 2026, evening (v0.5). First build session 10–14 Oct 2026; second session 23 Oct 2026._
-
-Read this first. With this file, `../CLAUDE.md`, `PROJECT_PLAN.md` and `../DESIGN.md` you have the full context. The complete chat history is in `D:\NASA_space_apps_challenge_2026\_claude_history\` (outside the repo, because it is private).
-
----
-
-## v0.5 in one page (23 Oct 2026, evening), newest first
-
-- **Find new sites (`/discover`, `src/pages/Find.tsx`) is a mission builder:** start screen with presets, then Destination, Job, Needs (sentence form: home city, max distance, town, altitude, month, Antarctica, only new) and Results. Logic in `src/lib/mission.ts` (`screen`, `runSearch`, relaxation hints, month light). Ten results, unique names, satellite thumbnails (`src/lib/thumbs.ts`), a compare tray for up to four places (`CompareSheet`), place report with confidence badge and rock type, printable report `/report` (`src/pages/Report.tsx`). Shared links (`?at=lat,lon`) open the place.
-- **How it works (`/methods`) rebuilt:** dot-globe hero (`components/methods/DotGlobe.tsx`: every land cell is a point, layers sweep in), four factor cards with real numbers, sticky scroll story (Jezero), proof charts (`components/methods/Charts.tsx`: RankStrip, MixCurve, JobSlope, Ablation; chart colours `--color-chart-1..4`, validated for colour blindness), failure gallery, datasets.
-- **Validation (`pipeline/s14_validate.py` → `public/data/validation.json`):** NumPy twin of `scoreAll`; 28 independent published sites (`catalogue.VALIDATION_SITES`, never used in training; model retrained without known sites within 300 km of each); known sites scored with their real jobs (`catalogue.KNOWN_JOBS`); model-share curve chosen on known sites only; job test; ±25% weight and data-noise robustness; ablations; bootstrap CIs. Key results: hidden known sites top 2.2% (default), independent top 21% (Moon top 5.2%), factors alone top 41% vs simple rule 40%, job test 78% of 78 sites (p < 0.001).
-- **Default model share is 60%** (`MODEL_MIX` in `src/lib/grid.ts`), chosen on the known-site curve before looking at the independent sites.
-- **Grid v3 (`s06_build.py` refactored into `features()` + `main()`):** adds `f_lith` (GLiM rock class, `grid.json.lithology`), `q_cover` (share of real, not gap-filled measurements), `u_moon`/`u_mars` (spread of the 8 model bags). Targets carry `rock` (family and GLiM affinity). Rock types are shown, not scored: scoring them ranked known sites worse at 0.5° (see validation `ablation.rocks`). `Grid.confidence()` → high/medium/low ("Not enough evidence").
-- **Maps (`/atlas`):** floating glass panels, world switcher with spinning planet thumbs, world title, layer cards with tile previews. **Twin finder:** tap the Moon or Mars → `src/lib/twins.ts` loads one 5° band of `public/data/terrain/{moon,mars}/bNN.bin` (from `pipeline/s15_planet_grids.py`, K1 output) and ranks Earth by ground shape, optionally 50/50 with the learned model.
-- **Compare (`/lab`):** seam medallion with the live match score, viewfinder corners. **Learn (`/learn`):** English and Bangla (`?lang=bn`, Noto Sans Bengali), quiz scored live, printable worksheet. Bangla text should be proofread by the team.
-- **App shell:** route light beam, scroll-progress hairline, page fade (`src/App.tsx`).
-- **Kaggle (`kaggle/run.py`):** tokens live outside the repo in `D:\NASA_space_apps_challenge_2026\_secrets\kaggle1\access_token` (account abdullahrubab1) and `…\kaggle2\access_token` (account absanim, which also holds the owner's own research notebooks: never touch those). The runner passes the token *path* through `KAGGLE_API_TOKEN`. Commands: `push`, `status`, `files`, `fetch --only "*.json"`, `output`, `cli …`. GPU kernels use `"machine_shape": "NvidiaTeslaT4"` (2 × T4). Kernels: K1 Moon/Mars DEM grids and patches (done, 62 min), K1b PDS context (Diviner path broken, GRS 5×5 fetched), K2 Earth patches (`k2_earth.py`), K3 three-world SSL ViT (`k3_ssl.py`, needs K1+K2 outputs, time-boxed, checkpoints `k3_ckpt.pt`), K5 PU model zoo with Optuna (`k5_models.py`, account 2, uses the private dataset `absanim/shadowastra-features` built from `s06.features()`).
-- **Network gotcha:** this PC sometimes cannot reach kaggle.com (DNS fine, TCP to 35.244.233.98 hangs); the owner's VPN fixes it. Kaggle `datasets create` needs an absolute folder path on Windows.
-
----
-
-## 0. v0.4 in one page (23 Oct 2026), read this first
-
-**What changed:** the site now has a real global data engine and a tested model. Section 3 below describes v0.3; everything here supersedes it.
-
-- **Data engine** (`pipeline/`, Python, see `pipeline/README.md`): every land cell on Earth at 0.5° (80,206 cells) measured from NASA POWER, MODIS via GIBS colormap inversion, AWS Terrain Tiles (SRTM), Smithsonian GVP, impact craters (`pipeline/catalogue.py`) and Natural Earth. Moon/Mars targets use full-precision 16-bit USGS LOLA (118 m) and MOLA (463 m) GeoTIFFs via HTTP range requests. Output: `public/data/grid.bin` (typed arrays, 4.3 MB) + `grid.json` (layout, names, targets, model evaluation). Cache: `pipeline/.cache/` (~700 MB, git-ignored).
-- **Model:** positive-unlabelled LightGBM on 38 known sites (`KNOWN_ANALOGS`), 4 bags, physical features only. Spatial hold-out (hide each site and all known sites within 300 km): Moon median rank top 0.8% (rule 35.3%), Mars top 4.9% (rule 31.1%); in top 10%: 82% / 71% (rule 14% / 14%).
-- **Terrain encoder** (`s07_patches.py`, `s08_encoder.py`): self-supervised CNN on 42×42 height patches from Earth, Moon and Mars, trained on the local CPU (20 epochs, 168 min). Honest result on 49 expert pairs: median rank top 44% (encoder) vs 34% (formula), 37% for both, so the formula stays the default; the encoder is an optional "Neural net (test)" in Find new sites (`public/data/shape.bin`, loaded on demand).
-- **New page `/discover` (Find new sites):** pick a job and a target, all cells scored live (`src/lib/grid.ts` → `scoreAll`), 3D score globe (`components/three/ScoreGlobe.tsx`) or flat map, ranked distinct places (`rankPlaces`, 400 km spacing; "only new" hides places within 150 km of known sites), place report, search (towns, regions, countries), saved places (localStorage), model test chart. URL: `?target=&task=&at=lat,lon`.
-- **Compare (`/lab`)** accepts any coordinates: `earth=@lat,lon` (`src/lib/places.ts`). Rocks, cold and bare-ground scores now come from the grid (Computed), not demo values.
-- **Home** rebuilt: town checker (`components/CheckTown.tsx`), Earth or Mars game (`components/EarthOrMars.tsx`), Meet Astra with 10 reactions and a badge log (`lib/fieldlog.ts`, `ui/BadgeToast.tsx`).
-- **UI kit** `components/ui/kit.tsx`: `.surface` spotlight cards (one global pointer listener, `useSpotlight`), Counter, Ring, Meter, Chip, Tip, Seg, Magnetic, WordCycler, RevealWords, Kicker (outlined numbers), Toaster/`toast()`, BackToTop, GlyphTile. Command palette (Ctrl K or /) in `ui/CommandPalette.tsx`.
-- **Astra:** new moods `cold`, `hot`; actions `shiver`, `fan`, `point`, `binoculars`; typed speech; `climateReaction()`; Ask Astra answers from the grid (`astraAnswerAsync`: "How Mars-like is Cairo?", "Best new site for Jezero?").
-- **Plain names:** Analog Lab → Compare, Atlas → Maps, Data & Method → How it works, About → Team (routes unchanged). Analog Fit → Match score; Shadow Lab → shadow map; Light Twin → sunlight match; Reality gap → "Earth can't copy". Task labels are plain ("Drive a rover or walk").
-- **Fixed:** infinite loop between the two linked Leaflet maps in Compare (BodyMap `setMetresPerPixel` now goes silent before `map.stop()`).
-
-### 0.1 Gotchas learned in v0.4
-- NASA POWER returns HTTP 429 when hit hard: `common.fetch` backs off 15 s × attempt on 429/503; `s02_power.py` uses 2 threads. A rerun only fetches failed boxes (disk cache).
-- GIBS IGBP water entry is `sourceValue="0,17"`: categorical lists use the last number, intervals use the midpoint.
-- On the Compare page the 4 MB grid loads while the 3D terrain is computed, so the rocks/cold rows can take 10 to 30 s on slow machines (they show "Demo" until then).
-- README screenshots: a Playwright script with `channel="msedge"` and `--use-angle=swiftshader` (sandbox disabled in Claude Code). Plain `msedge --headless --screenshot` returns before data loads.
-- Dev server runs on port 3000 (teammate change in `vite.config.ts`).
-
-### 0.2 Next TODOs (hackathon, 14 to 15 Nov)
-1. 28 Oct: read the challenge Resources tab and add the official datasets as new `pipeline/sNN_*.py` steps.
-2. EMIT minerals (Earth), Diviner (Moon) for the rocks and cold scores.
-3. Field test plan PDF export from the place report; Bangla mode.
-4. Kaggle GPUs (owner has 2 accounts): only needed if the encoder grows (bigger patches, HiRISE). Put `kaggle.json` in `C:\Users\user\.kaggle\`; never paste keys in chat.
-5. New portrait for Mohammed Mahmud Parvez; YouTube link in README.
+_Last updated 24 Oct 2026 (v0.5). Read this first. Together with `../CLAUDE.md`, `PROJECT_PLAN.md` (status and roadmap), `../DESIGN.md` and the chat history in `D:\NASA_space_apps_challenge_2026\_claude_history\` you have the full context._
 
 ---
 
 ## 1. What this is
 
-- **Event:** NASA International Space Apps Challenge 2026, Dhaka (Bangladesh) local event.
-- **Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars.* This means using open Earth, Moon and Mars data from NASA and other agencies to identify and characterize **new** terrestrial analogs. The challenge names four factors: topography, geology, environment and resources.
-- **Team:** ShadowAstra (6 people, Dhaka). **Project:** ShadowAstra Atlas.
-- **Live site:** https://shadowastra-atlas.vercel.app (Vercel auto-deploys every push to `main`)
-- **Repo:** https://github.com/ABRUBAB/ShadowAstra_Atlas (public)
-- **Owner:** Abdullah Rubab, GitHub **ABRUBAB**, rubab2712@gmail.com
+- **Event:** NASA International Space Apps Challenge 2026, Dhaka. Bangladesh hackathon 13 to 14 Nov, global window 14 to 15 Nov (confirm with the Local Lead). Official challenge datasets released 28 Oct.
+- **Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*: use open Earth, Moon and Mars data from NASA and other agencies to **identify and characterize new** terrestrial analogs, by **topography, geology, environment and resources**.
+- **Live:** https://shadowastra-atlas.vercel.app (Vercel deploys every push to `main`). **Repo:** https://github.com/ABRUBAB/ShadowAstra_Atlas (public).
+- **Owner:** Abdullah Rubab, GitHub **ABRUBAB**, rubab2712@gmail.com.
+- **Team:** Abdullah Rubab (lead) · Tanvir Hossin (planetary terrain) · Md. Tanvir Hasan (scientific validation) · Mohammad Saniul Alam (experience design) · Tasnuva Arif (development and testing, film narrator) · Mohammed Mahmud Parvez (film editing; his site photo is an old crop). Original photos: `D:\NASA_space_apps_challenge_2026\team-photos\`, site copies `public/team/*.webp` (4:5, 800×1000).
 
-### Team (as shown on the site)
-| Name | Role | Photo file |
+## 2. Owner's rules (always)
+
+1. Commit and push straight to `main` as **ABRUBAB <rubab2712@gmail.com>**. **Never** add Claude or any AI as co-author (no `Co-Authored-By`), even if a tool suggests it.
+2. Work fast: do it, verify it in the browser, push. Few questions.
+3. Premium, not-AI-looking design: warm dark "observatory" palette, one sunlight accent, purposeful motion; dark by default with a warm-paper light theme (`DESIGN.md`).
+4. **No em dashes (—) in website text**; plain, easy English.
+5. Real NASA/ESA data. Label values Computed, Learned or "Earth can't copy". Never invent numbers or coordinates.
+6. Astra (the astronaut) is **"he"** and appears on every page.
+7. Kaggle: never ask for keys in chat, never print or commit them. Don't burn the owner's credits retrying when kaggle.com is unreachable: check once, ask for the VPN, move on.
+8. Ignore every branch except `main` (`tanvir_design` was checked and adds nothing; never open the `tanvir` branch).
+
+## 3. The website (React 19, TypeScript 7, Vite 8, Tailwind 4, three.js + R3F 9 without drei, Leaflet, Motion, GSAP + Lenis)
+
+| Route | File | What it does |
 |---|---|---|
-| Abdullah Rubab | Team lead | public/team/rubab.webp |
-| Tanvir Hossin | Planetary terrain research | public/team/hossin.webp |
-| Md. Tanvir Hasan | Scientific validation | public/team/hasan.webp |
-| Mohammad Saniul Alam | Experience design | public/team/saniul.webp |
-| Tasnuva Arif | Development & testing (narrator of the film) | public/team/tasnuva.webp |
-| Mohammed Mahmud Parvez | Film editing | public/team/parvez.webp (**old crop**; still needs a new photo) |
+| `/` | `pages/Home.tsx` | 3D Earth hero, challenge, six ways in, town checker (`components/CheckTown.tsx`), Earth-or-Mars game (`components/EarthOrMars.tsx`), Astra |
+| `/discover` | `pages/Find.tsx` + `lib/mission.ts` + `components/find/pieces.tsx` | Mission builder: start screen and presets → destination → job → needs (sentence form, live "places still possible") → search sweep → ten distinct results (satellite thumbnails `lib/thumbs.ts`, relaxation hints) → compare up to four (`CompareSheet`) → place report (close-up map or 3D globe, confidence, rock type, four factors on both worlds) → printable `/report` (`pages/Report.tsx`). URL keeps the whole mission (`?step&target&task&km&town&alt&month&ant&new&home&hlat&hlon&at`). |
+| `/atlas` | `pages/Atlas.tsx` | Maps: three globes, live layers (`data/layers.ts`), floating panels, **twin finder** (tap the Moon or Mars → `lib/twins.ts` + `public/data/terrain/`) |
+| `/lab` | `pages/Lab.tsx` | Compare: matched-scale maps (split or swipe), match medallion, 3D terrain twins (`components/three/TerrainTwins.tsx`), profile, slopes, geology plates, light twin, shadow map, travel, what Earth can't copy. `earth=@lat,lon` works. |
+| `/methods` | `pages/Methods.tsx` + `components/methods/` | How it works: dot-globe hero, four factor cards, scroll story, proof charts from `public/data/validation.json`, nine-model table, failures, datasets |
+| `/learn` | `pages/Learn.tsx` | Classroom page in English, Spanish and বাংলা (`?lang=es|bn`), quiz scored live, printable worksheet |
+| `/about` | `pages/About.tsx` | Team |
 
-The original colour photos are in the parent folder (`Rubab_profile.png`, `tanvir_hossin.jpg`, `saniul.jpg`, `tasnuva.jpg`, `tanvir_hasan.jpg`). They are cropped to 4:5 at 800×1000 WebP.
+**Core libraries:** `lib/grid.ts` (loads `public/data/grid.bin` + `grid.json`; `scoreAll`, `scoreCell`, `rankPlaces`, `confidence`, `rock`; `MODEL_MIX = 0.6`; must stay identical to `pipeline/s14_validate.py`), `lib/scoring.ts` (job weights, CO₂), `lib/sun.ts` (light twin), `lib/terrain.ts` (DEM and imagery sampling for Compare), `lib/wheel.ts` (scroll policy), `lib/validation.ts`. Shared UI: `components/ui/kit.tsx` (Counter, Ring, Meter, Chip, ConfidenceChip, Seg, Magnetic, Reveal, toast…), `ui/Chrome.tsx` (Nav, Footer), `ui/Astronaut.tsx`, `ui/AskAstra.tsx` (answers from the grid), `ui/CommandPalette.tsx` (Ctrl K). App shell (`App.tsx`): route beam, scroll progress, page fade, lazy routes.
 
-### Timeline and deadlines (verify with organisers)
-- 1 Oct 2026: Video 1 (concept film, ≤240 s) submitted on YouTube. ✅
-- Oct 2026: preliminary round, with the GitHub repo showing progress. ✅ (this prototype)
-- ~28 Oct: full challenge statement expected.
-- Bangladesh hackathon 13–14 Nov; global window 14–15 Nov. Video 2 timing was unclear (1 Nov or 13 Nov). Ask the Local Lead.
+**Behaviours to keep:**
+- Maps and 3D views inside scrolling pages ignore the plain mouse wheel (Ctrl/⌘ + wheel or pinch zooms, `lib/wheel.ts`); only the full-screen Maps page uses wheel zoom (`wheelZoom="always"`, `wheel="zoom"`).
+- Globes call `FitSphere` (`components/three/Controls.tsx`) so the sphere always fits the canvas.
+- Imagery gets sharper as you zoom: each layer can name a `detail` layer (Earth Sentinel-2 → Esri World Imagery; Mars Viking → CTX 5 m via NASA Trek/Esri, 512 px tiles, `zoomOffset -1`; Moon WAC → Kaguya TC). Imagery is for viewing; scores come from the grid.
+- Space scenes are wrapped in `data-theme="dark"`; theme colours are `var(--color-*)`; SVG colours go in `style`. Chart colours `--color-chart-1..4` were validated for colour blindness.
 
----
+Commands: `npm install` · `npm run dev` (http://localhost:3000; `.claude/launch.json` "atlas") · `npm run typecheck` · `npm run build`. URL helpers: `?theme=light|dark`, `?splash=0`.
 
-## 2. Owner's standing instructions (follow these)
+## 4. Data and science (`pipeline/`, Python; cache in `pipeline/.cache/`, ~1 GB, git-ignored)
 
-1. **Git:** commit and push directly to `main` as **ABRUBAB <rubab2712@gmail.com>** (the global git config is already set). **Never add Claude or any AI as co-author.** No `Co-Authored-By` lines.
-2. **Speed:** deadlines are tight. "Just do it and push." Don't ask unnecessary questions.
-3. **Design:** premium, award-level and *not AI-looking*. Warm "observatory" palette, one sunlight accent, calm motion, no neon or glow. Dark is the default theme; light mode is a warm paper theme. See `../DESIGN.md`.
-4. **Text:** **no em dashes (—) in website text**, and plain, easy English.
-5. **3D first, 2D where it helps.** Use real NASA (and ESA) data and never fake imagery.
-6. **Honesty:** every value is labelled **Computed**, **Demo** or **Reality gap**. Don't invent scores or facts.
-7. **Astra** (the astronaut mascot) is **"he"**. Keep him on every page: he reacts to results and gives tips.
-8. **NASA data form field ≤ 200 characters.** The approved text is in `SUBMISSION.md`.
-
----
-
-## 3. What exists today (v0.3)
-
-| Route | Contents |
+| Step | Output |
 |---|---|
-| `/` Home | 3D Earth hero (NASA Blue/Black Marble day–night shader) with the Moon on an orbit ring and Mars behind; 10 chapters (challenge, 6 novelty ideas, worlds, false-friend scroll story, Moon base polar map, pipeline, sustainability, library, progress, team); Astra in each chapter |
-| `/atlas` | 3D globes plus 13 live map layers (Earth GIBS + Sentinel-2, Moon Trek, Mars Trek, LOLA south-pole stereographic); task and world filters; site detail; 8 queued screening regions |
-| `/lab` Analog Lab | **Top:** side-by-side or swipe real-imagery comparison, matched metres-per-pixel, an evidence panel (Analog Fit ring, 6 parameters, weights) and Astra's reaction. UX: numbered steps ①②③, quick pairs, coach tips, section dock, deep links `#evidence #geology #light #footprint #gaps`. **Below:** 01 3D terrain slabs (real DEM + imagery drape, cut walls, slice line, Sun controls, Shadow overlay), cross-section profile, slope stats; 02 geology plates (matched-scale real imagery); 03 Light Twin calendar + Shadow Lab maps; 04 Rehearse closer (distance, CO₂, closest credible sites, stewardship); 05 reality gaps, auto-summary, model roadmap |
-| `/methods` | Pipeline (scroll-drawn), scoring formulas, parameter cards, weights table, filterable source registry, model plan, principles |
-| `/about` | Sweeping-Sun lunar pole hero, crew with photos, the name meaning, 10 award categories mapped to features, values, scroll-linked timeline |
-| Global | Branded splash (first visit per session), orbit loader, **Ask Astra** chat assistant (rule-based, answers from our data), theme toggle (dark/light), film grain |
+| s01 GIBS · s02 POWER · s03 terrain · s04 context · s05 targets | raw layers in `.cache` (see `pipeline/README.md`) |
+| **s06_build** | `public/data/grid.bin/json`: 80,206 land cells, indicators, slope histograms, features, GLiM rock class `f_lith`, coverage `q_cover`, model bag spread `u_moon/u_mars`, PU LightGBM `model_moon/mars` (8 bags), the 38-site hold-out test, targets with rock families |
+| s07–s09 | the first CPU terrain encoder (optional "neural" ground shape, `public/data/shape.bin`) |
+| s10–s13 | Moon rows (stopped; done on Kaggle instead), Mars TES maps, 39 Mars Exploration Zones, Mars geology/craters/caves and Moon pits/albedo (context grids in `.cache`, not yet on the site) |
+| **s14_validate** | `public/data/validation.json`: 28 independent sites, known sites with their real jobs, model-share curve, job test, robustness, ablations |
+| s15_planet_grids | `public/data/terrain/{moon,mars}/bNN.bin` from Kaggle K1 (twin finder) |
+| s16_model_zoo | adds Kaggle K5 results to `validation.json` |
 
-URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id>&target=<id>&task=<id>`.
+`catalogue.py` holds `KNOWN_ANALOGS` (38 training sites), `KNOWN_JOBS`, `VALIDATION_SITES` (28, never trained on), `IMPACTS`, GLiM classes and target rock families.
 
-### Science that is actually computed in the browser
-- **Terrain:** elevation sampled on a shared azimuthal-equidistant grid (`src/lib/terrain.ts`).
-  - Earth uses AWS Terrain Tiles (SRTM, metres).
-  - Moon uses Trek `LRO_LOLA_DEM_Global_128ppd_v04` 8-bit (≈ −9150 + 78.2·DN m).
-  - Mars uses Trek `Mars_MGS_MOLA_DEM_mosaic_global_463m_8` 8-bit (≈ −10538 + 129.9·DN m).
-  - The 8-bit calibrations are our own fits from known extremes. Treat them as preview-grade.
-- **Topography score** = 0.65·slope-histogram overlap + 0.35·relief agreement.
-- **Lighting score** = 1 − W₁/25° (Wasserstein distance of daylight Sun-elevation distributions), using the **best month** (`src/lib/sun.ts`).
-- **Shadow Lab:** a horizon method with 24 azimuths and a constant Sun elevation. It outputs the persistent-shadow fraction.
-- Geology, temperature and regolith are **demo values** from literature ratings (`src/lib/scoring.ts`). Radiation is a reality gap and is never scored.
+**Headline numbers:** hidden known sites top 2.2% of land; 28 independent sites top 21% (Moon top 5.2%) vs simple rule 40%; job test 78% of 78 sites (p < 0.001); ±25% weight noise keeps 8 to 10 of the top 10. K5 ensemble: 1.2% / 14.7% (not shipped yet).
 
----
+## 5. Kaggle (heavy compute)
 
-## 4. Code map
+- Accounts: **1 = abdullahrubab1**, **2 = absanim** (account 2 also holds the owner's own research notebooks: only touch `shadowastra-*` items). Token files: `D:\NASA_space_apps_challenge_2026\_secrets\kaggle1\access_token` and `kaggle2\access_token` (outside the repo). The original key list is `_secrets\kaggle_api_keys.txt`.
+- Runner: `python kaggle/run.py whoami|push|status|files|fetch|output|cli <kernel> --account N`. It gives the CLI the token **file path** via `KAGGLE_API_TOKEN`. GPU kernels set `"machine_shape": "NvidiaTeslaT4"` (2 × T4; the runner patches the push request because the CLI ignores it). `fetch --only "*.json,*.npz"` downloads selected outputs into `kaggle/_out/` (git-ignored).
+- **Network:** this PC often cannot reach kaggle.com; the owner's VPN fixes it. `datasets create` needs an absolute folder path on Windows.
+
+| Kernel | Account | Status (24 Oct) |
+|---|---|---|
+| K1 `k1_worlds` Moon/Mars full DEMs → 0.5° grids + patches | 1, CPU | done (62 min) |
+| K1b `k1b_context` PDS context | 2, CPU | partly: Odyssey GRS 5×5 fetched; Diviner path 404; Lunar Prospector crawl matched the wrong files |
+| K2 `k2_earth` Earth patches (AWS terrain tiles z9) | 1, CPU | done |
+| K3 `k3_ssl` DINO ViT-S/8 on three worlds, 2 × T4, domain-adversarial, then embeddings, similarity maps, twins, evaluation | 1, GPU | first run ran out of GPU memory (batch 192); **re-pushed 24 Oct with batch 64**, about 8 h |
+| K5 `k5_models` PU model zoo + Optuna, dataset `absanim/shadowastra-features` | 2, CPU | done; results in `kaggle/_out/k5_models/` and on How it works |
+
+Next for Kaggle: `python kaggle/run.py status k3_ssl --account 1`; when complete, `fetch k3_ssl --account 1 --only "*.json,shape_ssl.npz,*_twins.npz"`, read `k3_eval.json` (SSL vs formula on known, independent and expert pairs). Then see `PROJECT_PLAN.md §4`.
+
+## 6. Gotchas
+
+- `git push` may wait for Git Credential Manager: the owner has to sign in; never enter credentials.
+- NASA POWER rate-limits (HTTP 429): `common.fetch` backs off; reruns only fetch what is missing.
+- PDS Geosciences is unreachable from this network; use Kaggle.
+- Leaflet: never zoom during `flyTo` (`BodyMap.setMetresPerPixel` stops first). Compare positions paired maps with `animate=false`.
+- Sentinel-2 cloudless has polar artifacts: above |60°| use Blue Marble (`earthVisible()`).
+- Trek 8-bit DEM calibrations (Moon −9150 + 78.2·DN, Mars −10538 + 129.9·DN) are preview-grade; scores use the 16-bit USGS files.
+- Windows Git Bash: long inline heredocs with quotes can break; write edit scripts to a scratch file. `python -I` hides user site-packages (numpy), so run downloaded-data scripts from a clean folder instead.
+- The dev page needs ~10 s to load the 4.6 MB grid in dev mode; production is faster.
+- README screenshots are from v0.4 and should be refreshed.
+
+## 7. Where things are on this PC
 
 ```
-ShadowAstra_Atlas/
-  index.html                 theme pre-paint script (?theme=, localStorage "sa-theme")
-  src/styles.css             Tailwind v4 tokens, light theme + dark "islands" ([data-theme])
-  src/App.tsx                routes, Splash, AskAstra, idle prefetch
-  src/data/sites.ts          EARTH_SITES (17), TARGETS (18), TASKS (8), SCREENING_REGIONS (8)
-  src/data/layers.ts         13 map layers (GIBS, Trek, Sentinel-2)
-  src/lib/terrain.ts         DEM + imagery sampling, stats, illumination, profile
-  src/lib/sun.ts             Light Twin solar geometry
-  src/lib/scoring.ts         params, task weights, demo values, CO2, stewardship
-  src/lib/astra.ts           Ask Astra question-answering engine (no LLM)
-  src/lib/geo.ts             projections, matched-scale maths, polar image mapping
-  src/components/three/      Planet (shader), HeroScene, GlobeView, TerrainTwins, Starfield, Controls, textures (LOD)
-  src/components/map/        BodyMap (Leaflet, 3 CRSs), Swipe
-  src/components/ui/         Chrome (Nav, Footer, theme toggle), Astronaut, AskAstra, Splash
-  src/pages/                 Home, Atlas, Lab, Methods, About
-  scripts/                   build_textures.py, build_thumbs.py (rebuild NASA assets)
-  public/textures|thumbs|team|brand
-  docs/                      PROJECT_PLAN.md, HANDOFF.md (this), SUBMISSION.md, readme/ (README images, animated SVGs)
+D:\NASA_space_apps_challenge_2026\
+  CLAUDE.md            folder guide
+  ShadowAstra_Atlas\   the repo (this)
+  _claude_history\     CHAT_LOG.md (readable), raw transcripts, official exports (private)
+  _secrets\            Kaggle token files (never commit, never print)
+  team-photos\         original team photos and logo
+  reference\           official challenge material (portal page, Participants Guide, key dates, award list)
+  _archive\            earlier plans from a previous AI and old concept work (kept, not used)
 ```
-
-Commands: `npm install` · `npm run dev` (port 3000) · `npm run build` · `npm run typecheck`.
-Stack: React 19, TypeScript 7, Vite 8, Tailwind 4, three.js + R3F 9 (no drei), Leaflet, GSAP + Lenis, Motion.
-
----
-
-## 5. Gotchas learned the hard way
-
-- **Leaflet scale sync:** never zoom a map while it is mid-`flyTo`. `BodyMap.setMetresPerPixel` calls `map.stop()` first, and the Lab positions its paired maps with `flyTo(..., animate=false)`.
-- **Sentinel-2 cloudless** has colour artifacts over polar ice. Earth sites above |60°| use NASA Blue Marble (`earthVisible()` in terrain.ts).
-- **Polar Moon targets** use the reprojected LOLA image (`public/textures/moon_south_pole_lola.webp`, CRS.Simple). Equirect tiles near the pole are cut to ≤80 tiles.
-- **Light theme:** space scenes (home hero, Atlas stage, 3D terrain card, splash) are wrapped in `data-theme="dark"`. Use `var(--color-*)` and not hex in anything theme-sensitive. SVG colours must go in `style={{ stroke: ... }}`, not attributes.
-- **Lab URL rewrite** drops the `#hash`, so it is read once at mount.
-- **Headless screenshots** (for the README): Edge `--headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --virtual-time-budget=…`. Scroll-reveal sections render empty in headless; use the in-app browser for those. The dev server must be running.
-- Windows Git Bash: write long Python edit scripts to a file. Inline heredocs with backticks and quotes broke once.
-
----
-
-## 6. Open TODOs
-
-1. New portrait for **Mohammed Mahmud Parvez** (add `parvez.jpg` and crop it to 4:5 WebP).
-2. Add the **YouTube video link** to the README and site once the owner shares it.
-3. Hackathon (Nov), from `PROJECT_PLAN.md`:
-   - Full-precision DEMs (LOLA polar 5–20 m, HiRISE 1 m, NASADEM 30 m).
-   - EMIT / Diviner / THEMIS / CRISM for geology, temperature and regolith.
-   - Physical baseline ranker, then a terrain encoder on Kaggle.
-   - Screen the 8 queued regions and export a Site Passport (PDF).
-   - A Bangla classroom mode.
-4. Optional: the owner mentioned `npx plugins add vercel/vercel-plugin`. It was not run. Deployment already works without it.
-
-## 7. Where the history is
-- `D:\NASA_space_apps_challenge_2026\_claude_history\CHAT_LOG.md`: readable chat (all user requests plus Claude replies)
-- `…\_claude_history\session-raw.jsonl`: full raw transcript
-- `…\_claude_history\session-2026-10-10_to_14-export.zip`: the official app export
-- Earlier planning docs (from a previous AI, now archived) are in the parent folder: `SHADOWASTRA_ATLAS_MASTER_PLAN.md`, video scripts, `KAGGLE_TRAINING_PLAN.md`, and so on.

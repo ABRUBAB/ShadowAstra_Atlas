@@ -1,6 +1,0 @@
-{
-  "name": "ShadowAstra Atlas",
-  "description": "ShadowAstra Atlas — find the Earth landscapes where crews, rovers and instruments can rehearse permanent Moon base and Mars missions. NASA Space Apps Challenge 2026 · Dhaka.",
-  "permissions": [],
-  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

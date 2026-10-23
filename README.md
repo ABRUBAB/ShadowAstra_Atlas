@@ -64,7 +64,7 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | 🌍 | **Find new sites** | A mission builder: pick a Moon or Mars destination, the job (landing, base life, rover drive, ice, lava tubes, life search, craters, low Sun) and your team's needs in plain words (how far from home, near a town, altitude, month). All 80,206 land areas are searched live; you get ten distinct new places with satellite views, reasons and hints about which rule hides better sites. |
 | ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
 | 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth. |
-| 🎓 | **Learn, in English or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
+| 🎓 | **Learn, in English, Spanish or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
 | 📄 | **Site report** | A printable one-page dossier for any place: the four factors on Earth and the target, field tests, planning, permission and what Earth can't copy. |
 | 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
 | ⛰️ | **Compare in 3D** | Any Earth place next to its Moon or Mars target: real heights, real imagery, a movable Sun, a shadow map, best months to go and travel CO₂. |
@@ -77,7 +77,7 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/discover-report.jpg" alt="Place report for Kunlun Mountains"/><br/><sub><b>Place report.</b> Kunlun Mountains scores 0.90 for a Mars life search at Jezero: top 0.1% of all land. Astra shivers: nights reach −26 °C.</sub></td>
+    <td width="50%"><img src="docs/readme/discover-report.jpg" alt="Place report for Kunlun Mountains"/><br/><sub><b>Place report.</b> Why a place scores for the job, its four factors next to the target, rock type, confidence and a close-up map. Astra reacts to the real night cold.</sub></td>
     <td width="50%"><img src="docs/readme/town.jpg" alt="Town checker with Dhaka"/><br/><sub><b>Check your town.</b> Dhaka: green and wet, 2,071 mm of rain a year. Astra points to the nearest strong site instead.</sub></td>
   </tr>
   <tr>
@@ -160,7 +160,7 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 | Best Storytelling | Earth to Moon to Mars, “looks alike is not enough”, light and shadow |
 | Global Connection | Check any town on Earth; find the closest strong site from any city |
 | Art & Technology | NASA-mosaic globes, a sunlight-and-shadow palette, light and dark themes |
-| Local Impact | Dhaka-first workshops and a Bangla classroom mode (next) |
+| Local Impact | Dhaka as the default home city; a classroom page in Bangla, Spanish and English |
 
 </details>
 
@@ -198,7 +198,7 @@ public/data/   grid.bin + grid.json: the measured planet the website loads
 src/
   lib/         grid (load, score, rank, search) · terrain · sun · scoring · astra
   components/  three (score globe, terrain slabs) · map · ui kit · Astra · game · town check
-  pages/       Home · Discover · Lab (Compare) · Atlas (Maps) · Methods · About
+  pages/       Home · Discover · Lab (Compare) · Atlas (Maps) · Methods · Learn · About
 ```
 
 ## 🗺️ Roadmap
@@ -209,12 +209,13 @@ src/
 - [x] Learned model with a spatial hold-out test
 - [x] Find new sites, town checker, game, badges, search, Astra's live answers
 - [x] Terrain encoder, first test: a self-supervised CNN on 86,000 height patches from all three worlds. On 49 expert pairs it ranks them in the top 44% vs 34% for the formula, so it stays optional
-- [x] Mission builder, compare up to four, Earth twins of any Moon or Mars spot, Learn page in English and Bangla
+- [x] Mission builder, compare up to four, Earth twins of any Moon or Mars spot, Learn page in English, Spanish and Bangla
 - [x] Independent validation on 28 published sites, model-share curve, job test, robustness and ablations
 - [x] Kaggle K1: full-precision LOLA and MOLA measured everywhere; K2: Earth patches; K5: model zoo with Optuna
 - [ ] Kaggle K3: a self-supervised terrain transformer for three worlds on 2 × T4
 - [ ] Official 2026 challenge datasets, EMIT minerals, Diviner temperatures
-- [ ] Field test plan export (PDF) and a Bangla classroom mode
+- [x] Sharper imagery as you zoom (Esri on Earth, CTX on Mars, Kaguya on the Moon), close-up map of each result
+- [ ] Ship the K5 ensemble as the site model; pinpoint the best 10 km spot inside each place; expert review of the top 20
 
 ## 👩‍🚀 Team ShadowAstra
 

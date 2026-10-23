@@ -1,29 +1,14 @@
 # Submission texts (ready to paste)
 
-## Space Apps form (updated 23 Oct 2026, v0.4)
+## Space Apps form (updated 24 Oct 2026, v0.5)
 
 **Project Description**
-> ShadowAstra Atlas measures every land area on Earth (80,206 places, about 55 km each) with open NASA data and compares each one with Moon and Mars places at the same scale. Pick a mission job (living at a base, driving a rover, hunting for ice, exploring lava tubes, searching for life) and a lunar or Martian destination, and the whole planet is re-ranked live on a 3D globe. Click any place to see why it scores, its real terrain and climate numbers, the best months to go, and what Earth can never copy (gravity, air, radiation). A model trained on 38 known analog sites finds hidden Moon test sites in the top 0.8% of all land in a fair hold-out test. You can also compare any place in 3D, check your own town, and play “Earth or Mars?” with Astra, our field-test astronaut.
+> ShadowAstra Atlas helps mission teams find new places on Earth to rehearse a Moon base or a Mars mission. Tell it the destination, the job (a landing test, base life, rover drives, ice, lava tubes, a life search) and your team's limits in plain words, and it searches all 80,206 land areas measured with open NASA data, comparing each with the Moon or Mars spot at the same scale. You get ten new places with satellite views, reasons, a confidence badge and a printable site report, and you can compare up to four side by side. Tap any spot on the Moon or Mars to see its closest Earth twins. Every result is tested: known analog sites hidden from the model still land in the top 2.2% of all land, and 28 published sites it never saw land in the top 21%. Lessons and a quiz work in English, Spanish and Bangla, with Astra, our field-test astronaut.
 
 **Which NASA Data Source Are You Using? (165 characters, limit 200)**
-> NASA POWER; NASA GIBS MODIS (LST, NDVI, snow, land cover); SRTM; LRO LOLA and MGS MOLA via USGS; Solar System Treks (LROC, Viking, THEMIS); Smithsonian GVP volcanoes
+> NASA POWER; GIBS MODIS (LST, NDVI, snow, land cover); SRTM; LRO LOLA and MGS MOLA via USGS; Solar System Treks (LROC, Kaguya, CTX, Viking); Smithsonian GVP volcanoes
 
 **Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas
-
-<details>
-<summary>Earlier version (preliminary round, 14 Oct)</summary>
-
-### Space Apps form (14 Oct)
-
-**Project Description**
-> ShadowAstra Atlas finds where on Earth to rehearse a permanent Moon base or a Mars mission. Pick a mission task and a lunar or Martian target, and our Analog Lab compares real NASA elevation for both worlds in 3D at the same scale. It rotates a low lunar Sun to map shadows and computes when Earth's sunlight best matches the target. It scores six parameters weighted by the mission, shows what Earth can never reproduce (gravity, vacuum, radiation), and suggests the closest credible site to cut travel emissions. This is a prototype: topography and lighting are computed live, and the rest are labelled demo values until our model is trained at the hackathon.
-
-**Which NASA Data Source Are You Using? (165 characters, limit 200)**
-> NASA GIBS (Blue Marble, MODIS, ASTER GDEM, VIIRS Black Marble), NASA Solar System Treks (LRO LROC & LOLA, MGS MOLA, Viking, Mars Odyssey THEMIS), NASA SRTM elevation
-
-**Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas
-
-</details>
 
 ## YouTube
 
@@ -40,17 +25,18 @@ We are Team ShadowAstra from Dhaka, Bangladesh, and this is our project for the 
 Places like the Atacama Desert, Haughton Crater and Death Valley let mission teams test rovers, tools and plans before they fly. But these analog sites are not well characterized, and new ones are still waiting to be found.
 
 🚀 OUR SOLUTION: SHADOWASTRA ATLAS
-A web atlas that matches each mission task to real places on Earth.
-• Matched to the job: a rover test and an ice search need different places, so the score changes with the task.
-• Terrain slabs: real Earth, Moon and Mars ground side by side in 3D, at the same scale.
-• Shadow Lab: we move a low lunar Sun around the terrain to find ground that never gets light, where ice can hide.
-• Light Twin calendar: which month on Earth has sunlight most like the Moon or Mars site.
-• Rehearse closer: the nearest good site to your team, with distance and a CO₂ estimate.
-• Honest labels: every number is marked Computed, Demo or Reality gap. Earth cannot copy gravity, vacuum or radiation, and we always say so.
+A web atlas that finds and characterizes new Earth practice sites for a chosen Moon or Mars mission.
+• Find new sites: pick a destination, a job and your limits; all 80,206 land areas on Earth are searched live.
+• Matched to the job: a rover test and an ice search need different places, so the ranking changes with the task.
+• Earth twins: tap any spot on the Moon or Mars and see the Earth places with the most similar ground.
+• Compare: any Earth place next to its target at the same scale, in maps and 3D, with a movable Sun and a shadow map.
+• Tested in the open: hidden known sites rank in the top 2.2% of land; 28 sites the model never saw rank in the top 21%.
+• Honest labels: every number is Computed, Learned or "Earth can't copy", with a confidence badge for each place.
+• Learn: lessons and a quiz in English, Spanish and Bangla.
 • Astra: our field-test astronaut, who reacts to results and answers questions.
 
 🛰️ OPEN DATA WE USE
-NASA GIBS (Blue Marble, Black Marble, MODIS, ASTER GDEM), NASA Solar System Treks (LRO LROC & LOLA for the Moon; Viking, MOLA & THEMIS for Mars), NASA SRTM elevation and ESA Copernicus Sentinel-2.
+NASA POWER, NASA GIBS (MODIS, Blue Marble, Black Marble), SRTM elevation, LRO LOLA and MGS MOLA via USGS, NASA Solar System Treks (LROC, Kaguya, CTX, Viking), Smithsonian volcano records, GLiM rock map and ESA Copernicus Sentinel-2.
 
 🔗 LINKS
 Live website: https://shadowastra-atlas.vercel.app

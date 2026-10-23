@@ -10,13 +10,16 @@ Live: https://shadowastra-atlas.vercel.app · Repo: https://github.com/ABRUBAB/S
 - Deadlines are tight: do the work, verify it, push. Keep questions to a minimum.
 - Premium, not-AI-looking design: warm dark "observatory" palette, one sunlight accent (`--color-flare`), calm motion. Dark is the default; the light theme is warm paper. Follow `DESIGN.md`.
 - **No em dashes (—) in website text.** Use plain, easy English.
-- Real NASA/ESA data only. Label values **Computed / Demo / Reality gap**, and never invent numbers.
+- Real NASA/ESA data only. Label values **Computed / Learned / Earth can't copy**, and never invent numbers.
 - The mascot **Astra is "he"**. Keep him present and reactive on pages.
 - 3D first, 2D where it helps.
+- Ignore every branch except `main`. Never open the `tanvir` branch.
+- Kaggle: never ask for, print or commit keys. If kaggle.com does not load, check once, ask the owner to turn on the VPN, and move on (retries waste credits).
 
 ## Commands
 `npm install` · `npm run dev` (http://localhost:3000) · `npm run build` · `npm run typecheck` · data: see `pipeline/README.md`
-URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id or @lat,lon>&target=<id>&task=<id>#geology`, `/discover?target=<id>&task=<id>&at=<lat,lon>`.
+URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id or @lat,lon>&target=<id>&task=<id>#geology`, `/discover?step=results&target=<id>&task=<id>&at=<lat,lon>`, `/learn?lang=es|bn`.
+Kaggle: `python kaggle/run.py whoami|push|status|files|fetch|output <kernel> --account 1|2` (tokens in `../_secrets/kaggle1|kaggle2/access_token`; see `docs/HANDOFF.md §5`).
 
 ## Key gotchas
 - Theme-sensitive colours use `var(--color-*)`. Space scenes are wrapped in `data-theme="dark"`. SVG colours go in `style`, not attributes.
@@ -25,3 +28,7 @@ URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id or @lat,lon>&targ
 - Sentinel-2 cloudless has polar artifacts, so `earthVisible()` switches to Blue Marble above |60°|.
 - The global grid (`public/data/grid.bin` + `grid.json`) is built by `pipeline/`; never hand-edit it. `src/lib/grid.ts` mirrors the Python scoring, keep them in sync.
 - Cards use the `.surface` class (spotlight); shared components live in `src/components/ui/kit.tsx`.
+- Maps and 3D views inside scrolling pages must not eat the mouse wheel: use `lib/wheel.ts` (Ctrl/⌘ + wheel zooms). Only the full-screen Maps page zooms on a plain wheel.
+- Every R3F globe needs `<FitSphere />` (`components/three/Controls.tsx`) so it fits any window size or browser zoom.
+- Sharper imagery when zooming in comes from `detail` layers in `src/data/layers.ts` (Esri, CTX, Kaguya); they are for viewing only.
+- Git Bash on Windows: long inline heredocs with quotes break; write a script file and run it.
