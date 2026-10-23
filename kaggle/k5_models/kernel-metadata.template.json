@@ -1,0 +1,14 @@
+{
+  "slug": "shadowastra-k5-models",
+  "title": "ShadowAstra K5 Models",
+  "code_file": "k5_models.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["{user}/shadowastra-features"],
+  "kernel_sources": [],
+  "competition_sources": []
+}
