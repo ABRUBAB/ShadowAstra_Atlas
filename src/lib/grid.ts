@@ -32,6 +32,8 @@ export interface GridTarget {
   light: number[];
   /** Month index (0 = Jan) of that best match, per row. */
   light_month: number[];
+  /** The target's main rocks and how close each Earth rock class (GLiM) is to them, 0 to 1. */
+  rock?: { family: string; label: string; aff: number[] };
 }
 
 export interface KnownSite {
@@ -65,6 +67,8 @@ export interface GridMeta {
   slope_bins: number[];
   targets: GridTarget[];
   names: { country: string[]; region: string[]; place: string[]; place_ll?: [number, number][]; volcano: string[]; impact: string[] };
+  /** GLiM rock classes, indexed by the f_lith value. */
+  lithology?: { code: string; label: string }[];
   known: KnownSite[];
   evaluation: Record<World, Evaluation>;
   sources: Record<string, string>;
@@ -189,6 +193,31 @@ export class Grid {
     return { title, subtitle: parts.join(" · "), country: where, region, place, placeKm };
   }
 
+  /** Main rock type of a place (GLiM, 0.5° dominant class), or null where unknown. */
+  rock(k: number): { code: string; label: string } | null {
+    const v = this.value("f_lith", k);
+    const L = this.meta.lithology;
+    if (v === null || !L || !L[v] || L[v].code === "nd") return null;
+    return L[v];
+  }
+
+  /** How close this place's rock is to the target's main rocks (0 to 1); 0.5 if unknown. */
+  rockMatch(k: number, t: GridTarget) {
+    const v = this.value("f_lith", k);
+    return v === null || !t.rock ? 0.5 : (t.rock.aff[v] ?? 0.5);
+  }
+
+  /**
+   * How much to trust a score here: share of measurements that are real (not gap-filled)
+   * and how much the learned model's eight bags disagree about the place.
+   */
+  confidence(k: number, world: World): { level: "high" | "medium" | "low"; cover: number; spread: number } {
+    const cover = this.value("q_cover", k) ?? 1;
+    const spread = this.value(`u_${world}`, k) ?? 0;
+    const level = cover < 0.6 || spread > 0.2 ? "low" : cover < 0.85 || spread > 0.12 ? "medium" : "high";
+    return { level, cover, spread };
+  }
+
   volcano(k: number) {
     const v = this.value("n_volc", k);
     const d = this.value("f_volc_km", k);
@@ -273,6 +302,9 @@ export function useGrid() {
 /* ------------------------------------------------------------------ scoring */
 
 export type Dim = keyof Weights;
+/** Default share of the learned model in the match score, chosen on the known sites (pipeline/s14_validate.py). */
+export const MODEL_MIX = 0.6;
+
 export const DIMS: Dim[] = ["topography", "geology", "temperature", "lighting", "regolith"];
 
 export const DIM_INFO: Record<Dim, { label: string; plain: string; source: string }> = {
@@ -283,7 +315,11 @@ export const DIM_INFO: Record<Dim, { label: string; plain: string; source: strin
   regolith: { label: "Bare, dry ground", plain: "Little rain and no plants, so loose soil and rock are exposed.", source: "NASA POWER rainfall, MODIS vegetation (NDVI)" },
 };
 
-/** Rocks & craters proxy: depends on the job and the world. */
+/**
+ * Rocks & craters: depends on the job and the world. Kept identical to pipeline/s14_validate.py.
+ * (A version that also scored GLiM rock types ranked the known sites worse at 0.5°, so rock
+ * types are shown as facts, not scored. See validation.json, "ablation".)
+ */
 function geology(world: World, task: TaskId, volc: number, imp: number, bare: number, dry: number) {
   const hard = Math.max(volc, imp);
   switch (task) {
@@ -360,7 +396,7 @@ export function scoreCell(g: Grid, k: number, o: ScoreOptions): CellScore {
   }
   const mission = ws ? s / ws : 0;
   const model = g.model(world, k);
-  const m = o.modelMix ?? 0.3;
+  const m = o.modelMix ?? MODEL_MIX;
   return { total: (1 - m) * mission + m * model, mission, model, dims, formula, neural };
 }
 
@@ -369,7 +405,7 @@ export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
   const w = o.weights ?? TASK_WEIGHTS[o.task];
   const world = o.target.body;
   const ws = DIMS.reduce((a, d) => a + w[d], 0) || 1;
-  const m = o.modelMix ?? 0.3;
+  const m = o.modelMix ?? MODEL_MIX;
   const A = (n: string) => g.arr(n);
   const [volc, imp, bare, dry, cold, swing, airdry, ice] = (["volcanic", "impact", "bare", "dry", "cold", "swing", "airdry", "ice"] as const).map((n) => A(`i_${n}`));
   const H = [0, 1, 2, 3, 4, 5, 6, 7].map((b) => A(`h${b}`));

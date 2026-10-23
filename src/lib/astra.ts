@@ -177,7 +177,7 @@ export function astraAnswer(raw: string): AstraReply {
 
   if (/score|calculat|how .*(work|made|compute)|weight|formula/.test(q))
     return {
-      text: "The match score goes from 0 to 1. We measure five things for every land area: ground shape, rocks and craters, cold and heat, sunlight angle, and bare, dry ground. The job you pick decides how much each one counts. A learned model adds 30% by default. Radiation can never be copied on Earth, so we show it but never count it. 0.75 or more is a high match.",
+      text: "The match score goes from 0 to 1. We measure five things for every land area: ground shape, rocks and craters, cold and heat, sunlight angle, and bare, dry ground. The job you pick decides how much each one counts. A model that learned from 38 places experts already use counts for 60% by default, because our tests showed it finds hidden test sites best. Radiation can never be copied on Earth, so we show it but never count it. 0.75 or more is a high match.",
       mood: "thinking",
       links: [{ label: "See the full method", to: "/methods" }],
     };

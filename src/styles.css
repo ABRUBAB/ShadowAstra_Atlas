@@ -29,6 +29,13 @@
   --color-partial: #e3b35e;
   --color-weak: #e47a63;
 
+  /* chart marks: the brand hues stepped into the data-viz band (validated for colour
+     blindness and contrast on both themes; fixed order, never cycled) */
+  --color-chart-1: #bd871c;
+  --color-chart-2: #5296df;
+  --color-chart-3: #d47452;
+  --color-chart-4: #9f7ed6;
+
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
@@ -66,6 +73,10 @@
   --color-strong: #2b8156;
   --color-partial: #9f6b10;
   --color-weak: #b2412a;
+  --color-chart-1: #996a06;
+  --color-chart-2: #2a76c3;
+  --color-chart-3: #b6522d;
+  --color-chart-4: #825eb9;
 }
 [data-theme="dark"] {
   color-scheme: dark;
@@ -87,6 +98,10 @@
   --color-strong: #7cc8a0;
   --color-partial: #e3b35e;
   --color-weak: #e47a63;
+  --color-chart-1: #bd871c;
+  --color-chart-2: #5296df;
+  --color-chart-3: #d47452;
+  --color-chart-4: #9f7ed6;
 }
 html[data-theme="light"] body::before {
   opacity: 0.07;

@@ -6,7 +6,7 @@ import { TARGET_BY_ID, TASKS, type TaskId } from "../data/sites";
 import { TASK_WEIGHTS, greatCircleKm, tripCo2Tonnes } from "../lib/scoring";
 import { formatCoord } from "../lib/geo";
 import { sunRegime } from "../lib/sun";
-import { MONTHS, scoreCell, useGrid } from "../lib/grid";
+import { MODEL_MIX, MONTHS, scoreCell, useGrid } from "../lib/grid";
 import { DHAKA, FACTORS, FIELD_TESTS } from "../lib/mission";
 import { useEarthThumb } from "../lib/thumbs";
 
@@ -34,7 +34,7 @@ export default function Report() {
   const lat = grid.lat(k);
   const lon = grid.lon(k);
   const nm = grid.name(k);
-  const cs = scoreCell(grid, k, { target: t, task, weights: TASK_WEIGHTS[task], modelMix: 0.3 });
+  const cs = scoreCell(grid, k, { target: t, task, weights: TASK_WEIGHTS[task], modelMix: MODEL_MIX });
   const v = (n: string) => grid.value(n, k);
   const km = greatCircleKm(home.lat, home.lon, lat, lon);
   const taskLabel = TASKS.find((x) => x.id === task)!.label;
@@ -83,7 +83,7 @@ export default function Report() {
             </div>
             <div className="mt-4 text-[12px] text-[#888275]">Match score</div>
             <div className="font-mono text-[44px] leading-none font-light">{cs.total.toFixed(2)}</div>
-            <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with 30% from a model trained on 38 known test sites.</div>
+            <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with 60% from a model trained on 38 known test sites.</div>
             <table className="mt-4 w-full text-[12.5px]">
               <tbody>
                 {FACTORS.map((x) => (

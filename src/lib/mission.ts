@@ -5,7 +5,7 @@
 import { TARGET_BY_ID, type TaskId, type World } from "../data/sites";
 import { TASK_WEIGHTS, type Weights } from "./scoring";
 import { sunRegime, sunSimilarity } from "./sun";
-import { haversineKm, rankPlaces, scoreAll, type Candidate, type Grid, type GridTarget } from "./grid";
+import { MODEL_MIX, haversineKm, rankPlaces, scoreAll, type Candidate, type Grid, type GridTarget } from "./grid";
 
 /* ------------------------------------------------------------------ mission */
 
@@ -44,7 +44,7 @@ export function defaultMission(target = "jezero", task: TaskId = "astrobio"): Mi
     skipAntarctica: false,
     onlyNew: true,
     weights: { ...TASK_WEIGHTS[task] },
-    modelMix: 0.3,
+    modelMix: MODEL_MIX,
   };
 }
 

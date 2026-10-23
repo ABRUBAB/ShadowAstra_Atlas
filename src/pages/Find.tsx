@@ -868,7 +868,7 @@ function ResultsPanel({ grid, m, result, scanning, onOpen, onRelax, onEdit }: { 
       </ol>
       {!scanning && result.places.length > 0 && (
         <p className="mt-4 text-[11.5px] leading-relaxed text-dim">
-          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model (30%). Click a place for the full report.
+          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model (60%). Click a place for the full report.
         </p>
       )}
     </div>
