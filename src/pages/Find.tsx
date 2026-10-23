@@ -90,6 +90,9 @@ export default function Find() {
   const [scanning, setScanning] = useState(false);
   const [focus, setFocus] = useState<{ lat: number; lon: number; key: number } | null>(null);
   const [world, setWorld] = useState<World>(TARGET_BY_ID[init.m.target].body);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [comparing, setComparing] = useState(false);
+  const togglePick = (k: number) => setPicked((p) => (p.includes(k) ? p.filter((x) => x !== k) : p.length >= 4 ? p : [...p, k]));
   const target = TARGET_BY_ID[m.target];
   const update = (patch: Partial<Mission>) => setM((x) => ({ ...x, ...patch }));
 
@@ -111,6 +114,11 @@ export default function Find() {
     if (k >= 0) openPlace(k);
     setPendingAt(null);
   }, [grid, result, pendingAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setPicked([]);
+    setComparing(false);
+  }, [result]);
 
   /* ---------- heat canvas: the possible area while choosing needs, the scores in results */
   const heat = useMemo(() => (typeof document === "undefined" ? null : document.createElement("canvas")), []);
@@ -314,6 +322,10 @@ export default function Find() {
                       toast(RULE_TEXT[r].relax);
                     }}
                     onEdit={() => setStep("needs")}
+                    picked={picked}
+                    onPick={togglePick}
+                    onCompare={() => setComparing(true)}
+                    onClear={() => setPicked([])}
                   />
                 )}
                 {step === "results" && grid && result && sel !== null && <SiteReport grid={grid} k={sel} m={m} result={result} onBack={() => setSel(null)} />}
@@ -323,6 +335,20 @@ export default function Find() {
           </div>
         </aside>
       </section>
+      <AnimatePresence>
+        {comparing && grid && result && picked.length >= 2 && (
+          <CompareSheet
+            grid={grid}
+            m={m}
+            ks={picked}
+            onClose={() => setComparing(false)}
+            onOpen={(k) => {
+              setComparing(false);
+              openPlace(k);
+            }}
+          />
+        )}
+      </AnimatePresence>
       <Footer />
     </div>
   );
@@ -786,15 +812,29 @@ function needLines(grid: Grid, m: Mission, k: number) {
   ];
 }
 
-function ResultCard({ grid, c, rank, m, onOpen }: { grid: Grid; c: Candidate; rank: number; m: Mission; onOpen: () => void }) {
+function PickThumb({ grid, k }: { grid: Grid; k: number }) {
+  const thumb = useEarthThumb(grid.lat(k), grid.lon(k), 96);
+  return <span className="block size-9 overflow-hidden rounded-full border-2 border-panel bg-ink">{thumb && <img src={thumb} alt="" className="size-full object-cover" />}</span>;
+}
+
+function ResultCard({ grid, c, rank, m, onOpen, picked, onPick, full }: { grid: Grid; c: Candidate; rank: number; m: Mission; onOpen: () => void; picked: boolean; onPick: () => void; full: boolean }) {
   const nm = grid.name(c.k);
   const thumb = useEarthThumb(c.lat, c.lon, 160);
   const t = grid.targets[m.target];
   const cs = scoreCell(grid, c.k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix });
   const best = FACTORS.map((f) => ({ f, v: f.dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / f.dims.length })).sort((a, b) => b.v - a.v)[0];
   return (
-    <motion.li initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE, delay: 0.05 * rank }}>
-      <button onClick={onOpen} className="surface lift group flex w-full gap-3 overflow-hidden rounded-2xl p-2.5 text-left">
+    <motion.li initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE, delay: 0.05 * rank }} className="relative">
+      <button
+        onClick={onPick}
+        disabled={full && !picked}
+        aria-pressed={picked}
+        title={picked ? "Remove from the comparison" : full ? "Up to 4 places" : "Add to the comparison"}
+        className={clsx("absolute right-2.5 bottom-2.5 z-10 rounded-full border px-2 py-0.5 text-[10.5px] transition-colors disabled:opacity-30", picked ? "border-flare bg-flare text-void" : "border-line-2 bg-void/60 text-chrome hover:border-flare/60 hover:text-platinum")}
+      >
+        {picked ? "Comparing" : "+ Compare"}
+      </button>
+      <button onClick={onOpen} className={clsx("surface lift group flex w-full gap-3 overflow-hidden rounded-2xl p-2.5 text-left", picked && "!border-flare/60")}>
         <div className="relative size-[86px] shrink-0 overflow-hidden rounded-xl bg-ink">
           {thumb ? <motion.img src={thumb} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="size-full object-cover" /> : <div className="shimmer size-full" />}
           <span className="absolute top-1 left-1 grid size-6 place-items-center rounded-full bg-void/80 font-mono text-[11px] text-platinum">{rank}</span>
@@ -827,7 +867,31 @@ function ResultCard({ grid, c, rank, m, onOpen }: { grid: Grid; c: Candidate; ra
   );
 }
 
-function ResultsPanel({ grid, m, result, scanning, onOpen, onRelax, onEdit }: { grid: Grid; m: Mission; result: SearchResult; scanning: boolean; onOpen: (k: number) => void; onRelax: (r: keyof typeof RULE_TEXT) => void; onEdit: () => void }) {
+function ResultsPanel({
+  grid,
+  m,
+  result,
+  scanning,
+  onOpen,
+  onRelax,
+  onEdit,
+  picked,
+  onPick,
+  onCompare,
+  onClear,
+}: {
+  grid: Grid;
+  m: Mission;
+  result: SearchResult;
+  scanning: boolean;
+  onOpen: (k: number) => void;
+  onRelax: (r: keyof typeof RULE_TEXT) => void;
+  onEdit: () => void;
+  picked: number[];
+  onPick: (k: number) => void;
+  onCompare: () => void;
+  onClear: () => void;
+}) {
   const t = TARGET_BY_ID[m.target];
   const task = TASKS.find((x) => x.id === m.task)!;
   return (
@@ -871,14 +935,159 @@ function ResultsPanel({ grid, m, result, scanning, onOpen, onRelax, onEdit }: { 
       <ol className="mt-4 space-y-2">
         {scanning
           ? Array.from({ length: 6 }, (_, i) => <li key={i} className="shimmer h-[106px] rounded-2xl" />)
-          : result.places.map((c, i) => <ResultCard key={c.k} grid={grid} c={c} rank={i + 1} m={m} onOpen={() => onOpen(c.k)} />)}
+          : result.places.map((c, i) => <ResultCard key={c.k} grid={grid} c={c} rank={i + 1} m={m} onOpen={() => onOpen(c.k)} picked={picked.includes(c.k)} onPick={() => onPick(c.k)} full={picked.length >= 4} />)}
       </ol>
+      <AnimatePresence>
+        {picked.length > 0 && !scanning && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.35, ease: EASE }} className="sticky bottom-3 z-10 mt-4 flex items-center gap-3 rounded-2xl border border-flare/40 bg-panel/95 p-2.5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+            <div className="flex -space-x-2">
+              {picked.map((k) => (
+                <PickThumb key={k} grid={grid} k={k} />
+              ))}
+            </div>
+            <span className="flex-1 text-[12.5px] text-chrome">{picked.length < 2 ? "Pick one more to compare" : `${picked.length} places picked`}</span>
+            <button onClick={onClear} className="text-[11.5px] text-dim hover:text-platinum">
+              Clear
+            </button>
+            <button onClick={onCompare} disabled={picked.length < 2} className="btn-primary rounded-full px-4 py-2 text-[12.5px] font-medium disabled:opacity-40">
+              Compare
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {!scanning && result.places.length > 0 && (
         <p className="mt-4 text-[11.5px] leading-relaxed text-dim">
           Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model (60%). Click a place for the full report.
         </p>
       )}
     </div>
+  );
+}
+
+/* ================================================================ compare sheet */
+
+function CompareSheet({ grid, m, ks, onClose, onOpen }: { grid: Grid; m: Mission; ks: number[]; onClose: () => void; onOpen: (k: number) => void }) {
+  const t = grid.targets[m.target];
+  const T = TARGET_BY_ID[m.target];
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  const cols = ks.map((k) => {
+    const cs = scoreCell(grid, k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix });
+    const factor = (dims: readonly string[]) => dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / dims.length;
+    const km = greatCircleKm(m.home.lat, m.home.lon, grid.lat(k), grid.lon(k));
+    return { k, cs, factors: FACTORS.map((f) => factor(f.dims)), km, conf: grid.confidence(k, T.body) };
+  });
+  const v = (n: string, k: number) => grid.value(n, k);
+  type Row = { label: string; vals: (number | null)[]; fmt: (x: number) => string; better: "high" | "low" | null };
+  const rows: Row[] = [
+    { label: "Average slope", vals: ks.map((k) => v("f_slope", k)), fmt: (x) => `${x.toFixed(1)}°`, better: null },
+    { label: "Height range", vals: ks.map((k) => v("f_relief", k)), fmt: (x) => `${(x / 1000).toFixed(2)} km`, better: null },
+    { label: "Coldest night", vals: ks.map((k) => v("f_lst_night_min", k)), fmt: (x) => `${Math.round(x)} °C`, better: "low" },
+    { label: "Rain a year", vals: ks.map((k) => v("f_precip", k)), fmt: (x) => `${Math.round(x).toLocaleString()} mm`, better: "low" },
+    { label: `From ${m.home.name}`, vals: cols.map((c) => c.km), fmt: (x) => `${Math.round(x).toLocaleString()} km`, better: "low" },
+    { label: "Trip CO₂, 4 people", vals: cols.map((c) => tripCo2Tonnes(c.km, 4)), fmt: (x) => `${x.toFixed(1)} t`, better: "low" },
+  ];
+  const bestOf = (vals: (number | null)[], better: "high" | "low") => {
+    const ok = vals.filter((x): x is number => x !== null);
+    if (!ok.length) return null;
+    return better === "high" ? Math.max(...ok) : Math.min(...ok);
+  };
+  const top = Math.max(...cols.map((c) => c.cs.total));
+  const gridCols = { gridTemplateColumns: `150px repeat(${ks.length}, minmax(150px, 1fr))` };
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1200] grid place-items-center bg-void/70 p-3 backdrop-blur-sm sm:p-6" onClick={onClose} role="dialog" aria-modal="true" aria-label="Compare places">
+      <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.45, ease: EASE }} onClick={(e) => e.stopPropagation()} className="scrollbar-thin max-h-full w-full max-w-[1100px] overflow-auto rounded-3xl border border-line bg-panel shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)]">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-panel/95 px-5 py-4 backdrop-blur">
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.22em] text-flare uppercase">Side by side</div>
+            <div className="mt-0.5 text-[17px] text-platinum">
+              {TASKS.find((x) => x.id === m.task)!.label} · {T.name}
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-full border border-line-2 px-3 py-1.5 text-[12px] text-chrome hover:text-platinum">
+            Close
+          </button>
+        </div>
+        <div className="min-w-[640px] p-5">
+          <div className="grid gap-3" style={gridCols}>
+            <span />
+            {cols.map((c, i) => (
+              <CompareHead key={c.k} grid={grid} k={c.k} score={c.cs.total} best={c.cs.total === top} delay={i * 0.06} onOpen={() => onOpen(c.k)} conf={c.conf} />
+            ))}
+          </div>
+          <div className="mt-5 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">The four factors</div>
+          {FACTORS.map((f, fi) => {
+            const vals = cols.map((c) => c.factors[fi]);
+            const best = Math.max(...vals);
+            return (
+              <div key={f.id} className="grid items-center gap-3 border-b border-line py-3" style={gridCols}>
+                <span className="text-[13px] text-chrome">{f.label}</span>
+                {vals.map((x, i) => (
+                  <span key={i} className="flex items-center gap-2">
+                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+                      <motion.span className="block h-full rounded-full" style={{ background: x === best ? "var(--color-flare)" : "var(--color-chrome)" }} initial={{ width: 0 }} animate={{ width: `${x * 100}%` }} transition={{ duration: 0.9, ease: EASE, delay: 0.1 + i * 0.05 }} />
+                    </span>
+                    <span className={clsx("w-9 text-right font-mono text-[12px]", x === best ? "text-flare" : "text-chrome")}>{x.toFixed(2)}</span>
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+          <div className="mt-5 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Measured, and the trip</div>
+          {rows.map((r) => {
+            const b = r.better ? bestOf(r.vals, r.better) : null;
+            return (
+              <div key={r.label} className="grid items-center gap-3 border-b border-line py-2.5 text-[13px]" style={gridCols}>
+                <span className="text-chrome">{r.label}</span>
+                {r.vals.map((x, i) => (
+                  <span key={i} className={clsx("font-mono", x !== null && b !== null && x === b ? "text-flare" : "text-platinum")}>
+                    {x === null ? "n/a" : r.fmt(x)}
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+          <div className="grid items-center gap-3 py-2.5 text-[13px]" style={gridCols}>
+            <span className="text-chrome">Main rock</span>
+            {ks.map((k) => (
+              <span key={k} className="text-platinum">
+                {grid.rock(k)?.label ?? "unknown"}
+              </span>
+            ))}
+          </div>
+          <p className="mt-4 text-[11.5px] text-dim">Gold marks the best value in each row. Earth can't copy gravity, air or space radiation at any of these places.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function CompareHead({ grid, k, score, best, delay, onOpen, conf }: { grid: Grid; k: number; score: number; best: boolean; delay: number; onOpen: () => void; conf: ReturnType<Grid["confidence"]> }) {
+  const thumb = useEarthThumb(grid.lat(k), grid.lon(k), 320);
+  const nm = grid.name(k);
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE, delay }} className={clsx("overflow-hidden rounded-2xl border", best ? "border-flare/60" : "border-line")}>
+      <div className="relative aspect-[4/3] bg-ink">
+        {thumb ? <img src={thumb} alt={`Satellite view of ${nm.title}`} className="h-full w-full object-cover" /> : <div className="shimmer h-full" />}
+        {best && <span className="absolute top-2 left-2 rounded-full bg-flare px-2 py-0.5 text-[10.5px] font-medium text-void">Best match</span>}
+      </div>
+      <div className="p-3">
+        <div className="truncate text-[14px] text-platinum">{nm.title}</div>
+        <div className="truncate text-[11px] text-dim">{nm.subtitle}</div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="font-mono text-[22px] text-platinum">{score.toFixed(2)}</span>
+          <button onClick={onOpen} className="rounded-full border border-line-2 px-2.5 py-1 text-[11px] text-chrome hover:text-platinum">
+            Report
+          </button>
+        </div>
+        <div className="mt-2">
+          <ConfidenceChip {...conf} />
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
