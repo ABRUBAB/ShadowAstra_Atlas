@@ -4,18 +4,23 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
-import { ArrowRight, ArrowUpRight, Check, CircleDashed, Leaf, Mountain, Radar, Scale, ShieldCheck, Sun, Target } from "lucide-react";
-import { Eyebrow, Footer, Github, Nav, REPO_URL, WorldDot } from "../components/ui/Chrome";
+import { AnimatePresence, motion } from "motion/react";
+import clsx from "clsx";
+import { ArrowRight, ArrowUpRight, Award, Check, CircleDashed, Gamepad2, Globe, Layers, Leaf, Lock, MapPin, Radar, ShieldCheck, Target } from "lucide-react";
+import { Footer, Github, Nav, REPO_URL, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, type Action, type Mood } from "../components/ui/Astronaut";
-import { EARTH_SITES, SCREENING_REGIONS, TARGETS, TARGET_BY_ID, TASKS } from "../data/sites";
-import { LAYERS, LAYERS_BY_BODY } from "../data/layers";
+import { Counter, EASE, GlyphTile, Kicker, Magnetic, WordCycler } from "../components/ui/kit";
+import { EarthOrMars } from "../components/EarthOrMars";
+import { CheckTown } from "../components/CheckTown";
+import { EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS } from "../data/sites";
 import { formatCoord, polarPixel, POLAR_IMAGE_SIZE } from "../lib/geo";
 import { useSmoothScroll } from "../lib/useSmoothScroll";
+import { BADGES, useFieldLog } from "../lib/fieldlog";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 const HeroScene = lazy(() => import("../components/three/HeroScene"));
-const EASE = "expo.out";
+const GSAP_EASE = "expo.out";
 
 export default function Home() {
   useSmoothScroll();
@@ -27,7 +32,7 @@ export default function Home() {
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const split = SplitText.create(".hero-title", { type: "words", mask: "words" });
         gsap
-          .timeline({ defaults: { ease: EASE } })
+          .timeline({ defaults: { ease: GSAP_EASE } })
           .from(split.words, { yPercent: 105, duration: 1.4, stagger: 0.07, delay: 0.15 })
           .from(".hero-fade", { opacity: 0, y: 14, duration: 1.1, stagger: 0.09 }, "-=1.0")
           .from(".hero-hud", { opacity: 0, duration: 1.2 }, "-=0.6");
@@ -35,16 +40,12 @@ export default function Home() {
         ScrollTrigger.batch("[data-reveal]", {
           start: "top 90%",
           once: true,
-          onEnter: (els) => gsap.fromTo(els, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 1.1, stagger: 0.08, ease: EASE }),
+          onEnter: (els) => gsap.fromTo(els, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 1.1, stagger: 0.08, ease: GSAP_EASE }),
         });
 
         gsap.utils.toArray<HTMLElement>(".split-reveal").forEach((el) => {
           const s = SplitText.create(el, { type: "words", mask: "words" });
-          gsap.from(s.words, { yPercent: 100, duration: 1.15, stagger: 0.03, ease: EASE, scrollTrigger: { trigger: el, start: "top 86%" } });
-        });
-
-        gsap.utils.toArray<HTMLElement>("[data-rule]").forEach((el) => {
-          gsap.from(el, { scaleX: 0, transformOrigin: "left center", duration: 1.4, ease: EASE, scrollTrigger: { trigger: el, start: "top 90%" } });
+          gsap.from(s.words, { yPercent: 100, duration: 1.15, stagger: 0.03, ease: GSAP_EASE, scrollTrigger: { trigger: el, start: "top 86%" } });
         });
 
         gsap.to(".hero-scene", { yPercent: 14, opacity: 0.3, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
@@ -57,17 +58,27 @@ export default function Home() {
     { scope: root },
   );
 
+  // Deep links such as /#play scroll once the page has laid out.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 700);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div ref={root} className="bg-void">
       <Nav overlay />
       <Hero />
       <SourceMarquee />
-      <Challenge />
-      <Novelty />
-      <Worlds />
+      <Numbers />
+      <TryIt />
+      <TownSection />
+      <PlaySection />
+      <MeetAstra />
       <FalseFriend />
       <MoonBase />
-      <Pipeline />
+      <HowItWorks />
       <Sustainability />
       <Library />
       <Progress />
@@ -80,16 +91,6 @@ export default function Home() {
 
 /* ------------------------------------------------------------------ helpers */
 
-function Chapter({ n, children, className }: { n: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`flex items-center gap-4 ${className ?? ""}`}>
-      <span className="font-mono text-[11px] text-flare">{n}</span>
-      <span data-rule className="h-px w-10 bg-line-2" />
-      <span className="font-mono text-[11px] tracking-[0.24em] text-chrome uppercase">{children}</span>
-    </div>
-  );
-}
-
 function H2({ children, className }: { children: React.ReactNode; className?: string }) {
   return <h2 className={`split-reveal text-[clamp(30px,4.2vw,62px)] leading-[1.03] font-medium tracking-[-0.038em] ${className ?? ""}`}>{children}</h2>;
 }
@@ -98,7 +99,15 @@ function Em({ children }: { children: React.ReactNode }) {
   return <span className="font-serif font-normal text-chrome italic">{children}</span>;
 }
 
-/** Astra appears once per chapter, doing that chapter's job. */
+function Section({ id, children, className, ink }: { id?: string; children: React.ReactNode; className?: string; ink?: boolean }) {
+  return (
+    <section id={id} className={clsx("relative scroll-mt-16 border-t border-line px-4 py-28 sm:px-6 md:py-36", ink && "bg-ink", className)}>
+      <div className="mx-auto max-w-[1400px]">{children}</div>
+    </section>
+  );
+}
+
+/** Astra appears in each chapter, doing that chapter's job. */
 function Guide({ mood, action, say, className, size = 130 }: { mood: Mood; action: Action; say?: string; className?: string; size?: number }) {
   return (
     <div data-reveal className={className}>
@@ -151,34 +160,45 @@ function Hero() {
 
       <div className="relative z-10 mx-auto flex h-full max-w-[1600px] flex-col justify-end px-4 pb-24 sm:px-6 min-[900px]:justify-center min-[900px]:pb-0">
         <div className="pointer-events-auto max-w-[860px]">
-          <Eyebrow className="hero-fade mb-7">NASA Space Apps 2026 · Team ShadowAstra · Dhaka</Eyebrow>
-          <h1 className="hero-title text-[clamp(40px,min(7vw,11vh),116px)] leading-[0.95] font-medium tracking-[-0.045em] text-platinum">
-            <span className="block">Rehearse other worlds</span>
+          <div className="hero-fade mb-7 flex items-center gap-3 font-mono text-[11px] tracking-[0.22em] text-chrome uppercase">
+            <span className="h-px w-8 bg-chrome/50" />
+            NASA Space Apps 2026 · Team ShadowAstra · Dhaka
+          </div>
+          <h1 className="hero-title text-[clamp(40px,min(7vw,11vh),112px)] leading-[0.95] font-medium tracking-[-0.045em] text-platinum">
+            <span className="block">Practise for other worlds</span>
             <span className="block font-serif font-normal tracking-[-0.02em] text-flare italic">on this one.</span>
           </h1>
-          <p className="hero-fade mt-7 max-w-[540px] text-[17px] leading-relaxed text-chrome">
-            ShadowAstra Atlas finds places on Earth where astronauts, rovers and tools can practise for a Moon base or a Mars mission. We match
-            each place to the job, compare the ground at the same size, and check the sunlight too.
+          <p className="hero-fade mt-7 max-w-[560px] text-[17px] leading-relaxed text-chrome">
+            Astronauts and rovers test their gear on Earth first. ShadowAstra Atlas measures every land area on Earth with NASA data and finds the best places
+            to practise for{" "}
+            <WordCycler words={["a Moon base.", "driving on Mars.", "finding ice.", "exploring lava tubes.", "the search for life."]} className="text-platinum" />
           </p>
           <div className="hero-fade mt-9 flex flex-wrap items-center gap-3">
-            <Link to="/lab" className="btn-primary group inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium">
-              Open the Analog Lab
-              <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+            <Magnetic>
+              <Link to="/discover" className="btn-primary group inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium">
+                Find new test sites
+                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+              </Link>
+            </Magnetic>
+            <Link to="/lab" className="inline-flex items-center gap-2 rounded-full border border-line-2 bg-void/40 px-6 py-3.5 text-sm text-platinum backdrop-blur transition-colors hover:border-chrome">
+              Compare two places in 3D
             </Link>
-            <Link to="/atlas" className="inline-flex items-center gap-2 rounded-full border border-line-2 bg-void/40 px-6 py-3.5 text-sm text-platinum backdrop-blur transition-colors hover:border-chrome">
-              Explore the Atlas
-            </Link>
+            <a href="#town" className="link-wipe ml-1 inline-flex items-center gap-1.5 text-sm text-chrome hover:text-platinum">
+              <MapPin size={14} /> How Mars-like is your town?
+            </a>
           </div>
         </div>
       </div>
 
       <div className="hero-hud pointer-events-none absolute right-4 bottom-24 z-10 hidden w-[340px] sm:right-6 min-[900px]:block">
-        <div className="panel rounded-xl p-4">
+        <div className="glass rounded-xl p-4">
           <div className="flex items-center justify-between font-mono text-[10px] tracking-widest text-dim uppercase">
             <span>
-              Reference analog {String(i + 1).padStart(2, "0")}/{EARTH_SITES.length}
+              Known test site {String(i + 1).padStart(2, "0")}/{EARTH_SITES.length}
             </span>
-            <span>live catalogue</span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-1.5 animate-pulse rounded-full bg-strong" /> live
+            </span>
           </div>
           <div key={s.id} className="mt-3 animate-[hudIn_.6s_cubic-bezier(.22,1,.36,1)]">
             <div className="text-[15px] font-medium text-platinum">{s.name}</div>
@@ -188,7 +208,7 @@ function Hero() {
             <div className="mt-3 flex items-center gap-2 text-[11px] text-dim">
               <WorldDot world="earth" />
               <span className="h-px flex-1 bg-line-2" />
-              <span className="font-serif text-[13px] italic">rehearses</span>
+              <span className="font-serif text-[13px] italic">practises for</span>
               <span className="h-px flex-1 bg-line-2" />
               <WorldDot world={pair.body} />
             </div>
@@ -208,9 +228,9 @@ function Hero() {
 }
 
 function SourceMarquee() {
-  const items = useMemo(() => Array.from(new Set(LAYERS.map((l) => l.instrument.replace(/,.*$/, "")))), []);
+  const items = ["NASA POWER", "NASA GIBS · MODIS", "LRO LOLA", "MGS MOLA", "SRTM terrain", "LRO LROC", "Mars Odyssey THEMIS", "Viking MDIM", "ASTER GDEM", "Smithsonian GVP", "ESA Sentinel-2", "Natural Earth"];
   return (
-    <div className="relative overflow-hidden border-y border-line bg-ink py-4" aria-label="NASA data sources">
+    <div className="relative overflow-hidden border-y border-line bg-ink py-4" aria-label="Data sources">
       <div className="animate-marquee flex w-max gap-12 whitespace-nowrap">
         {[...items, ...items].map((n, k) => (
           <span key={k} className="flex items-center gap-12 font-mono text-[11px] tracking-[0.22em] text-dim uppercase">
@@ -225,153 +245,318 @@ function SourceMarquee() {
   );
 }
 
-/* ------------------------------------------------------------- challenge */
+/* ------------------------------------------------------------- numbers */
 
-function Challenge() {
+function Numbers() {
   const stats = [
-    { n: EARTH_SITES.length, label: "Reference Earth analogs", note: "published field-test sites" },
-    { n: TARGETS.length, label: "Moon & Mars targets", note: "Artemis regions, rover sites, caves" },
-    { n: LAYERS.length, label: "Live map layers", note: "NASA GIBS, Trek + ESA Sentinel-2" },
-    { n: SCREENING_REGIONS.length, label: "Regions queued to screen", note: "for new analogs" },
+    { n: 80206, d: 0, s: "", label: "land areas measured", note: "every 55 km square of land on Earth", icon: Globe },
+    { n: 24, d: 0, s: "", label: "measurements each", note: "slopes, cold, heat, rain, plants, volcanoes, craters", icon: Layers },
+    { n: 38, d: 0, s: "", label: "known sites learned from", note: "used by NASA, ESA, CSA and universities", icon: Target },
+    { n: 0.8, d: 1, s: "%", label: "where hidden Moon sites rank", note: "the model finds them in the top 0.8% of land", icon: Radar },
   ];
   return (
-    <section className="relative px-4 py-28 sm:px-6 md:py-40">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex items-start justify-between gap-6">
-          <Chapter n="01">The challenge</Chapter>
-          <Guide mood="thinking" action="idle" size={96} className="-mt-6 hidden md:block" />
-        </div>
-        <H2 className="mt-8 max-w-[1100px]">
-          Earth’s famous analog sites let teams test before they fly. <Em>But they are not well characterized</Em>, and the next ones haven’t been
-          found.
-        </H2>
-        <div className="mt-14 grid gap-10 md:grid-cols-2">
-          <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
-            NASA asks teams to use open Earth, Moon and Mars data to <span className="text-platinum">identify and characterize new terrestrial analogs</span> for
-            future bases and landing sites, across deserts, polar regions, volcanic and arid terrain and caves.
-          </p>
-          <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
-            We start with the job, not the picture. Pick what you want to practise and the Atlas compares{" "}
-            <span className="text-platinum">ground shape, rocks, temperature, sunlight, soil and radiation</span> at the same scale. Then it tells you
-            plainly what Earth can’t copy.
-          </p>
-        </div>
-        <div className="mt-20 grid grid-cols-2 border-t border-l border-line lg:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} data-reveal className="border-r border-b border-line p-6 md:p-8">
-              <div className="font-mono text-[clamp(40px,5vw,72px)] leading-none font-light tracking-tight tabular">{s.n}</div>
-              <div className="mt-4 text-sm text-platinum">{s.label}</div>
-              <div className="mt-1 text-xs text-dim">{s.note}</div>
+    <Section>
+      <div className="flex items-start justify-between gap-6">
+        <Kicker n="01">The challenge</Kicker>
+        <Guide mood="thinking" action="idle" size={96} className="-mt-6 hidden md:block" />
+      </div>
+      <H2 className="mt-8 max-w-[1100px]">
+        NASA asked for new places on Earth that copy the Moon and Mars. <Em>So we measured all of them.</Em>
+      </H2>
+      <div className="mt-14 grid gap-10 md:grid-cols-2">
+        <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
+          The 2026 challenge asks teams to use open Earth, Moon and Mars data to <span className="text-platinum">find and describe new analog sites</span>: places on
+          Earth that are similar enough to practise a mission.
+        </p>
+        <p data-reveal className="max-w-xl text-[17px] leading-relaxed text-chrome">
+          We start with the job, not the picture. A rover test and an ice hunt need different places. So the Atlas compares{" "}
+          <span className="text-platinum">ground shape, rocks, cold, sunlight and bare ground</span> for the job you pick, and tells you plainly what Earth can't copy.
+        </p>
+      </div>
+      <div className="mt-16 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((s, i) => (
+          <motion.div
+            key={s.label}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.9, ease: EASE, delay: i * 0.07 }}
+            className="surface lift rounded-2xl p-5 md:p-7"
+          >
+            <GlyphTile>
+              <s.icon size={18} strokeWidth={1.5} />
+            </GlyphTile>
+            <div className="mt-7 font-mono text-[clamp(34px,4.4vw,64px)] leading-none font-light tracking-tight text-platinum">
+              <Counter value={s.n} decimals={s.d} suffix={s.s} duration={1.8} />
             </div>
-          ))}
-        </div>
+            <div className="mt-3 text-sm text-platinum">{s.label}</div>
+            <div className="mt-1 text-xs leading-relaxed text-dim">{s.note}</div>
+          </motion.div>
+        ))}
       </div>
-    </section>
+    </Section>
   );
 }
 
-/* -------------------------------------------------------------- novelty */
+/* --------------------------------------------------------------- try it */
 
-function Novelty() {
-  const items = [
-    { icon: Target, t: "Matched to the job", d: "There is no single “Mars-like” score. A rover test and an ice search need different places, so the score changes with the task." },
-    { icon: Mountain, t: "Terrain Twins", d: "Real Earth, Moon and Mars ground side by side in 3D, cut to the same size so slopes compare fairly." },
-    { icon: Sun, t: "Shadow Lab", d: "Move a low Sun around both places and see which ground never gets light. That is where ice can hide." },
-    { icon: Radar, t: "Light Twin calendar", d: "Our Sun maths tells field teams which months on Earth have sunlight most like the target." },
-    { icon: Leaf, t: "Rehearse closer", d: "Find the nearest good site to your team and see the travel footprint. Fewer flights, same science." },
-    { icon: Scale, t: "Honest evidence", d: "Every number is marked Computed, Demo or Reality gap. We never hide gravity, vacuum or radiation." },
+function MiniHeat() {
+  return (
+    <div className="relative h-36 overflow-hidden rounded-xl border border-line bg-void">
+      <img src="/textures/earth_day_1k.webp" alt="" className="absolute inset-0 size-full object-cover opacity-40 saturate-50" />
+      {[
+        [62, 38, 0],
+        [55, 46, 0.6],
+        [28, 70, 1.2],
+        [76, 34, 1.8],
+        [52, 57, 0.9],
+      ].map(([x, y, d], k) => (
+        <span
+          key={k}
+          className="absolute size-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ left: `${x}%`, top: `${y}%`, background: "radial-gradient(circle, rgba(242,200,121,0.9), rgba(224,138,95,0.4) 45%, transparent 70%)", animation: `heatPulse 3.2s ${d}s ease-in-out infinite` }}
+        />
+      ))}
+      <style>{`@keyframes heatPulse{0%,100%{transform:translate(-50%,-50%) scale(.7);opacity:.5}50%{transform:translate(-50%,-50%) scale(1.15);opacity:1}}`}</style>
+    </div>
+  );
+}
+
+function MiniRidges() {
+  return (
+    <div className="relative h-36 overflow-hidden rounded-xl border border-line bg-void">
+      <svg viewBox="0 0 300 140" className="absolute inset-0 size-full" preserveAspectRatio="none">
+        {[0, 1, 2, 3, 4, 5].map((k) => (
+          <motion.path
+            key={k}
+            d={`M0,${110 - k * 12} C40,${96 - k * 12 - (k % 2) * 14} 80,${118 - k * 12} 120,${92 - k * 12} S200,${70 - k * 10} 240,${96 - k * 12} S290,${84 - k * 12} 300,${90 - k * 12}`}
+            fill="none"
+            style={{ stroke: k < 3 ? "var(--color-earth)" : "var(--color-mars)" }}
+            strokeWidth="1"
+            strokeOpacity={0.35 + k * 0.1}
+            initial={{ pathLength: 0 }}
+            whileInView={{ pathLength: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.6, delay: k * 0.12, ease: EASE }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function MiniTown() {
+  return (
+    <div className="relative grid h-36 place-items-center overflow-hidden rounded-xl border border-line bg-void">
+      <div className="flex w-[78%] flex-col gap-3">
+        {[
+          ["Moon-like", 0.34, "var(--color-moon)"],
+          ["Mars-like", 0.81, "var(--color-mars)"],
+        ].map(([k, v, c]) => (
+          <div key={k as string}>
+            <div className="flex justify-between text-[11px] text-chrome">
+              <span>{k}</span>
+              <span className="font-mono">{Math.round((v as number) * 100)}</span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
+              <motion.div className="h-full rounded-full" style={{ background: c as string }} initial={{ width: 0 }} whileInView={{ width: `${(v as number) * 100}%` }} viewport={{ once: true }} transition={{ duration: 1.3, ease: EASE }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniGame() {
+  return (
+    <div className="relative grid h-36 grid-cols-2 gap-2 overflow-hidden rounded-xl border border-line bg-void p-2">
+      <img src="/thumbs/atacama.webp" alt="" className="size-full rounded-lg object-cover grayscale" />
+      <div className="grid place-items-center rounded-lg bg-[url(/textures/mars_viking_1k.webp)] bg-[length:600%] bg-[position:40%_45%] grayscale">
+        <span className="rounded-full bg-void/70 px-2 py-0.5 font-mono text-[11px] text-platinum">?</span>
+      </div>
+    </div>
+  );
+}
+
+function TryIt() {
+  const cards = [
+    { to: "/discover", t: "Find new test sites", d: "See the whole Earth ranked live for the job you pick. Click any place to see why it scores.", cta: "Open the finder", visual: <MiniHeat />, icon: Globe },
+    { to: "/lab", t: "Compare two places in 3D", d: "Real ground from Earth and the Moon or Mars, cut to the same size, with a Sun you can move.", cta: "Open compare", visual: <MiniRidges />, icon: Layers },
+    { to: "#town", t: "Check your town", d: "Type any town. See how Moon-like and Mars-like it is, and the nearest strong site.", cta: "Check a town", visual: <MiniTown />, icon: MapPin },
+    { to: "#play", t: "Play: Earth or Mars?", d: "Two real images at the same scale, colour off. Can you spot which one is not Earth?", cta: "Play now", visual: <MiniGame />, icon: Gamepad2 },
   ];
   return (
-    <section className="relative border-t border-line bg-ink px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <Chapter n="02">What’s new</Chapter>
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-8">
-          <H2 className="max-w-[860px]">
-            Six ideas no analog catalogue has <Em>put together before.</Em>
+    <Section ink>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <Kicker n="02">Things to try</Kicker>
+          <H2 className="mt-8 max-w-[860px]">
+            Four ways in. <Em>Pick one and start exploring.</Em>
           </H2>
-          <Link to="/lab" className="link-wipe inline-flex items-center gap-2 pb-1 text-sm text-chrome hover:text-platinum">
-            Try them in the Analog Lab <ArrowUpRight size={15} />
-          </Link>
         </div>
-        <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((it, k) => (
-            <article key={it.t} data-reveal className="group relative bg-panel p-7 transition-colors duration-500 hover:bg-panel-2">
-              <div className="flex items-center justify-between">
-                <it.icon size={20} strokeWidth={1.5} className="text-platinum" />
-                <span className="font-mono text-[11px] text-dim">{String(k + 1).padStart(2, "0")}</span>
-              </div>
-              <h3 className="mt-10 text-[19px] font-medium tracking-tight">{it.t}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-chrome">{it.d}</p>
-              <span className="absolute inset-x-7 bottom-0 h-px origin-left scale-x-0 bg-flare transition-transform duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-x-100" />
-            </article>
-          ))}
-        </div>
+        <Guide mood="happy" action="point" size={104} className="hidden md:block" />
       </div>
-    </section>
+      <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((c, i) => {
+          const inner = (
+            <>
+              {c.visual}
+              <div className="mt-5 flex items-center gap-3">
+                <GlyphTile className="size-10">
+                  <c.icon size={16} strokeWidth={1.6} />
+                </GlyphTile>
+                <h3 className="text-[18px] leading-tight font-medium tracking-tight">{c.t}</h3>
+              </div>
+              <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-chrome">{c.d}</p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] text-flare">
+                {c.cta} <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+              </span>
+            </>
+          );
+          const cls = "surface lift group flex h-full flex-col rounded-2xl p-4";
+          return (
+            <motion.div key={c.t} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }}>
+              {c.to.startsWith("#") ? (
+                <a href={c.to} className={cls}>
+                  {inner}
+                </a>
+              ) : (
+                <Link to={c.to} className={cls}>
+                  {inner}
+                </Link>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+    </Section>
   );
 }
 
-/* ---------------------------------------------------------------- worlds */
-
-function SpinningBody({ src, size = 220, speed = 60 }: { src: string; size?: number; speed?: number }) {
+function TownSection() {
   return (
-    <div
-      className="rounded-full"
-      style={{
-        width: size,
-        height: size,
-        backgroundImage: `url(${src})`,
-        backgroundSize: "200% 100%",
-        animation: `spin-tex ${speed}s linear infinite`,
-        boxShadow: `inset -${size * 0.24}px -${size * 0.06}px ${size * 0.26}px rgba(7,8,10,0.95), inset ${size * 0.03}px ${size * 0.02}px ${size * 0.08}px rgba(255,255,255,0.12)`,
-      }}
-    />
+    <Section id="town">
+      <Kicker n="03">Your town</Kicker>
+      <H2 className="mt-8 max-w-[900px]">
+        How Mars-like is your town? <Em>Ask the same model that ranks the planet.</Em>
+      </H2>
+      <div className="mt-14">
+        <CheckTown />
+      </div>
+    </Section>
   );
 }
 
-function Worlds() {
-  const worlds = [
-    { body: "moon" as const, title: "The Moon", sub: "Permanent base · south pole", tex: "/textures/moon_lroc_1k.webp", text: "Ridges with near-constant sunlight beside craters that haven’t seen the Sun in billions of years." },
-    { body: "earth" as const, title: "Earth", sub: "The rehearsal ground", tex: "/textures/earth_day_1k.webp", text: "Deserts, polar valleys, lava tubes and impact craters, screened with global NASA terrain, imagery and thermal data." },
-    { body: "mars" as const, title: "Mars", sub: "Landing & human sites", tex: "/textures/mars_viking_1k.webp", text: "Rover craters, ice-rich plains and cave skylights that future crews will need to reach, survive and study." },
-  ];
+function PlaySection() {
   return (
-    <section className="relative overflow-hidden border-t border-line px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <Chapter n="03">Three worlds · one atlas</Chapter>
-        <H2 className="mt-8 max-w-[900px]">
-          Every map is real NASA data, <Em>many maps per world.</Em>
-        </H2>
-        <div className="mt-16 grid gap-4 lg:grid-cols-3">
-          {worlds.map((w) => (
-            <article key={w.body} data-reveal className="flex flex-col rounded-2xl border border-line bg-panel p-7">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.25em] text-dim uppercase">{w.sub}</div>
-                  <h3 className="mt-2 text-3xl font-medium tracking-tight">{w.title}</h3>
-                </div>
-                <WorldDot world={w.body} className="mt-2" />
+    <Section id="play" ink>
+      <Kicker n="04">A quick game</Kicker>
+      <H2 className="mt-8 max-w-[900px]">
+        Earth or Mars? <Em>It is harder than you think.</Em>
+      </H2>
+      <p data-reveal className="mt-6 max-w-[620px] text-[16px] leading-relaxed text-chrome">
+        Each pair is a real Earth test site and the Moon or Mars place it is used to practise for. Same size, colour off. If you can't tell them apart, the site is
+        doing its job.
+      </p>
+      <div className="mt-12">
+        <EarthOrMars />
+      </div>
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------ meet astra */
+
+const MOODS: { label: string; mood: Mood; action: Action; say: string }[] = [
+  { label: "Say hello", mood: "happy", action: "wave", say: "Hi! I'm Astra. I test places so real crews don't have to guess." },
+  { label: "Scan the ground", mood: "focused", action: "scan", say: "Scanning slopes and rocks at the same scale as the target…" },
+  { label: "Drill a core", mood: "focused", action: "drill", say: "A core sample tells us what the ground is made of." },
+  { label: "Take a sample", mood: "happy", action: "sample", say: "Bagged and labelled. Clean hands, clean science." },
+  { label: "Look far", mood: "thinking", action: "binoculars", say: "Somewhere out there is a place nobody has tested yet." },
+  { label: "Cold night", mood: "cold", action: "shiver", say: "Brr! −40 °C. The lunar night is far colder, but this is good practice." },
+  { label: "Hot noon", mood: "hot", action: "fan", say: "The ground is 60 °C. Great for testing how gear handles heat." },
+  { label: "Great match", mood: "happy", action: "celebrate", say: "0.86! This place copies the mission really well." },
+  { label: "Poor match", mood: "sad", action: "slump", say: "0.31. It looks right, but it won't test what matters." },
+  { label: "Plant a flag", mood: "wow", action: "flag", say: "New candidate site! Let's tell the field teams." },
+];
+
+function MeetAstra() {
+  const [k, setK] = useState(0);
+  const m = MOODS[k];
+  const got = useFieldLog();
+  useEffect(() => {
+    const t = setInterval(() => setK((n) => (n + 1) % MOODS.length), 5200);
+    return () => clearInterval(t);
+  }, [k]);
+  return (
+    <Section>
+      <div className="grid items-center gap-14 lg:grid-cols-[0.95fr_1.05fr]">
+        <div data-theme="dark" className="relative overflow-hidden rounded-3xl border border-line bg-void">
+          <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_100%,rgba(242,200,121,0.16),transparent_70%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-[url(/textures/moon_lroc_1k.webp)] bg-[length:200%] bg-[position:30%_60%] opacity-30 [mask-image:linear-gradient(to_top,black,transparent)]" />
+          <div className="relative grid min-h-[460px] place-items-center p-8">
+            <div className="flex flex-col items-center">
+              <AnimatePresence mode="wait">
+                <motion.p key={k} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.35, ease: EASE }} className="glass mb-6 max-w-[320px] rounded-2xl px-4 py-3 text-center text-[14.5px] leading-snug text-platinum">
+                  {m.say}
+                </motion.p>
+              </AnimatePresence>
+              <Astronaut size={240} mood={m.mood} action={m.action} />
+            </div>
+          </div>
+        </div>
+        <div>
+          <Kicker n="05">Meet Astra</Kicker>
+          <H2 className="mt-8">
+            He goes where you point him. <Em>And he tells you the truth.</Em>
+          </H2>
+          <p data-reveal className="mt-6 max-w-[560px] text-[16px] leading-relaxed text-chrome">
+            Astra is our field-test astronaut. He checks every place you open, shivers in the cold, sweats in the heat, and says plainly when a place is poor
+            practice. He also answers questions in the corner of every page.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {MOODS.map((x, i) => (
+              <button
+                key={x.label}
+                onClick={() => setK(i)}
+                aria-pressed={i === k}
+                className={clsx("rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors", i === k ? "border-flare/60 bg-flare/10 text-flare" : "border-line-2 text-chrome hover:border-chrome hover:text-platinum")}
+              >
+                {x.label}
+              </button>
+            ))}
+          </div>
+          <div className="surface mt-10 rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[14px] text-platinum">
+                <Award size={16} className="text-flare" /> Astra's field log
               </div>
-              <div className="my-10 grid place-items-center">
-                <SpinningBody src={w.tex} speed={w.body === "earth" ? 60 : 90} />
-              </div>
-              <p className="text-sm leading-relaxed text-chrome">{w.text}</p>
-              <ul className="mt-6 border-t border-line">
-                {LAYERS_BY_BODY[w.body].map((l) => (
-                  <li key={l.id} className="flex items-baseline justify-between gap-4 border-b border-line py-2.5 text-[13px]">
-                    <span className="text-platinum">{l.name}</span>
-                    <span className="shrink-0 font-mono text-[11px] text-dim">{l.resolution}</span>
+              <span className="font-mono text-[12px] text-dim">
+                {got.length} of {BADGES.length} badges
+              </span>
+            </div>
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
+              <motion.div className="h-full rounded-full bg-flare" initial={{ width: 0 }} whileInView={{ width: `${(got.length / BADGES.length) * 100}%` }} viewport={{ once: true }} transition={{ duration: 1.2, ease: EASE }} />
+            </div>
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {BADGES.map((b) => {
+                const on = got.includes(b.id);
+                return (
+                  <li key={b.id} className={clsx("flex items-start gap-2.5 rounded-xl border p-2.5", on ? "border-flare/40 bg-flare/[0.06]" : "border-line")}>
+                    <span className={clsx("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full", on ? "bg-flare text-void" : "bg-ink text-dim")}>{on ? <Check size={12} /> : <Lock size={11} />}</span>
+                    <span>
+                      <span className={clsx("block text-[12.5px]", on ? "text-platinum" : "text-chrome")}>{b.title}</span>
+                      <span className="block text-[11px] leading-snug text-dim">{b.how}</span>
+                    </span>
                   </li>
-                ))}
-              </ul>
-              <Link to={`/atlas?body=${w.body}`} className="link-wipe mt-6 inline-flex w-fit items-center gap-1.5 text-sm text-chrome hover:text-platinum">
-                Open {w.title.replace("The ", "")} maps <ArrowUpRight size={15} />
-              </Link>
-            </article>
-          ))}
+                );
+              })}
+            </ul>
+          </div>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -386,14 +571,14 @@ function FalseFriend() {
   const ref = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const steps = [
-    { k: "01", title: "It looks like Mars.", text: "Red rock, no plants, a crater on the horizon. Site A is the obvious place to rehearse a rover traverse." },
+    { k: "01", title: "It looks like Mars.", text: "Red rock, no plants, a crater on the horizon. Site A is the obvious place to practise a rover drive." },
     { k: "02", title: "The mission asks a different question.", text: "The real route crosses steep, broken ground. What matters is the slope and bumps under the wheels, not the colour." },
-    { k: "03", title: "Compare the task, at the same scale.", text: "Site B carries the obstacle the mission cares about. The Atlas changes the choice while the plan can still change." },
+    { k: "03", title: "Compare the job, at the same scale.", text: "Site B has the obstacle the mission cares about. The Atlas changes the choice while the plan can still change." },
   ];
   const astra: { mood: Mood; action: Action; say: string }[] = [
     { mood: "wow", action: "walk", say: "Looks just like Mars!" },
-    { mood: "sad", action: "slump", say: "Site A is too gentle, the rover test would prove nothing." },
-    { mood: "happy", action: "celebrate", say: "Site B matches the route. That's our rehearsal ground." },
+    { mood: "sad", action: "slump", say: "Site A is too gentle. The rover test would prove nothing." },
+    { mood: "happy", action: "celebrate", say: "Site B matches the route. That's our practice ground." },
   ];
 
   useGSAP(
@@ -417,7 +602,7 @@ function FalseFriend() {
     <section ref={ref} className="relative border-t border-line bg-ink px-4 py-24 sm:px-6 min-[900px]:flex min-[900px]:h-dvh min-[900px]:items-center min-[900px]:py-0">
       <div className="mx-auto grid w-full max-w-[1400px] items-center gap-14 min-[900px]:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <Chapter n="04">The false friend</Chapter>
+          <Kicker n="06">Looks alike is not enough</Kicker>
           <div className="mt-10 space-y-8">
             {steps.map((s, k) => (
               <button
@@ -436,10 +621,10 @@ function FalseFriend() {
           <div className="absolute -top-28 right-6 z-10 hidden md:block">
             <Astronaut size={104} {...astra[step]} sayAlign="left" />
           </div>
-          <div className="rounded-2xl border border-line bg-panel p-6 md:p-8">
+          <div className="surface rounded-2xl p-6 md:p-8">
             <div className="flex items-center justify-between font-mono text-[10px] tracking-widest text-dim uppercase">
-              <span>Route elevation profile</span>
-              <span className="rounded-full border border-dashed border-line-2 px-2 py-0.5">Illustrative · not measured</span>
+              <span>Route height profile</span>
+              <span className="rounded-full border border-dashed border-line-2 px-2 py-0.5">Drawing to explain · not measured</span>
             </div>
             <svg viewBox="0 0 600 170" className="mt-6 w-full overflow-visible" role="img" aria-label="Two route profiles compared against the target route">
               {[40, 80, 120, 160].map((y) => (
@@ -458,20 +643,20 @@ function FalseFriend() {
               />
             </svg>
             <div className="mt-6 grid gap-3 text-[13px] sm:grid-cols-3">
-              <Legend color="var(--color-mars)" dashed label="Mars target route" on={step >= 1} />
+              <Legend color="var(--color-mars)" dashed label="Mars route" on={step >= 1} />
               <Legend color="var(--color-chrome)" label="Site A: looks right" on />
               <Legend color="var(--color-platinum)" label="Site B: tests right" on={step === 2} />
             </div>
             <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line text-[13px]">
               <div className="bg-panel p-4">
                 <div className="text-dim">Site A</div>
-                <div className="mt-1 text-platinum">Colour match · gentle relief</div>
-                <div className="mt-2 text-weak">✕ Misses the traverse hazard</div>
+                <div className="mt-1 text-platinum">Same colour · gentle ground</div>
+                <div className="mt-2 text-weak">✕ Misses the hard part of the drive</div>
               </div>
               <div className="bg-panel p-4">
                 <div className="text-dim">Site B</div>
-                <div className="mt-1 text-platinum">Matched slope & roughness</div>
-                <div className={`mt-2 transition-opacity duration-700 ${step === 2 ? "text-strong opacity-100" : "opacity-0"}`}>✓ Rehearses the real obstacle</div>
+                <div className="mt-1 text-platinum">Same slopes and bumps</div>
+                <div className={`mt-2 transition-opacity duration-700 ${step === 2 ? "text-strong opacity-100" : "opacity-0"}`}>✓ Practises the real obstacle</div>
               </div>
             </div>
           </div>
@@ -524,19 +709,19 @@ function MoonBase() {
               </svg>
             </div>
           </div>
-          <div className="mt-4 text-center font-mono text-[10px] tracking-widest text-dim uppercase">LRO LOLA hillshade · reprojected polar stereographic · ~84°S → pole</div>
+          <div className="mt-4 text-center font-mono text-[10px] tracking-widest text-dim uppercase">LRO LOLA shaded relief · seen from above the pole · 84°S to the pole</div>
         </div>
         <div>
           <div className="flex items-end justify-between gap-6">
-            <Chapter n="05">Permanent Moon base</Chapter>
+            <Kicker n="07">A base at the Moon's south pole</Kicker>
             <Guide mood="happy" action="flag" size={96} className="-mb-2 hidden md:block" />
           </div>
           <H2 className="mt-8">
             Light on the ridges, <Em>ice in the dark.</Em>
           </H2>
           <p data-reveal className="mt-6 max-w-lg text-[16px] leading-relaxed text-chrome">
-            Artemis candidate regions cluster around the lunar south pole, where the Sun never climbs more than a few degrees. That is why our Shadow Lab
-            exists: the base will live between light and shadow, so its rehearsal ground must too.
+            NASA's Artemis landing regions sit around the lunar south pole, where the Sun never climbs more than a few degrees. The base will live between light
+            and shadow, so its practice ground must too.
           </p>
           <ul className="mt-10 border-t border-line">
             {polar.map((t) => (
@@ -555,57 +740,55 @@ function MoonBase() {
               </li>
             ))}
           </ul>
-          <Link to="/lab?earth=dry-valleys&target=shackleton&task=polar" className="link-wipe mt-8 inline-flex items-center gap-2 text-sm text-flare">
-            Shackleton vs. McMurdo Dry Valleys in the Shadow Lab <ArrowRight size={15} />
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link to={`/discover?target=${hover ?? "shackleton"}&task=polar`} className="link-wipe inline-flex items-center gap-2 text-sm text-flare">
+              Find Earth sites for {TARGETS.find((t) => t.id === hover)?.name ?? "Shackleton"} <ArrowRight size={15} />
+            </Link>
+            <Link to="/lab?earth=dry-valleys&target=shackleton&task=polar" className="link-wipe inline-flex items-center gap-2 text-sm text-chrome hover:text-platinum">
+              Dry Valleys vs Shackleton in 3D <ArrowUpRight size={15} />
+            </Link>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* --------------------------------------------------------------- pipeline */
+/* ----------------------------------------------------------- how it works */
 
-function Pipeline() {
+function HowItWorks() {
   const steps = [
-    { k: "01", t: "Mission task", d: `Pick one of ${TASKS.length} rehearsal tasks, traverse, ISRU, ice, caves, polar light…`, live: true },
-    { k: "02", t: "Target region", d: "Choose a Moon base region or Mars site; its NASA terrain sets the physical scale.", live: true },
-    { k: "03", t: "Twin the evidence", d: "Terrain, Sun and shadow computed live today; geology, temperature and regolith next.", live: true },
-    { k: "04", t: "Screen & rank", d: "Physical baseline first, then our trained terrain encoder on held-out regions.", live: false },
-    { k: "05", t: "Site passport", d: "Protocol, best season, reality gaps, permits and travel footprint for a field team.", live: false },
+    { k: "01", t: "Pick a job", d: `${TASKS.length} kinds of practice: living at a base, rover drives, ice hunts, lava tubes, craters and more.` },
+    { k: "02", t: "Pick a destination", d: `${TARGETS.length} Moon and Mars places: Artemis regions, rover craters, ice plains and cave skylights.` },
+    { k: "03", t: "Every land area is scored", d: "80,206 places on Earth, five measured scores plus a learned model, re-ranked live as you move the sliders." },
+    { k: "04", t: "Check, compare, plan", d: "Open a place, compare it in 3D, see the best months for the light and the travel CO₂." },
   ];
   return (
-    <section className="relative border-t border-line bg-ink px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <Chapter n="06">How the Atlas decides</Chapter>
-            <H2 className="mt-8 max-w-[820px]">From a mission question to a field-ready passport.</H2>
-          </div>
-          <Guide mood="focused" action="scan" size={110} className="hidden md:block" />
+    <Section ink>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <Kicker n="08">How it works</Kicker>
+          <H2 className="mt-8 max-w-[820px]">From a mission question to a place you can visit.</H2>
         </div>
-        <ol className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-5">
-          {steps.map((s) => (
-            <li key={s.k} data-reveal className="relative flex flex-col bg-panel p-6">
-              <div className="font-mono text-xs text-dim">{s.k}</div>
-              <div className="mt-8 text-lg font-medium">{s.t}</div>
-              <p className="mt-2 flex-1 text-[13px] leading-relaxed text-chrome">{s.d}</p>
-              <div className="mt-6">
-                {s.live ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-strong/40 bg-strong/10 px-2.5 py-1 text-[11px] text-strong">
-                    <Check size={12} /> Live in prototype
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-line-2 px-2.5 py-1 text-[11px] text-chrome">
-                    <CircleDashed size={12} /> Hackathon build
-                  </span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
+        <Guide mood="focused" action="scan" size={110} className="hidden md:block" />
       </div>
-    </section>
+      <ol className="mt-16 grid gap-4 md:grid-cols-4">
+        {steps.map((s, i) => (
+          <motion.li key={s.k} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="surface relative flex flex-col rounded-2xl p-6">
+            <span className="outline-num text-[56px] leading-none">{s.k}</span>
+            <div className="mt-6 text-lg font-medium">{s.t}</div>
+            <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-chrome">{s.d}</p>
+            <span className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-full border border-strong/40 bg-strong/10 px-2.5 py-1 text-[11px] text-strong">
+              <Check size={12} /> Working now
+            </span>
+            {i < steps.length - 1 && <span className="absolute top-1/2 -right-3 hidden h-px w-6 bg-line-2 md:block" />}
+          </motion.li>
+        ))}
+      </ol>
+      <Link to="/methods" className="link-wipe mt-10 inline-flex items-center gap-2 text-sm text-chrome hover:text-platinum">
+        Read the full method and data list <ArrowUpRight size={15} />
+      </Link>
+    </Section>
   );
 }
 
@@ -613,33 +796,33 @@ function Pipeline() {
 
 function Sustainability() {
   const cards = [
-    { icon: Leaf, t: "Fewer, smarter field trips", d: "Remote screening narrows the shortlist before anyone flies. The Lab shows each trip's distance and an indicative CO₂ estimate, and suggests the closest credible analog." },
-    { icon: ShieldCheck, t: "Stewardship built in", d: "Every site carries its protection status. Antarctic Treaty, national parks, sacred and Indigenous land. Consent comes before coordinates." },
-    { icon: Target, t: "Local impact, Dhaka first", d: "A Bangla-friendly classroom mode and a university workshop pilot so students who can't reach Atacama can still do real planetary science." },
+    { icon: Leaf, t: "Fewer, smarter field trips", d: "Remote checks narrow the shortlist before anyone flies. Compare shows each trip's distance and a rough CO₂ number, and the closest good site." },
+    { icon: ShieldCheck, t: "Respect for the land", d: "Sites carry their protection status: Antarctic Treaty, national parks, sacred and Indigenous land. Permission comes before coordinates." },
+    { icon: Target, t: "Local impact, Dhaka first", d: "A Bangla classroom mode and a university workshop, so students who can't reach Atacama can still do real planetary science." },
   ];
   return (
-    <section className="relative border-t border-line px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <Chapter n="07">Sustainability & people</Chapter>
-            <H2 className="mt-8 max-w-[880px]">
-              Explore responsibly here <Em>so we can explore elsewhere.</Em>
-            </H2>
-          </div>
-          <Guide mood="neutral" action="walk" size={100} className="hidden md:block" />
+    <Section>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <Kicker n="09">Explore responsibly</Kicker>
+          <H2 className="mt-8 max-w-[880px]">
+            Care for this planet <Em>so we can explore the next ones.</Em>
+          </H2>
         </div>
-        <div className="mt-16 grid gap-4 md:grid-cols-3">
-          {cards.map((c) => (
-            <article key={c.t} data-reveal className="rounded-2xl border border-line bg-panel p-7">
-              <c.icon size={20} strokeWidth={1.5} className="text-strong" />
-              <h3 className="mt-8 text-[19px] font-medium tracking-tight">{c.t}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-chrome">{c.d}</p>
-            </article>
-          ))}
-        </div>
+        <Guide mood="neutral" action="walk" size={100} className="hidden md:block" />
       </div>
-    </section>
+      <div className="mt-16 grid gap-4 md:grid-cols-3">
+        {cards.map((c, i) => (
+          <motion.article key={c.t} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="surface lift rounded-2xl p-7" style={{ ["--spot" as string]: "var(--color-strong)" }}>
+            <GlyphTile tone="var(--color-strong)">
+              <c.icon size={18} strokeWidth={1.5} />
+            </GlyphTile>
+            <h3 className="mt-8 text-[19px] font-medium tracking-tight">{c.t}</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-chrome">{c.d}</p>
+          </motion.article>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -650,19 +833,19 @@ function Library() {
     <section className="relative border-t border-line bg-ink py-28 md:py-36">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <div className="flex items-end justify-between gap-6">
-          <Chapter n="08">Reference library</Chapter>
+          <Kicker n="10">Known test sites</Kicker>
           <Guide mood="happy" action="sample" size={96} className="hidden md:block" />
         </div>
         <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
           <H2 className="max-w-[820px]">
-            The analogs we already know, <Em>our calibration set.</Em>
+            The places teams already use. <Em>Our model learned from them.</Em>
           </H2>
-          <p className="max-w-sm text-sm text-dim">Known sites are controls for validating the screening method. They are not presented as new discoveries.</p>
+          <p className="max-w-sm text-sm text-dim">These are known sites, not our discoveries. We use them to train and test the model. New places live in Find new sites.</p>
         </div>
       </div>
       <div className="scrollbar-thin mt-14 flex snap-x gap-4 overflow-x-auto px-4 pb-6 sm:px-6 lg:px-[max(24px,calc((100vw-1400px)/2+24px))]">
         {EARTH_SITES.map((s) => (
-          <Link key={s.id} to={`/lab?earth=${s.id}&target=${s.pairs[0]}`} className="group relative w-[300px] shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-panel">
+          <Link key={s.id} to={`/lab?earth=${s.id}&target=${s.pairs[0]}`} className="surface group relative w-[300px] shrink-0 snap-start overflow-hidden rounded-2xl">
             <div className="relative h-44 overflow-hidden">
               <img src={`/thumbs/${s.id}.webp`} alt={`NASA Blue Marble view around ${s.name}`} loading="lazy" className="size-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.04]" />
               <div className="absolute inset-0 bg-gradient-to-t from-panel via-transparent to-transparent" />
@@ -699,108 +882,106 @@ function Library() {
 
 function Progress() {
   const done = [
-    "Analog Lab: 3D Terrain Twins from real Earth, Moon & Mars elevation",
-    "Shadow Lab: horizon-based illumination & persistent-shadow mapping",
-    "Light Twin: solar-geometry match and rehearsal calendar",
-    "Rehearse-closer finder with travel-footprint estimate",
-    "12 live NASA map layers; lunar south pole reprojected from LOLA",
-    "17 reference analogs, 18 targets, 8 tasks, 8 screening regions",
+    "Global data engine: 80,206 land areas measured from NASA POWER, MODIS, SRTM terrain, volcanoes and craters",
+    "Full-precision Moon and Mars terrain (LRO LOLA 118 m, MGS MOLA 463 m)",
+    "A learned model, tested by hiding known sites: hidden Moon sites come back in the top 0.8% of land",
+    "Find new sites: the whole planet ranked live, with search, filters and saved places",
+    "Compare any place in 3D, with a movable Sun, a shadow map, best months and travel CO₂",
+    "Astra reacts to cold, heat and match scores; badges, a game and search for everything",
   ];
   const next = [
-    "Full-precision DEMs: LOLA polar 5 to 20 m, HiRISE 1 m, NASADEM 30 m",
-    "Geology, temperature & regolith from EMIT, Diviner, THEMIS, CRISM",
-    "Physical baseline ranker + region-held-out evaluation",
-    "Terrain encoder trained on Kaggle; uncertainty & abstention",
-    "Screen the queued regions; export site passports",
+    "Add the official 2026 challenge datasets as soon as NASA releases them (28 Oct)",
+    "Minerals from NASA EMIT and Moon surface temperature from LRO Diviner",
+    "A terrain neural network trained on Kaggle GPUs to compare ground shape directly",
+    "A field test plan you can download as a PDF for any place",
+    "A Bangla mode for schools in Dhaka",
   ];
   return (
-    <section className="relative border-t border-line px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex items-end justify-between gap-6">
-          <Chapter n="09">Preliminary-round progress</Chapter>
-          <Guide mood="focused" action="drill" size={96} className="hidden md:block" />
+    <Section>
+      <div className="flex items-end justify-between gap-6">
+        <Kicker n="11">Progress</Kicker>
+        <Guide mood="focused" action="drill" size={96} className="hidden md:block" />
+      </div>
+      <H2 className="mt-8 max-w-[900px]">
+        What works today, <Em>and what we build next.</Em>
+      </H2>
+      <div className="mt-16 grid gap-4 md:grid-cols-2">
+        <div data-reveal className="surface rounded-2xl p-7" style={{ ["--spot" as string]: "var(--color-strong)" }}>
+          <div className="flex items-center gap-2 text-sm text-strong">
+            <Check size={16} /> Built and live
+          </div>
+          <ul className="mt-6 space-y-3.5">
+            {done.map((d) => (
+              <li key={d} className="flex gap-3 text-[15px] text-platinum">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-strong" />
+                {d}
+              </li>
+            ))}
+          </ul>
         </div>
-        <H2 className="mt-8 max-w-[900px]">
-          What’s real today, <Em>and what we build next.</Em>
-        </H2>
-        <div className="mt-16 grid gap-4 md:grid-cols-2">
-          <div data-reveal className="rounded-2xl border border-line bg-panel p-7">
-            <div className="flex items-center gap-2 text-sm text-strong">
-              <Check size={16} /> Built and in this repository
-            </div>
-            <ul className="mt-6 space-y-3.5">
-              {done.map((d) => (
-                <li key={d} className="flex gap-3 text-[15px] text-platinum">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-strong" />
-                  {d}
-                </li>
-              ))}
-            </ul>
+        <div data-reveal className="rounded-2xl border border-dashed border-line-2 p-7">
+          <div className="flex items-center gap-2 text-sm text-chrome">
+            <CircleDashed size={16} /> Next, for the hackathon weekend
           </div>
-          <div data-reveal className="rounded-2xl border border-dashed border-line-2 p-7">
-            <div className="flex items-center gap-2 text-sm text-chrome">
-              <Radar size={16} /> Next, at the hackathon
-            </div>
-            <ul className="mt-6 space-y-3.5">
-              {next.map((d) => (
-                <li key={d} className="flex gap-3 text-[15px] text-chrome">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full border border-chrome" />
-                  {d}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="mt-6 space-y-3.5">
+            {next.map((d) => (
+              <li key={d} className="flex gap-3 text-[15px] text-chrome">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full border border-chrome" />
+                {d}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
 
 /* -------------------------------------------------------------------- team */
 
 const TEAM = [
-  { id: "rubab", name: "Abdullah Rubab" },
-  { id: "hossin", name: "Tanvir Hossin" },
-  { id: "hasan", name: "Md. Tanvir Hasan" },
-  { id: "saniul", name: "Mohammad Saniul Alam" },
-  { id: "tasnuva", name: "Tasnuva Arif" },
-  { id: "parvez", name: "Mohammed Mahmud Parvez" },
+  { id: "rubab", name: "Abdullah Rubab", role: "Team lead" },
+  { id: "hossin", name: "Tanvir Hossin", role: "Planetary terrain" },
+  { id: "hasan", name: "Md. Tanvir Hasan", role: "Science checks" },
+  { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design" },
+  { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing" },
+  { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film" },
 ];
 
 function TeamTeaser() {
   return (
-    <section className="relative border-t border-line bg-ink px-4 py-28 sm:px-6 md:py-36">
-      <div className="mx-auto max-w-[1400px]">
-        <Chapter n="10">Team ShadowAstra · Dhaka</Chapter>
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
-          <H2>
-            Six people, <Em>three worlds.</Em>
-          </H2>
-          <Link to="/about" className="link-wipe inline-flex items-center gap-2 pb-1 text-sm text-chrome hover:text-platinum">
-            Meet the team <ArrowUpRight size={15} />
-          </Link>
-        </div>
-        <div className="mt-14 grid grid-cols-3 gap-3 md:grid-cols-6">
-          {TEAM.map((m) => (
-            <Link to="/about" key={m.id} data-reveal className="group">
-              <div className="aspect-[4/5] overflow-hidden rounded-xl border border-line bg-panel">
-                <img
-                  src={`/team/${m.id}.webp`}
-                  alt={m.name}
-                  loading="lazy"
-                  className="size-full object-cover opacity-85 grayscale transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.03] group-hover:opacity-100 group-hover:grayscale-0"
-                />
-              </div>
-              <div className="mt-2 text-[13px] text-platinum">{m.name}</div>
-            </Link>
-          ))}
-        </div>
+    <Section ink>
+      <Kicker n="12">Team ShadowAstra · Dhaka</Kicker>
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
+        <H2>
+          Six people, <Em>three worlds.</Em>
+        </H2>
+        <Link to="/about" className="link-wipe inline-flex items-center gap-2 pb-1 text-sm text-chrome hover:text-platinum">
+          Meet the team <ArrowUpRight size={15} />
+        </Link>
       </div>
-    </section>
+      <div className="mt-14 grid grid-cols-3 gap-3 md:grid-cols-6">
+        {TEAM.map((m) => (
+          <Link to="/about" key={m.id} data-reveal className="group">
+            <div className="aspect-[4/5] overflow-hidden rounded-xl border border-line bg-panel">
+              <img
+                src={`/team/${m.id}.webp`}
+                alt={m.name}
+                loading="lazy"
+                className="size-full object-cover opacity-85 grayscale transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.03] group-hover:opacity-100 group-hover:grayscale-0"
+              />
+            </div>
+            <div className="mt-2 text-[13px] text-platinum">{m.name}</div>
+            <div className="text-[11px] text-dim">{m.role}</div>
+          </Link>
+        ))}
+      </div>
+    </Section>
   );
 }
 
 function FinalCta() {
+  const pick = useMemo(() => TARGETS[Math.floor(Math.random() * TARGETS.length)], []);
   return (
     <section className="relative overflow-hidden border-t border-line px-4 py-32 sm:px-6 md:py-44">
       <div className="absolute inset-0 bg-[radial-gradient(50%_70%_at_50%_120%,rgba(242,200,121,0.14),transparent_70%)]" />
@@ -812,9 +993,11 @@ function FinalCta() {
           Find where Earth <span className="font-serif font-normal text-flare italic">can teach us.</span>
         </h2>
         <div data-reveal className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link to="/lab" className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-medium">
-            Open the Analog Lab <ArrowRight size={16} />
-          </Link>
+          <Magnetic>
+            <Link to={`/discover?target=${pick.id}&task=${pick.tasks[0]}`} className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-medium">
+              Find sites for {pick.name} <ArrowRight size={16} />
+            </Link>
+          </Magnetic>
           <a href={REPO_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-line-2 px-7 py-4 text-sm text-platinum hover:border-chrome">
             <Github size={16} /> View the code
           </a>

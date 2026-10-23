@@ -8,7 +8,10 @@ import { Astronaut, reactionFor, type Action, type Mood } from "../components/ui
 import { BodyMap, type BodyMapHandle, type MapView } from "../components/map/BodyMap";
 import { SwipeStage } from "../components/map/Swipe";
 import type { Overlay } from "../components/three/TerrainTwins";
-import { EARTH_BY_ID, EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS, type TaskId } from "../data/sites";
+import { EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS, type EarthSite, type TaskId } from "../data/sites";
+import { earthSite } from "../lib/places";
+import { logBadge } from "../lib/fieldlog";
+import { scoreCell, useGrid, type Grid } from "../lib/grid";
 import { LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord, zoomForMercator } from "../lib/geo";
 import {
@@ -45,11 +48,11 @@ const QUICK_PAIRS: { earth: string; target: string; task: TaskId; label: string 
 
 const DOCK = [
   { id: "compare", label: "Compare" },
-  { id: "evidence", label: "Terrain" },
-  { id: "geology", label: "Geology" },
+  { id: "evidence", label: "Ground" },
+  { id: "geology", label: "Rocks" },
   { id: "light", label: "Light" },
-  { id: "footprint", label: "Footprint" },
-  { id: "gaps", label: "Gaps" },
+  { id: "footprint", label: "Travel" },
+  { id: "gaps", label: "Limits" },
 ];
 const EASE = [0.22, 1, 0.36, 1] as const;
 type World = "earth" | "moon" | "mars";
@@ -65,11 +68,11 @@ interface TwinState {
   error: string | null;
 }
 
-function useTerrainTwins(earthId: string, targetId: string, footprintKm: number) {
+function useTerrainTwins(lat: number, lon: number, targetId: string, footprintKm: number) {
   const [s, setS] = useState<TwinState>({ earth: null, target: null, statsE: null, statsT: null, progress: 0, error: null });
   useEffect(() => {
     let alive = true;
-    const e = EARTH_BY_ID[earthId];
+    const e = { lat, lon };
     const t = TARGET_BY_ID[targetId];
     const spacing = Math.max(nativeKm(DEM[t.body], DEM[t.body].maxZoom, 0), footprintKm / 128);
     const prog = { a: 0, b: 0 };
@@ -84,7 +87,7 @@ function useTerrainTwins(earthId: string, targetId: string, footprintKm: number)
     return () => {
       alive = false;
     };
-  }, [earthId, targetId, footprintKm]);
+  }, [lat, lon, targetId, footprintKm]);
   return s;
 }
 
@@ -95,11 +98,11 @@ interface Plates {
   ts: HTMLCanvasElement | null;
 }
 
-function useImagery(earthId: string, targetId: string, footprintKm: number) {
+function useImagery(lat: number, lon: number, targetId: string, footprintKm: number) {
   const [p, setP] = useState<Plates>({ ev: null, es: null, tv: null, ts: null });
   useEffect(() => {
     let alive = true;
-    const e = EARTH_BY_ID[earthId];
+    const e = { lat, lon };
     const t = TARGET_BY_ID[targetId];
     setP({ ev: null, es: null, tv: null, ts: null });
     const put = (k: keyof Plates) => (c: HTMLCanvasElement) => alive && setP((s) => ({ ...s, [k]: c }));
@@ -110,7 +113,7 @@ function useImagery(earthId: string, targetId: string, footprintKm: number) {
     return () => {
       alive = false;
     };
-  }, [earthId, targetId, footprintKm]);
+  }, [lat, lon, targetId, footprintKm]);
   return p;
 }
 
@@ -129,14 +132,22 @@ function useIllumination(grid: TerrainGrid | null, sunElev: number) {
 
 export default function Lab() {
   const [params, setParams] = useSearchParams();
-  const [earthId, setEarthId] = useState(() => (EARTH_BY_ID[params.get("earth") ?? ""] ? params.get("earth")! : "dry-valleys"));
+  const [earthId, setEarthId] = useState(() => (earthSite(params.get("earth") ?? "") ? params.get("earth")! : "dry-valleys"));
   const [targetId, setTargetId] = useState(() => (TARGET_BY_ID[params.get("target") ?? ""] ? params.get("target")! : "shackleton"));
   const [task, setTask] = useState<TaskId>(() => (TASKS.some((t) => t.id === params.get("task")) ? (params.get("task") as TaskId) : "polar"));
   const [footprint, setFootprint] = useState(80);
   const [weights, setWeights] = useState<Weights>(TASK_WEIGHTS[task]);
 
-  const earth = EARTH_BY_ID[earthId];
   const target = TARGET_BY_ID[targetId];
+  const { grid } = useGrid();
+  const base = earthSite(earthId)!;
+  const cell = useMemo(() => (grid ? grid.cellAt(base.lat, base.lon, 3) : -1), [grid, base.lat, base.lon]);
+  const label = useMemo(() => {
+    if (!grid || cell < 0 || !earthId.startsWith("@")) return null;
+    const n = grid.name(cell);
+    return { name: n.title, country: n.subtitle || n.country };
+  }, [grid, cell, earthId]);
+  const earth = useMemo(() => earthSite(earthId, label)!, [earthId, label]);
 
   useEffect(() => {
     setParams({ earth: earthId, target: targetId, task }, { replace: true, preventScrollReset: true });
@@ -152,8 +163,9 @@ export default function Lab() {
     return () => clearTimeout(t);
   }, []);
 
-  const twins = useTerrainTwins(earthId, targetId, footprint);
-  const plates = useImagery(earthId, targetId, footprint);
+  useEffect(() => logBadge("compare"), []);
+  const twins = useTerrainTwins(earth.lat, earth.lon, targetId, footprint);
+  const plates = useImagery(earth.lat, earth.lon, targetId, footprint);
   const light = useMemo(() => lightTwin(earth.lat, target.body, target.lat), [earth.lat, target.body, target.lat]);
   const defaultSun = Math.max(0.5, Math.round(light.target.medianElev * 10) / 10);
   const [sunElev, setSunElev] = useState(defaultSun);
@@ -163,16 +175,19 @@ export default function Lab() {
 
   const topo = twins.statsE && twins.statsT ? topographySimilarity(twins.statsE, twins.statsT) : null;
   const demo = demoValues(earth, target);
+  const gt = grid?.targets[targetId];
+  const cs = grid && gt && cell >= 0 ? scoreCell(grid, cell, { target: gt, task, weights, modelMix: 0 }) : null;
   const results: ParamResult[] = [
-    { id: "topography", value: topo ?? demo.topography, kind: topo !== null ? "computed" : "demo", note: "" },
-    { id: "geology", value: demo.geology, kind: "demo", note: "" },
-    { id: "temperature", value: demo.temperature, kind: "demo", note: "" },
+    { id: "topography", value: topo ?? cs?.dims.topography ?? demo.topography, kind: topo !== null || cs ? "computed" : "demo", note: "" },
+    { id: "geology", value: cs?.dims.geology ?? demo.geology, kind: cs ? "computed" : "demo", note: "" },
+    { id: "temperature", value: cs?.dims.temperature ?? demo.temperature, kind: cs ? "computed" : "demo", note: "" },
     { id: "lighting", value: light.score, kind: "computed", note: "" },
-    { id: "regolith", value: demo.regolith, kind: "demo", note: "" },
+    { id: "regolith", value: cs?.dims.regolith ?? demo.regolith, kind: cs ? "computed" : "demo", note: "" },
     { id: "radiation", value: null, kind: "gap", note: "" },
   ];
   const fit = analogFit(results, weights);
   const loading = !twins.statsE;
+  const learned = grid && cell >= 0 ? grid.model(target.body, cell) : null;
   const pairedTargets = useMemo(() => [...earth.pairs.map((p) => TARGET_BY_ID[p]), ...TARGETS.filter((t) => !earth.pairs.includes(t.id))], [earth]);
   const earthName = earth.name.split(",")[0];
 
@@ -181,6 +196,7 @@ export default function Lab() {
       <Nav />
       <CompareStage
         earthId={earthId}
+        earth={earth}
         targetId={targetId}
         setEarthId={setEarthId}
         setTargetId={setTargetId}
@@ -192,14 +208,14 @@ export default function Lab() {
           setTargetId(q.target);
           setTask(q.task);
         }}
-        panel={<EvidencePanel results={results} fit={fit} weights={weights} setWeights={setWeights} task={task} loading={loading} light={light} earthName={earthName} />}
+        panel={<EvidencePanel results={results} fit={fit} weights={weights} setWeights={setWeights} task={task} loading={loading} light={light} earthName={earthName} learned={learned} world={target.body} gridReady={!!cs} grid={grid} cell={cell} />}
       />
 
       <div className="mx-auto max-w-[1400px] space-y-32 px-4 py-28 sm:px-6">
         <section id="evidence" className="scroll-mt-32">
           <SectionHead
             n="01"
-            kicker="Topographic similarity"
+            kicker="Ground shape"
             title={
               <>
                 Real terrain, <Em>cut to the same size.</Em>
@@ -226,15 +242,15 @@ export default function Lab() {
           <SectionHead
             n="02"
             astra={{ mood: "happy", action: "sample", say: "Same size, north up, compare texture and colour." }}
-            kicker="Geological similarity"
+            kicker="Rocks and surface"
             title={
               <>
                 Same scale, <Em>real surfaces.</Em>
               </>
             }
-            text="Real satellite images of the same size, north up. Compare texture, colour and shapes. The mineral score stays a demo until NASA EMIT and CRISM data are added."
-            kind="demo"
-            aside={<span className="font-mono text-[13px] text-chrome">geology {demo.geology?.toFixed(2) ?? "n/a"}</span>}
+            text="Real satellite images of the same size, north up. Compare texture, colour and shapes. The rocks score uses volcano and crater records and MODIS bare-ground maps. Mineral maps from NASA EMIT come next."
+            kind={cs ? "computed" : "demo"}
+            aside={<span className="font-mono text-[13px] text-chrome">rocks {results[1].value?.toFixed(2) ?? "n/a"}</span>}
           />
           <GeologyPlates plates={plates} footprint={footprint} earthName={earthName} targetName={target.name} targetBody={target.body} earthLat={earth.lat} />
         </section>
@@ -243,13 +259,13 @@ export default function Lab() {
           <SectionHead
             n="03"
             astra={{ mood: "wow", action: "flag", say: `Best season at ${earthName}: ${light.best.join(" · ") || "n/a"}.` }}
-            kicker="Light & shadow"
+            kicker="Sunlight and shadow"
             title={
               <>
                 Same Sun, <Em>two worlds.</Em>
               </>
             }
-            text="Sun maths finds when Earth's sunlight acts like the target's. The Shadow Lab then finds ground that never gets light at that Sun angle."
+            text="Sun maths finds when Earth's sunlight acts like the target's. The shadow map then finds ground that never gets light at that Sun angle."
             kind="computed"
           />
           <div className="grid gap-4 lg:grid-cols-2">
@@ -262,7 +278,7 @@ export default function Lab() {
           <SectionHead
             n="04"
             astra={{ mood: "happy", action: "walk", say: "Closer site, fewer flights, same science." }}
-            kicker="Rehearse closer"
+            kicker="Closer and greener"
             title={
               <>
                 The nearest credible site <Em>is the greenest one.</Em>
@@ -270,14 +286,14 @@ export default function Lab() {
             }
             text="How far your team must travel, a rough CO₂ number, the closest good sites for this task, and the rules for visiting the site."
           />
-          <Sustainability task={task} targetId={targetId} earthId={earthId} onPick={setEarthId} />
+          <Sustainability task={task} targetId={targetId} earth={earth} onPick={setEarthId} />
         </section>
 
         <section id="gaps" className="scroll-mt-32">
           <SectionHead
             n="05"
             astra={{ mood: "sad", action: "slump", say: "Earth can't fake gravity, vacuum or radiation." }}
-            kicker="What Earth cannot reproduce"
+            kicker="What Earth can't copy"
             title={
               <>
                 The gaps stay <Em>next to every score.</Em>
@@ -286,7 +302,7 @@ export default function Lab() {
           />
           <RealityGaps world={target.body} />
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-            <Insight earthName={earthName} targetName={target.name} topo={topo} statsE={twins.statsE} statsT={twins.statsT} light={light} illE={illE} illT={illT} fit={fit.score} />
+            <Insight earthName={earthName} targetName={target.name} topo={topo} statsE={twins.statsE} statsT={twins.statsT} light={light} illE={illE} illT={illT} fit={fit.score} measured={!!cs} />
             <ModelRoadmap />
           </div>
         </section>
@@ -348,6 +364,7 @@ function SectionDock() {
 
 const STAGE_TIPS = [
   "Pick a quick pair above, or choose ① Earth, ② target and ③ task.",
+  "Any place on Earth works: use Find new sites, then press Compare in 3D.",
   "Zoom one map and the other follows at the same scale.",
   "Switch to Swipe and drag the divider to compare surfaces.",
   "Scroll down for real 3D ground, rocks, sunlight and travel footprint.",
@@ -485,7 +502,7 @@ function KindBadge({ kind }: { kind: "computed" | "demo" | "gap" }) {
     demo: "border-dashed border-line-2 text-chrome",
     gap: "border-weak/40 bg-weak/10 text-weak",
   };
-  const label = { computed: "Computed", demo: "Demo", gap: "Reality gap" };
+  const label = { computed: "Computed", demo: "Demo", gap: "Earth can't copy" };
   return <span className={clsx("rounded-full border px-2 py-0.5 font-mono text-[9.5px] tracking-wider uppercase", map[kind])}>{label[kind]}</span>;
 }
 
@@ -546,7 +563,7 @@ function CountUp({ value, digits = 2 }: { value: number; digits?: number }) {
 }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={clsx("rounded-2xl border border-line bg-panel", className)}>{children}</div>;
+  return <div className={clsx("surface rounded-2xl", className)}>{children}</div>;
 }
 
 function Loader({ label, progress }: { label: string; progress?: number }) {
@@ -572,6 +589,7 @@ const C = (w: World) => `var(--color-${w})`;
 
 function CompareStage({
   earthId,
+  earth,
   targetId,
   setEarthId,
   setTargetId,
@@ -582,6 +600,7 @@ function CompareStage({
   onQuick,
 }: {
   earthId: string;
+  earth: EarthSite;
   targetId: string;
   setEarthId: (v: string) => void;
   setTargetId: (v: string) => void;
@@ -591,7 +610,6 @@ function CompareStage({
   panel: React.ReactNode;
   onQuick: (q: (typeof QUICK_PAIRS)[number]) => void;
 }) {
-  const earth = EARTH_BY_ID[earthId];
   const target = TARGET_BY_ID[targetId];
   const polar = target.body === "moon" && target.lat < -80;
   const [mode, setMode] = useState<"split" | "swipe">("split");
@@ -664,7 +682,7 @@ function CompareStage({
     <section id="compare" className="border-b border-line">
       <div className="z-40 border-b border-line bg-void/90 backdrop-blur-xl lg:sticky lg:top-16">
         <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-6">
-          <PairSelect step={1} hint="Earth site" world="earth" value={earthId} onChange={setEarthId} options={EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))} />
+          <PairSelect step={1} hint="Earth site" world="earth" value={earthId} onChange={setEarthId} options={[...(earthId.startsWith("@") ? [{ id: earthId, label: `Your place: ${earth.name}` }] : []), ...EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))]} />
           <span className="font-serif text-lg text-dim italic">rehearses</span>
           <PairSelect
             step={2}
@@ -752,7 +770,7 @@ function CompareStage({
           )}
           <StageCoach />
           <a href="#evidence" className="absolute bottom-5 left-1/2 z-[700] hidden -translate-x-1/2 items-center gap-2 rounded-full border border-line-2 bg-void/80 px-4 py-2 text-[12px] text-chrome backdrop-blur transition-colors hover:text-platinum lg:flex">
-            Terrain, geology, light & footprint <ArrowDown size={13} className="animate-bounce" />
+            Ground, rocks, light and travel <ArrowDown size={13} className="animate-bounce" />
           </a>
         </div>
         <aside className="scrollbar-thin border-line lg:overflow-y-auto lg:border-l">{panel}</aside>
@@ -820,7 +838,17 @@ function EvidencePanel({
   loading,
   light,
   earthName,
+  learned,
+  world,
+  gridReady,
+  grid,
+  cell,
 }: {
+  learned: number | null;
+  world: "moon" | "mars";
+  gridReady: boolean;
+  grid: Grid | null;
+  cell: number;
   results: ParamResult[];
   fit: { score: number; computedShare: number };
   weights: Weights;
@@ -836,7 +864,7 @@ function EvidencePanel({
   const [open, setOpen] = useState(false);
   return (
     <div className="p-6">
-      <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Analog fit · {TASKS.find((t) => t.id === task)!.short}</div>
+      <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Match score · {TASKS.find((t) => t.id === task)!.short}</div>
       <div className="mt-4 flex items-center justify-between gap-4">
         <div className="relative size-[124px] shrink-0">
           <svg viewBox="0 0 128 128" className="size-full -rotate-90">
@@ -855,7 +883,9 @@ function EvidencePanel({
         <Astronaut size={96} mood={react.mood} action={react.action} />
       </div>
       <p className="mt-4 min-h-[40px] text-[14px] leading-snug text-platinum">{react.say}</p>
-      <p className="mt-1 text-[12px] text-dim">{Math.round(fit.computedShare * 100)}% computed from data in your browser · the rest is demo until the model is trained.</p>
+      <p className="mt-1 text-[12px] text-dim">
+        {gridReady ? "Every number below is measured from NASA and open data." : `${Math.round(fit.computedShare * 100)}% measured so far. Loading the global data for the rest…`}
+      </p>
 
       <ul className="mt-6 border-t border-line">
         {results.map((p) => {
@@ -886,20 +916,20 @@ function EvidencePanel({
           <KindBadge kind="computed" /> measured live
         </span>
         <span className="flex items-center gap-1.5">
-          <KindBadge kind="demo" /> placeholder
+          <KindBadge kind="demo" /> placeholder while loading
         </span>
         <span className="flex items-center gap-1.5">
           <KindBadge kind="gap" /> never scored
         </span>
       </div>
       <button onClick={() => setOpen((o) => !o)} className="link-wipe mt-4 text-[12px] text-chrome">
-        {open ? "Hide" : "Adjust"} mission weights
+        {open ? "Hide" : "Change"} what matters most
       </button>
       {open && (
         <div className="mt-3 space-y-2.5">
           {(Object.keys(weights) as (keyof Weights)[]).map((k) => (
             <label key={k} className="flex items-center gap-3 text-[12px]">
-              <span className="w-24 text-chrome capitalize">{k}</span>
+              <span className="w-24 text-chrome">{PARAMS.find((x) => x.id === k)!.label}</span>
               <input type="range" min={0} max={1} step={0.05} value={weights[k]} onChange={(e) => setWeights({ ...weights, [k]: +e.target.value })} className="flex-1 accent-[#edeae4]" />
               <span className="w-9 text-right font-mono text-dim">{Math.round(weights[k] * 100)}</span>
             </label>
@@ -909,16 +939,30 @@ function EvidencePanel({
           </button>
         </div>
       )}
-      <div className="mt-6 rounded-xl border border-line bg-ink p-4">
+      {learned !== null && (
+        <div className="mt-5 rounded-xl border border-earth/30 bg-earth/[0.06] p-4">
+          <div className="flex items-center justify-between gap-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
+            <span className="flex items-center gap-2">
+              <Cpu size={12} className="text-earth" /> Learned model
+            </span>
+            <span className="font-mono text-[13px] tracking-normal text-earth">{learned.toFixed(2)}</span>
+          </div>
+          <p className="mt-1.5 text-[12.5px] leading-snug text-chrome">
+            Looks more {world === "moon" ? "Moon" : "Mars"}-like than {Math.round(learned * 100)}% of all land, judged by a model trained on 38 known test sites.
+          </p>
+        </div>
+      )}
+      {grid && cell >= 0 && <ClimateLine grid={grid} cell={cell} />}
+      <div className="mt-3 rounded-xl border border-line bg-ink p-4">
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
-          <Sun size={12} className="text-flare" /> Best rehearsal window
+          <Sun size={12} className="text-flare" /> Best months to go
         </div>
         <div className="mt-1 text-[15px] text-platinum">
           {earthName}: <span className="text-flare">{light.best.join(" · ") || "n/a"}</span>
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2 text-[11px] text-dim">
-        <Cpu size={12} /> Prototype. Our model is trained at the hackathon.
+        <Cpu size={12} /> Worked out in your browser from NASA data.
       </div>
     </div>
   );
@@ -1253,7 +1297,7 @@ function LightTwinCard({ light, targetBody, targetName, earthName }: { light: Re
       <Card className="h-full p-6">
         <div className="flex items-start justify-between">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Light Twin · rehearsal calendar</div>
+            <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Sunlight match · best months</div>
             <h3 className="mt-1 text-[19px] font-medium tracking-tight">
               Lighting <span className="font-mono text-flare">{light.score.toFixed(2)}</span> <span className="text-[13px] text-dim">best season · {light.annual.toFixed(2)} annual</span>
             </h3>
@@ -1314,7 +1358,7 @@ function ShadowCard({ grids, ills, sunElev, names, targetBody }: { grids: (Terra
       <Card className="h-full p-6">
         <div className="flex items-start justify-between">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Shadow Lab · Sun at {sunElev.toFixed(1)}°</div>
+            <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Shadow map · Sun at {sunElev.toFixed(1)}°</div>
             <h3 className="mt-1 text-[19px] font-medium tracking-tight">Where the light never reaches</h3>
           </div>
           <KindBadge kind="computed" />
@@ -1350,11 +1394,10 @@ function ShadowCard({ grids, ills, sunElev, names, targetBody }: { grids: (Terra
 
 /* =========================================================== sustainability */
 
-function Sustainability({ task, targetId, earthId, onPick }: { task: TaskId; targetId: string; earthId: string; onPick: (id: string) => void }) {
+function Sustainability({ task, targetId, earth, onPick }: { task: TaskId; targetId: string; earth: EarthSite; onPick: (id: string) => void }) {
   const [home, setHome] = useState("dhaka");
   const base = HOME_BASES.find((h) => h.id === home)!;
   const target = TARGET_BY_ID[targetId];
-  const earth = EARTH_BY_ID[earthId];
   const km = greatCircleKm(base.lat, base.lon, earth.lat, earth.lon);
   const stew = STEWARDSHIP[earth.id];
   const ranked = useMemo(
@@ -1476,6 +1519,7 @@ function RealityGaps({ world }: { world: "moon" | "mars" }) {
 }
 
 function Insight({
+  measured,
   earthName,
   targetName,
   topo,
@@ -1495,6 +1539,7 @@ function Insight({
   illE: Illumination | null;
   illT: Illumination | null;
   fit: number;
+  measured: boolean;
 }) {
   const lines: string[] = [];
   if (topo !== null && statsE && statsT) {
@@ -1506,11 +1551,15 @@ function Insight({
     lines.push(
       `Under the same Sun, ${(illE.persistentShadow * 100).toFixed(1)}% of ${earthName} never sees light versus ${(illT.persistentShadow * 100).toFixed(1)}% of ${targetName}, ${illE.persistentShadow < illT.persistentShadow * 0.5 ? "shadow-trap rehearsal will be weaker than the real thing" : "a usable shadow rehearsal"}.`,
     );
-  lines.push(`Overall ${fit.toFixed(2)} is provisional: geology, temperature and regolith are demo values until the model is trained.`);
+  lines.push(
+    measured
+      ? `Overall ${fit.toFixed(2)}: rocks, cold and bare ground come from NASA POWER, MODIS and volcano and crater records for this exact 55 km area.`
+      : `Overall ${fit.toFixed(2)} is provisional while the global data loads.`,
+  );
   return (
     <Reveal>
       <Card className="h-full p-6">
-        <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Auto-summary</div>
+        <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">In short</div>
         <h3 className="mt-1 text-[19px] font-medium tracking-tight">What the numbers say</h3>
         <ol className="mt-5 space-y-3">
           {lines.map((l, i) => (
@@ -1528,18 +1577,18 @@ function Insight({
 
 function ModelRoadmap() {
   const steps = [
-    { k: "Now", t: "Prototype", d: "Topography & lighting computed live; other parameters are demo values.", on: true },
-    { k: "Hackathon", t: "Physical baseline", d: "Full-precision LOLA, MOLA, HiRISE & NASADEM; transparent feature ranker." },
-    { k: "Next", t: "Trained model", d: "Terrain encoder + mission-conditioned ranker, with uncertainty and abstention." },
+    { k: "Done", t: "Every place measured", d: "80,206 land areas scored from NASA POWER, MODIS, terrain tiles, volcanoes and craters.", on: true },
+    { k: "Done", t: "Learned model, tested", d: "Trained on 38 known sites. Hidden sites come back in the top few percent of all land.", on: true },
+    { k: "Next", t: "Terrain encoder", d: "A neural network that compares the shape of the ground directly, trained on GPUs." },
   ];
   return (
     <Reveal delay={0.08}>
       <Card className="h-full p-6">
-        <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Model status</div>
-        <h3 className="mt-1 text-[19px] font-medium tracking-tight">From demo to trained</h3>
+        <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Progress</div>
+        <h3 className="mt-1 text-[19px] font-medium tracking-tight">What is built, what is next</h3>
         <ol className="relative mt-5 space-y-5 border-l border-line pl-5">
           {steps.map((s) => (
-            <li key={s.k} className="relative">
+            <li key={s.t} className="relative">
               <span className={clsx("absolute top-1.5 -left-[25px] size-2.5 rounded-full border", s.on ? "border-flare bg-flare" : "border-line-2 bg-void")} />
               <div className="font-mono text-[10px] tracking-widest text-dim uppercase">{s.k}</div>
               <div className="text-[14px] text-platinum">{s.t}</div>
@@ -1552,5 +1601,26 @@ function ModelRoadmap() {
         </Link>
       </Card>
     </Reveal>
+  );
+}
+
+/* ============================================================ climate line */
+
+function ClimateLine({ grid, cell }: { grid: Grid; cell: number }) {
+  const v = (n: string) => grid.value(n, cell);
+  const items: [string, number | null, string][] = [
+    ["Coldest night", v("f_lst_night_min"), " °C"],
+    ["Hottest day", v("f_lst_day_max"), " °C"],
+    ["Rain a year", v("f_precip"), " mm"],
+  ];
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-line bg-line">
+      {items.map(([k, x, u]) => (
+        <div key={k} className="bg-ink p-3">
+          <div className="text-[10.5px] text-dim">{k}</div>
+          <div className="mt-0.5 font-mono text-[14px] text-platinum">{x === null ? "n/a" : `${Math.round(x)}${u}`}</div>
+        </div>
+      ))}
+    </div>
   );
 }

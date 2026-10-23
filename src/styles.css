@@ -163,6 +163,149 @@ body::before {
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* ------------------------------------------------------------ surfaces
+   .surface: the standard card. A soft light follows the mouse (useSpotlight sets
+   --mx/--my) and the edge catches it. Content needs no extra positioning because
+   the light lives in the background layers. */
+@property --glow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+.surface {
+  --glow: 0;
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--color-line);
+  background:
+    radial-gradient(520px circle at var(--mx, 50%) var(--my, 0%), color-mix(in oklab, var(--spot, var(--color-flare)) calc(9% * var(--glow)), transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in oklab, var(--color-platinum) 3%, transparent), transparent 42%),
+    var(--color-panel);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--color-platinum) 5%, transparent),
+    0 30px 70px -44px rgb(0 0 0 / 0.75);
+  transition:
+    --glow 0.5s var(--ease-out-quint),
+    border-color 0.4s var(--ease-out-quint),
+    transform 0.5s var(--ease-out-quint);
+}
+.surface::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%), color-mix(in oklab, var(--spot, var(--color-flare)) 60%, transparent), transparent 70%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: var(--glow);
+}
+@media (hover: hover) {
+  .surface:hover {
+    --glow: 1;
+    border-color: var(--color-line-2);
+  }
+  .surface.lift:hover {
+    transform: translateY(-3px);
+  }
+}
+html[data-theme="light"] .surface {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 24px 50px -36px rgb(60 45 20 / 0.35);
+}
+
+/* Glass: floating UI only (dock, palette, toasts) */
+.glass {
+  background:
+    linear-gradient(145deg, color-mix(in oklab, var(--color-platinum) 9%, transparent), color-mix(in oklab, var(--color-platinum) 2%, transparent) 55%),
+    color-mix(in oklab, var(--color-panel) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-platinum) 14%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--color-platinum) 14%, transparent),
+    0 24px 60px -24px rgb(0 0 0 / 0.6);
+}
+
+/* Big outlined chapter numbers */
+.outline-num {
+  font-family: var(--font-wide);
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--color-platinum) 28%, transparent);
+  letter-spacing: -0.02em;
+}
+
+/* Icon tile with a slow orbit */
+.glyph-orbit {
+  transition: transform 1.6s var(--ease-out-quint);
+}
+.surface:hover .glyph-orbit,
+.glyph-tile:hover .glyph-orbit {
+  transform: rotate(140deg);
+}
+
+/* Range inputs in the warm style */
+input[type="range"].range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--color-flare) var(--fill, 50%), var(--color-line-2) var(--fill, 50%));
+}
+input[type="range"].range::-moz-range-track {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--color-line-2);
+}
+input[type="range"].range::-moz-range-progress {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--color-flare);
+}
+input[type="range"].range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -6.5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: var(--color-platinum);
+  border: 3px solid var(--color-void);
+  box-shadow: 0 0 0 1px var(--color-flare);
+  transition: transform 0.2s var(--ease-out-quint);
+}
+input[type="range"].range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 99px;
+  background: var(--color-platinum);
+  border: 3px solid var(--color-void);
+  box-shadow: 0 0 0 1px var(--color-flare);
+}
+input[type="range"].range:active::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Shimmer for loading placeholders */
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--color-panel-2) 0%, var(--color-line) 40%, var(--color-panel-2) 80%) 0 0 / 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
 /* Link with an underline that draws in from the left */
 .link-wipe {
   background-image: linear-gradient(currentColor, currentColor);

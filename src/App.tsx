@@ -3,15 +3,19 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import { MiniLoader, Splash } from "./components/ui/Splash";
 import { AskAstra } from "./components/ui/AskAstra";
+import { BackToTop, Toaster, useSpotlight } from "./components/ui/kit";
+import { CommandPalette } from "./components/ui/CommandPalette";
+import { BadgeToast } from "./components/ui/BadgeToast";
 
 const Atlas = lazy(() => import("./pages/Atlas"));
 const Lab = lazy(() => import("./pages/Lab"));
+const Discover = lazy(() => import("./pages/Discover"));
 const Methods = lazy(() => import("./pages/Methods"));
 const About = lazy(() => import("./pages/About"));
 
 // Warm the likely next routes while the visitor reads the landing page.
 const prefetch = () => {
-  void import("./pages/Atlas");
+  void import("./pages/Discover");
   void import("./pages/Lab");
 };
 
@@ -33,6 +37,7 @@ function Loading() {
 }
 
 export default function App() {
+  useSpotlight();
   useEffect(() => {
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
     const id = w.requestIdleCallback ? w.requestIdleCallback(prefetch) : window.setTimeout(prefetch, 2500);
@@ -45,6 +50,8 @@ export default function App() {
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/discover" element={<Discover />} />
+          <Route path="/find" element={<Navigate to="/discover" replace />} />
           <Route path="/atlas" element={<Atlas />} />
           <Route path="/lab" element={<Lab />} />
           <Route path="/compare" element={<CompareRedirect />} />
@@ -54,6 +61,10 @@ export default function App() {
         </Routes>
       </Suspense>
       <AskAstra />
+      <CommandPalette />
+      <BackToTop />
+      <Toaster />
+      <BadgeToast />
     </>
   );
 }

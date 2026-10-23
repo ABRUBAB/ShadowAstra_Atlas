@@ -242,11 +242,16 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
         else z = Math.log2(POLAR_METRES_PER_PIXEL / mpp);
         z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), z));
         if (Math.abs(z - map.getZoom()) < 0.01) return;
-        // Cancel any running fly-in first: zooming mid-animation leaves Leaflet's tile pane stuck.
-        map.stop();
+        // Stay silent for the whole change: map.stop() itself can fire move events, and an
+        // echo back to the paired map would bounce the scale between the two forever.
         silent.current = true;
-        map.setView(map.getCenter(), z, { animate: false });
-        silent.current = false;
+        try {
+          // Cancel any running fly-in first: zooming mid-animation leaves Leaflet's tile pane stuck.
+          map.stop();
+          map.setView(map.getCenter(), z, { animate: false });
+        } finally {
+          silent.current = false;
+        }
       },
     }),
     [projection, body],

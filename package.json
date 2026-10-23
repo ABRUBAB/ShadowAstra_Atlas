@@ -2,7 +2,7 @@
   "name": "shadowastra-atlas",
   "private": true,
   "version": "0.1.0",
-  "description": "ShadowAstra Atlas — find Earth rehearsal grounds for Moon base and Mars missions. NASA Space Apps Challenge 2026, Dhaka.",
+  "description": "ShadowAstra Atlas: find places on Earth to practise for a Moon base and Mars missions. NASA Space Apps Challenge 2026, Dhaka.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",

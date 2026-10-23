@@ -8,3 +8,6 @@ dist
 __pycache__/
 shots/
 .claude/
+
+# data pipeline downloads (rebuild with pipeline/s01..s06)
+pipeline/.cache/

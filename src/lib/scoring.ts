@@ -13,12 +13,12 @@ export type ParamId = "topography" | "geology" | "temperature" | "lighting" | "r
 export type ParamKind = "computed" | "demo" | "gap";
 
 export const PARAMS: { id: ParamId; label: string; what: string }[] = [
-  { id: "topography", label: "Topography", what: "Slope distribution & relief at a shared scale" },
-  { id: "geology", label: "Geology", what: "Rock types and minerals" },
-  { id: "temperature", label: "Temperature", what: "Day and night range and cold extremes" },
-  { id: "lighting", label: "Lighting", what: "Sun-elevation regime and shadows" },
-  { id: "regolith", label: "Regolith", what: "Soil and dust make-up" },
-  { id: "radiation", label: "Radiation", what: "Surface exposure. Earth's field and air block it" },
+  { id: "topography", label: "Ground shape", what: "Slopes and height range, compared at the same scale" },
+  { id: "geology", label: "Rocks & craters", what: "Volcanic ground, impact craters and bare rock" },
+  { id: "temperature", label: "Cold & heat", what: "How cold the nights get and the day to night swing" },
+  { id: "lighting", label: "Sunlight angle", what: "How high the Sun climbs, and the shadows it casts" },
+  { id: "regolith", label: "Bare, dry ground", what: "Little rain and no plants, so soil and rock show" },
+  { id: "radiation", label: "Radiation", what: "Space radiation. Earth's air and magnetic field block it" },
 ];
 
 export type Weights = Record<Exclude<ParamId, "radiation">, number>;

@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
 import { ArrowRight, Send, X } from "lucide-react";
 import { Astronaut, type Mood } from "./Astronaut";
-import { astraAnswer, pageGreeting, type AstraReply } from "../../lib/astra";
+import { astraAnswerAsync, pageGreeting, type AstraReply } from "../../lib/astra";
+import { logBadge } from "../../lib/fieldlog";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -40,6 +41,18 @@ export function AskAstra() {
     };
   }, []);
 
+  // Other parts of the site can open Astra with a question: askAstra("…")
+  useEffect(() => {
+    const on = (e: Event) => {
+      const q = (e as CustomEvent<{ q: string }>).detail?.q ?? "";
+      setOpen(true);
+      setNudge(false);
+      if (q) setTimeout(() => askRef.current(q), 250);
+    };
+    window.addEventListener("sa-ask", on);
+    return () => window.removeEventListener("sa-ask", on);
+  }, []);
+
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: "smooth" });
   }, [msgs, typing]);
@@ -49,12 +62,17 @@ export function AskAstra() {
     if (!text) return;
     setMsgs((m) => [...m, { from: "you", text }]);
     setInput("");
+    logBadge("ask");
     setTyping(true);
-    setTimeout(() => {
-      setMsgs((m) => [...m, { from: "astra", reply: astraAnswer(text) }]);
+    const wait = new Promise((r) => setTimeout(r, 550 + Math.min(900, text.length * 12)));
+    Promise.all([astraAnswerAsync(text), wait]).then(([reply]) => {
+      setMsgs((m) => [...m, { from: "astra", reply }]);
       setTyping(false);
-    }, 550 + Math.min(900, text.length * 12));
+    });
   };
+
+  const askRef = useRef(ask);
+  askRef.current = ask;
 
   const last = [...msgs].reverse().find((m) => m.from === "astra")?.reply;
   const mood: Mood = typing ? "thinking" : (last?.mood ?? "happy");
@@ -188,7 +206,7 @@ export function AskAstra() {
                 <Send size={15} />
               </button>
             </form>
-            <p className="px-4 pb-3 text-[10.5px] text-dim">No AI model or internet lookup. Every answer comes from our catalogue and maths.</p>
+            <p className="px-4 pb-3 text-[10.5px] text-dim">No chatbot. Every answer is built from our NASA-based data and maths, so Astra can't make things up.</p>
           </motion.section>
         )}
       </AnimatePresence>

@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import clsx from "clsx";
 
 /**
@@ -8,8 +9,22 @@ import clsx from "clsx";
  * character stays a crewed suit, not a cartoon face). Actions swap the tool in the
  * right hand and drive calm CSS motion; every loop respects prefers-reduced-motion.
  */
-export type Mood = "neutral" | "happy" | "sad" | "focused" | "thinking" | "wow";
-export type Action = "idle" | "wave" | "scan" | "drill" | "flag" | "sample" | "celebrate" | "walk" | "slump";
+export type Mood = "neutral" | "happy" | "sad" | "focused" | "thinking" | "wow" | "cold" | "hot";
+export type Action = "idle" | "wave" | "scan" | "drill" | "flag" | "sample" | "celebrate" | "walk" | "slump" | "shiver" | "fan" | "point" | "binoculars";
+
+/** Types the line out quickly, so Astra feels like he is talking. */
+function useTyped(text: string | null | undefined) {
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!text || reduce) return;
+    setN(0);
+    const id = setInterval(() => setN((v) => (v >= text.length ? (clearInterval(id), v) : v + 2)), 16);
+    return () => clearInterval(id);
+  }, [text, reduce]);
+  if (!text) return "";
+  return reduce ? text : text.slice(0, n);
+}
 
 interface Props {
   mood?: Mood;
@@ -21,6 +36,7 @@ interface Props {
 }
 
 export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, className, sayAlign = "right" }: Props) {
+  const typed = useTyped(say);
   return (
     <div className={clsx("astro-wrap relative inline-block select-none", className)} style={{ width: size }} aria-hidden={!say}>
       <AnimatePresence mode="wait">
@@ -32,6 +48,7 @@ export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, 
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             role="status"
+            aria-label={say}
             className={clsx(
               "absolute z-10 w-max max-w-[220px] rounded-2xl border border-line-2 bg-panel/95 px-3 py-2 text-[12px] leading-snug text-platinum backdrop-blur",
               sayAlign === "side"
@@ -41,7 +58,8 @@ export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, 
                   : "right-[58%] bottom-[86%] rounded-br-sm",
             )}
           >
-            {say}
+            <span aria-hidden>{typed}</span>
+            <span aria-hidden className="invisible">{say.slice(typed.length)}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -117,9 +135,21 @@ export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, 
             {action === "sample" && (
               <path d="M96 134 L104 128 L113 133 L111 142 L100 144 Z" fill="#6c6a65" stroke="#2f3035" strokeWidth="1.2" />
             )}
+            {action === "point" && <circle cx="103" cy="140" r="2.6" fill="#f2c879" filter="url(#astro-glow)" className="astro-led" />}
             <rect x="96" y="86" width="14" height="42" rx="7" fill="url(#astro-suit)" stroke="#2f3035" strokeWidth="1.4" />
             <circle cx="103" cy="131" r="6.5" fill="#8d887e" stroke="#2f3035" strokeWidth="1.4" />
           </g>
+
+          {/* binoculars, held up to the visor */}
+          {action === "binoculars" && (
+            <g className="astro-binos">
+              <rect x="64" y="46" width="14" height="12" rx="4" fill="#23242a" stroke="#3a3b40" />
+              <rect x="82" y="46" width="14" height="12" rx="4" fill="#23242a" stroke="#3a3b40" />
+              <rect x="77" y="49" width="6" height="5" fill="#3a3b40" />
+              <circle cx="71" cy="52" r="3" fill="#8fb4ea" opacity="0.7" />
+              <circle cx="89" cy="52" r="3" fill="#8fb4ea" opacity="0.7" />
+            </g>
+          )}
 
           {/* torso */}
           <rect x="56" y="80" width="48" height="52" rx="16" fill="url(#astro-suit)" stroke="#2f3035" strokeWidth="1.4" />
@@ -166,12 +196,44 @@ export function Astronaut({ mood = "neutral", action = "idle", say, size = 160, 
                 <circle cx="91" cy="54" r="2" fill="#f2c879" stroke="none" />
                 <path d="M78 64 Q82 62 86 64" />
               </g>
+              <g className="face face-cold">
+                <path d="M67 55 L75 57" />
+                <path d="M85 57 L93 55" />
+                <path d="M72 65 L75 62 L78 65 L81 62 L84 65 L87 62" strokeWidth="1.6" />
+              </g>
+              <g className="face face-hot">
+                <path d="M67 55 Q71 59 75 55" />
+                <path d="M85 55 Q89 59 93 55" />
+                <ellipse cx="80" cy="65" rx="3.4" ry="2.4" />
+              </g>
               <g className="face face-wow">
                 <circle cx="71" cy="55" r="3" />
                 <circle cx="89" cy="55" r="3" />
                 <circle cx="80" cy="64" r="2.4" />
               </g>
             </g>
+          </g>
+
+          {/* frost creeping over the visor */}
+          <g className="astro-frost" fill="none" stroke="#cfe3ff" strokeWidth="1" strokeLinecap="round">
+            <path d="M58 66 l4 -3 M60 70 l5 -2 M62 62 l3 -4" />
+            <path d="M102 66 l-4 -3 M100 70 l-5 -2 M98 62 l-3 -4" />
+          </g>
+          <g className="astro-flakes" fill="#cfe3ff">
+            <circle cx="30" cy="30" r="1.6" />
+            <circle cx="132" cy="44" r="1.3" />
+            <circle cx="40" cy="70" r="1.1" />
+            <circle cx="124" cy="80" r="1.6" />
+          </g>
+          {/* sweat */}
+          <g className="astro-sweat" fill="#8fb4ea">
+            <path d="M112 34 q3 5 0 7 q-3 -2 0 -7 Z" />
+            <path d="M48 40 q3 5 0 7 q-3 -2 0 -7 Z" />
+          </g>
+          {/* heat shimmer */}
+          <g className="astro-heat" fill="none" stroke="#e08a5f" strokeWidth="1.2" strokeLinecap="round" opacity="0.7">
+            <path d="M30 120 q4 -4 0 -8 q-4 -4 0 -8" />
+            <path d="M132 120 q4 -4 0 -8 q-4 -4 0 -8" />
           </g>
 
           {/* thought dots */}
@@ -258,13 +320,48 @@ const ASTRO_CSS = `
 @keyframes astro-swing-r { 0%,100% { transform: rotate(-18deg); } 50% { transform: rotate(4deg); } }
 @keyframes astro-led { 0%, 60% { opacity: 1; } 61%, 100% { opacity: .25; } }
 @keyframes astro-think { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
+
+.astro .astro-frost, .astro .astro-flakes, .astro .astro-sweat, .astro .astro-heat { opacity: 0; transition: opacity .5s ease-out; }
+.astro[data-mood="cold"] .face-cold, .astro[data-mood="hot"] .face-hot { opacity: 1; }
+.astro[data-mood="cold"] .astro-frost { opacity: .9; }
+.astro[data-mood="cold"] .astro-flakes { opacity: 1; animation: astro-snow 2.6s linear infinite; }
+.astro[data-mood="hot"] .astro-sweat { opacity: 1; animation: astro-drip 1.4s ease-in infinite; }
+.astro[data-mood="hot"] .astro-heat { opacity: .7; animation: astro-shimmer 1.2s ease-in-out infinite; }
+.astro[data-action="shiver"] .astro-body { animation: astro-shiver .1s linear infinite; }
+.astro[data-action="shiver"] .astro-arm-l { transform: rotate(-32deg) translateX(6px); }
+.astro[data-action="shiver"] .astro-arm-r { transform: rotate(32deg) translateX(-6px); }
+.astro[data-action="fan"] .astro-arm-l { animation: astro-fan .35s ease-in-out infinite; }
+.astro[data-action="point"] .astro-arm-r { transform: rotate(-96deg); }
+.astro[data-action="point"] .astro-head { transform: rotate(-4deg); }
+.astro[data-action="binoculars"] .astro-arm-r { transform: rotate(-150deg) translate(6px, 0); }
+.astro[data-action="binoculars"] .astro-arm-l { transform: rotate(150deg) translate(-6px, 0); }
+.astro[data-action="binoculars"] .astro-head { animation: astro-look 3.2s ease-in-out infinite; }
+@keyframes astro-shiver { 0%,100% { transform: translateX(-.8px); } 50% { transform: translateX(.8px); } }
+@keyframes astro-fan { 0%,100% { transform: rotate(150deg); } 50% { transform: rotate(118deg); } }
+@keyframes astro-look { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes astro-snow { from { transform: translateY(-6px); } to { transform: translateY(10px); } }
+@keyframes astro-drip { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
+@keyframes astro-shimmer { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .astro *, .astro { animation: none !important; } }
 `;
 
-/** Map an Analog Fit score to Astra's reaction. */
-export function reactionFor(score: number | null, loading: boolean): { mood: Mood; action: Action; say: string } {
-  if (loading || score === null) return { mood: "focused", action: "scan", say: "Scanning terrain tiles…" };
+export interface Reaction {
+  mood: Mood;
+  action: Action;
+  say: string;
+}
+
+/** Map a match score to Astra's reaction. */
+export function reactionFor(score: number | null, loading: boolean): Reaction {
+  if (loading || score === null) return { mood: "focused", action: "scan", say: "Scanning the ground…" };
   if (score >= 0.75) return { mood: "happy", action: "celebrate", say: `${score.toFixed(2)}! A strong place to practise.` };
-  if (score >= 0.5) return { mood: "thinking", action: "sample", say: `${score.toFixed(2)}. Good for some tests. Check the gaps.` };
+  if (score >= 0.5) return { mood: "thinking", action: "sample", say: `${score.toFixed(2)}. Good for some tests. Check what Earth can't copy.` };
   return { mood: "sad", action: "slump", say: `${score.toFixed(2)}. This place won't copy the mission well.` };
+}
+
+/** Astra feels the weather: shivers in deep cold, sweats in strong heat. */
+export function climateReaction(nightMinC: number | null, dayMaxC: number | null): Reaction | null {
+  if (nightMinC !== null && nightMinC <= -25) return { mood: "cold", action: "shiver", say: `Brr! Nights here drop to ${Math.round(nightMinC)} °C. Good practice for the cold.` };
+  if (dayMaxC !== null && dayMaxC >= 48) return { mood: "hot", action: "fan", say: `Phew, the ground hits ${Math.round(dayMaxC)} °C. Great for testing gear in heat.` };
+  return null;
 }

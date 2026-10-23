@@ -22,6 +22,8 @@ import {
 } from "../data/sites";
 import { DEFAULT_LAYER, LAYERS, LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord } from "../lib/geo";
+import { useGrid } from "../lib/grid";
+import { Meter } from "../components/ui/kit";
 
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
 
@@ -94,7 +96,7 @@ export default function Atlas() {
             lat: r.lat,
             lon: r.lon,
             color: "#a197cf",
-            label: `${r.name} · queued`,
+            label: `${r.name} · checked`,
             dashed: true,
             dim: world !== "both" && !r.worlds.includes(world),
           });
@@ -140,7 +142,7 @@ export default function Atlas() {
         {/* ------------------------------------------------ left rail */}
         <aside className="scrollbar-thin order-2 border-line lg:order-1 lg:overflow-y-auto lg:border-r">
           <div className="space-y-8 p-5">
-            <Section title="Rehearsing for">
+            <Section title="Practising for">
               <div className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-ink p-1">
                 {(["moon", "both", "mars"] as WorldFilter[]).map((w) => (
                   <button
@@ -185,7 +187,7 @@ export default function Atlas() {
                     className="mt-3 rounded-xl border border-line bg-ink p-3"
                   >
                     <p className="text-[13px] leading-relaxed text-platinum">{TASKS.find((t) => t.id === task)!.question}</p>
-                    <div className="mt-3 font-mono text-[10px] tracking-widest text-dim uppercase">Evidence that matters</div>
+                    <div className="mt-3 font-mono text-[10px] tracking-widest text-dim uppercase">What to compare</div>
                     <ul className="mt-1.5 space-y-1">
                       {TASKS.find((t) => t.id === task)!.evidence.map((e) => (
                         <li key={e} className="flex items-center gap-2 text-[12px] text-chrome">
@@ -248,7 +250,7 @@ export default function Atlas() {
             </Section>
 
             {body === "earth" && (
-              <Section title="New-analog screening">
+              <Section title="Regions we checked">
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3">
                   <input
                     type="checkbox"
@@ -257,9 +259,9 @@ export default function Atlas() {
                     className="mt-0.5 size-4 accent-[#a197cf]"
                   />
                   <span>
-                    <span className="block text-[13px] text-platinum">Show queued search regions</span>
+                    <span className="block text-[13px] text-platinum">Show the regions we checked</span>
                     <span className="block text-[11px] leading-relaxed text-dim">
-                      {SCREENING_REGIONS.length} regions selected for screening at the hackathon. Not yet analysed.
+                      {SCREENING_REGIONS.length} regions we picked by hand, now measured with the global data. For the whole planet, use Find new sites.
                     </span>
                   </span>
                 </label>
@@ -322,7 +324,7 @@ export default function Atlas() {
                 <Key color={WORLD_COLOR.moon} label="Moon analog" />
                 <Key color={WORLD_COLOR.mars} label="Mars analog" />
                 <Key color={WORLD_COLOR.earth} label="Both" />
-                {showScreening && <Key color="#a197cf" label="Queued for screening" dashed />}
+                {showScreening && <Key color="#a197cf" label="Regions we checked" dashed />}
               </>
             ) : (
               <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
@@ -440,9 +442,9 @@ function Overview({
   const targets = TARGETS.filter((t) => (world === "both" || t.body === world) && (!task || t.tasks.includes(task)));
   return (
     <div className="p-5">
-      <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Atlas overview</div>
+      <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Overview</div>
       <h2 className="mt-1.5 text-2xl leading-tight font-medium tracking-tight">
-        {task ? TASKS.find((t) => t.id === task)!.label : "All mission tasks"}
+        {task ? TASKS.find((t) => t.id === task)!.label : "All jobs"}
       </h2>
       <p className="mt-2 text-[13px] leading-relaxed text-chrome">
         Select a pin on the {body === "earth" ? "Earth" : body === "moon" ? "Moon" : "Mars"} {""}globe, or pick from the lists below.
@@ -476,7 +478,7 @@ function Overview({
             </button>
           </li>
         ))}
-        {earth.length === 0 && <li className="py-4 text-[13px] text-dim">No reference analog for this combination, a gap worth screening.</li>}
+        {earth.length === 0 && <li className="py-4 text-[13px] text-dim">No known test site for this combination yet. Try Find new sites.</li>}
       </ul>
     </div>
   );
@@ -511,7 +513,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
 
         <div>
           <div className="flex items-center justify-between">
-            <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Characterization</div>
+            <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">What it is like</div>
             <span className="rounded-full border border-dashed border-line-2 px-2 py-0.5 text-[10px] text-dim">prototype · literature-based</span>
           </div>
           <ul className="mt-2 border-t border-line">
@@ -525,7 +527,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
         </div>
 
         <div>
-          <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Rehearses</div>
+          <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Practises for</div>
           <div className="mt-2 grid gap-1.5">
             {s.pairs.map((p) => {
               const t = TARGET_BY_ID[p];
@@ -550,7 +552,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
         </div>
 
         <div>
-          <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Will not reproduce</div>
+          <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Earth can't copy</div>
           <ul className="mt-2 space-y-1.5">
             {s.gaps.map((g) => (
               <li key={g} className="flex gap-2 text-[13px] text-chrome">
@@ -571,7 +573,7 @@ function EarthDetail({ id, world, onTarget, onClose }: { id: string; world: Worl
           to={`/lab?earth=${s.id}&target=${s.pairs[0]}`}
           className="flex items-center justify-center gap-2 rounded-full bg-platinum py-3 text-sm font-medium text-void transition-transform hover:bg-white active:scale-[0.99]"
         >
-          Open in Analog Lab <ArrowRight size={15} />
+          Compare in 3D <ArrowRight size={15} />
         </Link>
       </div>
     </div>
@@ -601,7 +603,7 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
       </div>
 
       <div>
-        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Earth rehearsal grounds · {grounds.length}</div>
+        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Earth practice sites · {grounds.length}</div>
         <div className="mt-2 grid gap-1.5">
           {grounds.map((s) => (
             <button key={s.id} onClick={() => onEarth(s.id)} className="group flex items-center gap-3 rounded-xl border border-line p-2 text-left hover:border-line-2">
@@ -614,15 +616,15 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
             </button>
           ))}
           {grounds.length === 0 && (
-            <div className="rounded-xl border border-dashed border-line-2 p-4 text-[13px] text-chrome">
-              No catalogued Earth analog yet, this target drives the new-analog screening.
-            </div>
+            <Link to={`/discover?target=${t.id}&task=${t.tasks[0]}`} className="block rounded-xl border border-dashed border-line-2 p-4 text-[13px] text-chrome hover:border-flare/50 hover:text-platinum">
+              No known Earth site yet. Find new ones on the global map <ArrowRight size={12} className="inline" />
+            </Link>
           )}
         </div>
       </div>
 
       <div>
-        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Reality gaps</div>
+        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Earth can't copy</div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {REALITY_GAPS[t.body].map((g) => (
             <span key={g} className="rounded-full border border-line px-2 py-0.5 text-[11px] text-dim">
@@ -646,54 +648,66 @@ function TargetDetail({ id, onEarth, onClose }: { id: string; onEarth: (id: stri
 
 function ScreenDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const r = SCREENING_REGIONS.find((x) => x.id === id)!;
-  const datasets = ["NASADEM / Copernicus DEM: slope and bumps", "HLS (Landsat + Sentinel-2): what covers the ground", "EMIT: surface minerals", "MODIS LST: ground temperature"];
+  const { grid, progress } = useGrid();
+  const k = grid ? grid.cellAt(r.lat, r.lon, 3) : -1;
+  const v = (n: string) => (grid && k >= 0 ? grid.value(n, k) : null);
+  const moon = grid && k >= 0 ? grid.model("moon", k) : null;
+  const mars = grid && k >= 0 ? grid.model("mars", k) : null;
+  const top = (x: number | null) => (x === null ? "…" : `top ${Math.max(1, Math.round((1 - x) * 100))}%`);
+  const facts: [string, number | null, string][] = [
+    ["Height range", v("f_relief"), " m"],
+    ["Coldest night", v("f_lst_night_min"), " °C"],
+    ["Hottest ground", v("f_lst_day_max"), " °C"],
+    ["Rain a year", v("f_precip"), " mm"],
+  ];
+  const volc = grid && k >= 0 ? grid.volcano(k) : null;
   return (
     <div>
       <div className="relative h-44 overflow-hidden">
         <img src={`/thumbs/${r.id}.webp`} alt={`NASA Blue Marble regional view around ${r.name}`} className="size-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/20 to-transparent" />
       </div>
-    <div className="space-y-7 p-5">
-      <PanelHeader eyebrow={`Search region · ${r.country}`} title={r.name} sub={formatCoord(r.lat, r.lon)} onClose={onClose} />
-      <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-amethyst/60 px-3 py-1 text-[12px] text-amethyst">
-        <CircleDashed size={13} /> Queued, not checked yet
-      </span>
-      <div>
-        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Terrain</div>
-        <p className="mt-1.5 text-[14px] text-platinum">{r.terrain}</p>
-      </div>
-      <div>
-        <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Hypothesis to test</div>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-platinum">{r.hypothesis}</p>
-      </div>
-      <div className="flex gap-1.5">
-        {r.worlds.map((w) => (
-          <span key={w} className="flex items-center gap-1.5 rounded-full border border-line-2 px-2.5 py-1 text-[11px] capitalize text-chrome">
-            <WorldDot world={w} /> {w}
-          </span>
-        ))}
-      </div>
-      <div>
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
-          <Layers size={12} /> Planned evidence
+      <div className="space-y-7 p-5">
+        <PanelHeader eyebrow={`Region we checked · ${r.country}`} title={r.name} sub={formatCoord(r.lat, r.lon)} onClose={onClose} />
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Our idea</div>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-platinum">{r.hypothesis}</p>
+          <p className="mt-1 text-[12px] text-dim">{r.terrain}</p>
         </div>
-        <ul className="mt-2 border-t border-line">
-          {datasets.map((d) => (
-            <li key={d} className="border-b border-line py-2 text-[13px] text-chrome">
-              {d}
-            </li>
-          ))}
-        </ul>
+        <div>
+          <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
+            <Radar size={12} className="text-amethyst" /> What the data says
+          </div>
+          {grid ? (
+            <div className="mt-3 space-y-3">
+              <Meter value={moon} label="Moon-like" kind="model" right={top(moon)} tone="var(--color-moon)" />
+              <Meter value={mars} label="Mars-like" kind="model" right={top(mars)} tone="var(--color-mars)" />
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line">
+                {facts.map(([a, b, u]) => (
+                  <div key={a} className="bg-panel p-2.5">
+                    <div className="text-[10.5px] text-dim">{a}</div>
+                    <div className="font-mono text-[13px] text-platinum">{b === null ? "n/a" : `${Math.round(b)}${u}`}</div>
+                  </div>
+                ))}
+              </div>
+              {volc && volc.km < 150 && <p className="text-[12px] text-chrome">Nearest volcano: {volc.name}, {Math.round(volc.km)} km.</p>}
+            </div>
+          ) : (
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-line">
+              <div className="h-full bg-flare transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
+            </div>
+          )}
+        </div>
+        <Link
+          to={`/discover?target=${r.worlds[0] === "moon" ? "shackleton" : "jezero"}&task=${r.worlds[0] === "moon" ? "base" : "traverse"}&at=${r.lat.toFixed(2)},${r.lon.toFixed(2)}`}
+          className="btn-primary flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium"
+        >
+          Open the full report <ArrowRight size={15} />
+        </Link>
+        <Link to="/methods" className="inline-flex items-center gap-1.5 text-sm text-chrome hover:text-platinum">
+          How places are measured <ExternalLink size={13} />
+        </Link>
       </div>
-      <div className="rounded-xl border border-line bg-ink p-4 text-[12px] leading-relaxed text-dim">
-        <Radar size={14} className="mb-2 text-amethyst" />
-        No score is shown until the screening pipeline runs on measured data. A region can still come back as{" "}
-        <span className="text-chrome">“insufficient evidence”</span>.
-      </div>
-      <Link to="/methods" className="inline-flex items-center gap-1.5 text-sm text-chrome hover:text-platinum">
-        How screening will work <ExternalLink size={13} />
-      </Link>
-    </div>
     </div>
   );
 }

@@ -18,31 +18,31 @@ const TEAM = [
 ];
 
 const AWARDS = [
-  { a: "Best Use of Science", f: "Mission-conditioned scoring, matched-scale terrain statistics, a horizon shadow model, reality gaps on every site." },
-  { a: "Best Use of Data", f: "13 live layers plus LOLA, MOLA & SRTM elevation; ESA, JAXA & ISRO in the pipeline; every value tagged by source." },
-  { a: "Best Use of Technology", f: "WebGL terrain slabs from real DEMs with real imagery, browser-side illumination, three-body GIS, a trainable ranker." },
-  { a: "Galactic Impact", f: "Tells analog field teams where, and when, to rehearse, and what the rehearsal can't prove." },
-  { a: "Best Mission Concept", f: "“What mission can we test here?”, a target becomes a field passport with a best season." },
-  { a: "Most Inspirational", f: "Astra, our field-test astronaut, shows the search succeed and fail, exploration with honesty." },
-  { a: "Best Storytelling", f: "Earth → Moon → Mars, the false-friend reversal, and light and shadow as the thread." },
-  { a: "Global Connection", f: "Search analogs anywhere; Rehearse-closer works from any team’s city." },
-  { a: "Art & Technology", f: "Cinematic globes from NASA mosaics, a sunlight-and-shadow palette, restrained motion." },
-  { a: "Local Impact", f: "Dhaka-first STEM workshops and a Bangla-friendly classroom mode." },
+  { a: "Best Use of Science", f: "Every land area measured the same way as the Moon or Mars target, at the same 50 km scale. A learned model tested by hiding known sites." },
+  { a: "Best Use of Data", f: "NASA POWER, MODIS (GIBS), SRTM, full-precision LOLA and MOLA, volcano and crater records, built into one open global dataset." },
+  { a: "Best Use of Technology", f: "80,206 places re-ranked live in the browser, a 3D score globe, WebGL terrain from real heights, and a shadow model." },
+  { a: "Galactic Impact", f: "Tells field teams where, and when, to practise, and what the practice can't prove." },
+  { a: "Best Mission Concept", f: "Pick a job and a destination. The whole planet answers with places to test, why, and the best months to go." },
+  { a: "Most Inspirational", f: "Astra, our field-test astronaut, shivers, sweats, cheers and admits when a place is poor practice." },
+  { a: "Best Storytelling", f: "Earth to Moon to Mars, “looks alike is not enough”, and light and shadow as the thread." },
+  { a: "Global Connection", f: "Check any town on Earth. Find the closest strong site from any team's city." },
+  { a: "Art & Technology", f: "Cinematic globes from NASA mosaics, a sunlight-and-shadow palette, calm motion." },
+  { a: "Local Impact", f: "Dhaka-first workshops and a Bangla classroom mode, so students far from Atacama do real planetary science." },
 ];
 
 const VALUES = [
   { icon: Eye, t: "Evidence over impressions", d: "A site that looks like Mars is not automatically a Mars rehearsal." },
-  { icon: Scale, t: "Labels you can trust", d: "Computed, demo and reality-gap values never share a colour." },
+  { icon: Scale, t: "Labels you can trust", d: "Measured, learned and “Earth can't copy” values never share a colour." },
   { icon: Leaf, t: "Stewardship first", d: "Sacred, Indigenous and protected land is flagged before any trip." },
   { icon: Users, t: "Open by default", d: "Code, method and data lineage are public for anyone to reuse." },
 ];
 
 const TIMELINE = [
-  { d: "Sep 2026", t: "Team formed in Dhaka", s: "Six people, one challenge: find Earth’s rehearsal grounds." },
-  { d: "1 Oct", t: "Concept film submitted", s: "WHO → WHY → WHAT → SO WHAT NEXT, in under four minutes." },
-  { d: "Oct", t: "Preliminary prototype", s: "Atlas, Analog Lab, Shadow Lab and Astra, this repository." },
-  { d: "Nov", t: "Hackathon weekend", s: "Full-precision DEMs, baseline ranker, screening and site passports." },
-  { d: "Next", t: "Model & community", s: "Trained matcher, expert review, open dataset and a classroom pilot." },
+  { d: "Sep 2026", t: "Team formed in Dhaka", s: "Six people, one challenge: find Earth's best practice grounds." },
+  { d: "1 Oct", t: "Concept film submitted", s: "Who, why, what and what next, in under four minutes." },
+  { d: "Oct", t: "Working prototype", s: "Maps, 3D compare, the shadow map and Astra. Then every land area on Earth measured and a tested model." },
+  { d: "Nov", t: "Hackathon weekend", s: "The official 2026 datasets, minerals from EMIT, a terrain neural network and field test plans." },
+  { d: "Next", t: "Community", s: "Expert review, an open dataset anyone can reuse, and a classroom pilot in Dhaka." },
 ];
 
 function Words({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
@@ -91,8 +91,8 @@ export default function About() {
             See the method <span className="font-serif font-normal text-flare italic">in action.</span>
           </motion.h2>
           <div className="flex flex-wrap gap-3">
-            <Link to="/lab" className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium">
-              Open the Analog Lab <ArrowRight size={16} />
+            <Link to="/discover" className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium">
+              Find new test sites <ArrowRight size={16} />
             </Link>
             <a href={REPO_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-line-2 px-6 py-3.5 text-sm hover:border-chrome">
               <Github size={16} /> GitHub <ArrowUpRight size={14} />
@@ -283,7 +283,7 @@ function Values() {
               viewport={{ once: true }}
               transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }}
               whileHover={{ y: -4 }}
-              className="rounded-2xl border border-line bg-panel p-7 transition-colors duration-500 hover:border-line-2"
+              className="surface lift rounded-2xl p-7"
             >
               <v.icon size={20} strokeWidth={1.5} className="text-flare" />
               <h3 className="mt-10 text-[18px] font-medium tracking-tight">{v.t}</h3>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Moon, Sun, X } from "lucide-react";
+import { Menu, Moon, Search, Sun, X } from "lucide-react";
 import clsx from "clsx";
 import type { Fit } from "../../data/sites";
 import { FIT_LABEL } from "../../data/sites";
@@ -90,12 +90,13 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
-const LINKS = [
+export const LINKS = [
   { to: "/", label: "Home" },
-  { to: "/atlas", label: "Atlas" },
-  { to: "/lab", label: "Analog Lab" },
-  { to: "/methods", label: "Data & Method" },
-  { to: "/about", label: "About" },
+  { to: "/discover", label: "Find new sites" },
+  { to: "/lab", label: "Compare" },
+  { to: "/atlas", label: "Maps" },
+  { to: "/methods", label: "How it works" },
+  { to: "/about", label: "Team" },
 ];
 
 export function Nav({ overlay = false }: { overlay?: boolean }) {
@@ -124,7 +125,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
     >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6">
         <Logo />
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Primary">
           {LINKS.map((l) => (
             <NavLink
               key={l.to}
@@ -132,7 +133,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
               end={l.to === "/"}
               className={({ isActive }) =>
                 clsx(
-                  "rounded-full px-4 py-2 text-[13px] transition-colors duration-150",
+                  "rounded-full px-3.5 py-2 text-[13px] whitespace-nowrap transition-colors duration-150",
                   isActive ? "bg-platinum/[0.07] text-platinum" : "text-chrome hover:text-platinum",
                 )
               }
@@ -140,20 +141,26 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
               {l.label}
             </NavLink>
           ))}
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="ml-2 inline-flex items-center gap-2 rounded-full border border-line-2 px-4 py-2 text-[13px] text-chrome transition-colors hover:border-chrome hover:text-platinum"
+          <button
+            onClick={() => window.dispatchEvent(new Event("sa-palette"))}
+            className="ml-2 inline-flex items-center gap-2 rounded-full border border-line-2 py-1.5 pr-1.5 pl-3.5 text-[13px] text-chrome transition-colors hover:border-chrome hover:text-platinum"
+            aria-label="Search everything"
           >
-            <Github size={15} /> Source
+            <Search size={14} /> Search
+            <kbd className="rounded-full border border-line-2 px-2 py-0.5 font-mono text-[10px] text-dim">Ctrl K</kbd>
+          </button>
+          <a href={REPO_URL} target="_blank" rel="noreferrer" aria-label="Source code on GitHub" title="Source code on GitHub" className="ml-1 grid size-9 place-items-center rounded-full border border-line-2 text-chrome transition-colors hover:border-chrome hover:text-platinum">
+            <Github size={15} />
           </a>
-          <ThemeToggle className="ml-2" />
+          <ThemeToggle className="ml-1" />
         </nav>
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 xl:hidden">
+          <button onClick={() => window.dispatchEvent(new Event("sa-palette"))} aria-label="Search everything" className="grid size-9 place-items-center rounded-full border border-line-2 text-chrome">
+            <Search size={15} />
+          </button>
           <ThemeToggle />
         <button
-          className="rounded-full border border-line-2 p-2 text-chrome md:hidden"
+          className="rounded-full border border-line-2 p-2 text-chrome xl:hidden"
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
@@ -169,7 +176,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-t border-line bg-void/95 px-4 pb-4 backdrop-blur-xl md:hidden"
+            className="border-t border-line bg-void/95 px-4 pb-4 backdrop-blur-xl xl:hidden"
           >
             {LINKS.map((l) => (
               <Link key={l.to} to={l.to} className="block border-b border-line py-3 text-sm text-chrome">
