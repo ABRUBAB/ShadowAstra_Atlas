@@ -1,6 +1,19 @@
 # Submission texts (ready to paste)
 
-## Space Apps form
+## Space Apps form (updated 23 Oct 2026, v0.4)
+
+**Project Description**
+> ShadowAstra Atlas measures every land area on Earth (80,206 places, about 55 km each) with open NASA data and compares each one with Moon and Mars places at the same scale. Pick a mission job (living at a base, driving a rover, hunting for ice, exploring lava tubes, searching for life) and a lunar or Martian destination, and the whole planet is re-ranked live on a 3D globe. Click any place to see why it scores, its real terrain and climate numbers, the best months to go, and what Earth can never copy (gravity, air, radiation). A model trained on 38 known analog sites finds hidden Moon test sites in the top 0.8% of all land in a fair hold-out test. You can also compare any place in 3D, check your own town, and play “Earth or Mars?” with Astra, our field-test astronaut.
+
+**Which NASA Data Source Are You Using? (165 characters, limit 200)**
+> NASA POWER; NASA GIBS MODIS (LST, NDVI, snow, land cover); SRTM; LRO LOLA and MGS MOLA via USGS; Solar System Treks (LROC, Viking, THEMIS); Smithsonian GVP volcanoes
+
+**Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas
+
+<details>
+<summary>Earlier version (preliminary round, 14 Oct)</summary>
+
+### Space Apps form (14 Oct)
 
 **Project Description**
 > ShadowAstra Atlas finds where on Earth to rehearse a permanent Moon base or a Mars mission. Pick a mission task and a lunar or Martian target, and our Analog Lab compares real NASA elevation for both worlds in 3D at the same scale. It rotates a low lunar Sun to map shadows and computes when Earth's sunlight best matches the target. It scores six parameters weighted by the mission, shows what Earth can never reproduce (gravity, vacuum, radiation), and suggests the closest credible site to cut travel emissions. This is a prototype: topography and lighting are computed live, and the rest are labelled demo values until our model is trained at the hackathon.
@@ -9,6 +22,8 @@
 > NASA GIBS (Blue Marble, MODIS, ASTER GDEM, VIIRS Black Marble), NASA Solar System Treks (LRO LROC & LOLA, MGS MOLA, Viking, Mars Odyssey THEMIS), NASA SRTM elevation
 
 **Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas
+
+</details>
 
 ## YouTube
 

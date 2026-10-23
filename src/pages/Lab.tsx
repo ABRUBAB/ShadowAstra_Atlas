@@ -683,7 +683,7 @@ function CompareStage({
       <div className="z-40 border-b border-line bg-void/90 backdrop-blur-xl lg:sticky lg:top-16">
         <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-6">
           <PairSelect step={1} hint="Earth site" world="earth" value={earthId} onChange={setEarthId} options={[...(earthId.startsWith("@") ? [{ id: earthId, label: `Your place: ${earth.name}` }] : []), ...EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))]} />
-          <span className="font-serif text-lg text-dim italic">rehearses</span>
+          <span className="font-serif text-lg text-dim italic">practises for</span>
           <PairSelect
             step={2}
             hint="Moon or Mars target"
@@ -884,7 +884,7 @@ function EvidencePanel({
       </div>
       <p className="mt-4 min-h-[40px] text-[14px] leading-snug text-platinum">{react.say}</p>
       <p className="mt-1 text-[12px] text-dim">
-        {gridReady ? "Every number below is measured from NASA and open data." : `${Math.round(fit.computedShare * 100)}% measured so far. Loading the global data for the rest…`}
+        {gridReady ? "Every number below is measured from NASA and open data." : "Loading the NASA data for rocks, cold and bare ground…"}
       </p>
 
       <ul className="mt-6 border-t border-line">

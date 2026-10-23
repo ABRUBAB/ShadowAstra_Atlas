@@ -15,11 +15,13 @@ Live: https://shadowastra-atlas.vercel.app · Repo: https://github.com/ABRUBAB/S
 - 3D first, 2D where it helps.
 
 ## Commands
-`npm install` · `npm run dev` (http://localhost:5173) · `npm run build` · `npm run typecheck`
-URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id>&target=<id>&task=<id>#geology`.
+`npm install` · `npm run dev` (http://localhost:3000) · `npm run build` · `npm run typecheck` · data: see `pipeline/README.md`
+URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id or @lat,lon>&target=<id>&task=<id>#geology`, `/discover?target=<id>&task=<id>&at=<lat,lon>`.
 
 ## Key gotchas
 - Theme-sensitive colours use `var(--color-*)`. Space scenes are wrapped in `data-theme="dark"`. SVG colours go in `style`, not attributes.
 - Leaflet: never zoom mid-`flyTo` (`BodyMap` calls `map.stop()`); the Lab positions paired maps with `animate=false`.
 - Trek 8-bit DEM calibrations (Moon −9150+78.2·DN, Mars −10538+129.9·DN) are preview-grade.
 - Sentinel-2 cloudless has polar artifacts, so `earthVisible()` switches to Blue Marble above |60°|.
+- The global grid (`public/data/grid.bin` + `grid.json`) is built by `pipeline/`; never hand-edit it. `src/lib/grid.ts` mirrors the Python scoring, keep them in sync.
+- Cards use the `.surface` class (spotlight); shared components live in `src/components/ui/kit.tsx`.

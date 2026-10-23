@@ -37,7 +37,7 @@ export const TASKS: MissionTask[] = [
     id: "base",
     label: "Live at a base",
     short: "Base life",
-    question: "Where can a crew rehearse living and working at a remote, resource-poor outpost?",
+    question: "Where can a crew practise living and working at a remote, resource-poor outpost?",
     evidence: ["Isolation & logistics", "Terrain trafficability", "Thermal extremes", "Comms constraints"],
   },
   {
@@ -65,7 +65,7 @@ export const TASKS: MissionTask[] = [
     id: "caves",
     label: "Explore lava tubes",
     short: "Lava tubes",
-    question: "Where can we rehearse exploring and mapping volcanic caves for shelter?",
+    question: "Where can we practise exploring and mapping volcanic caves for shelter?",
     evidence: ["Lava tube geometry", "Skylights", "Basaltic flows", "Darkness ops"],
   },
   {

@@ -204,8 +204,9 @@ export function Footer() {
             Locations that Analog the Permanent Moon Base Locations and Mars.”
           </p>
           <p className="max-w-md text-xs leading-relaxed text-dim">
-            Prototype for the preliminary round. Imagery: NASA GIBS, NASA Solar System Treks (LRO, MGS, Viking, Mars
-            Odyssey). NASA does not endorse this project. Site ratings are a literature-informed prototype, not model output.
+            Data: NASA POWER, NASA GIBS (MODIS), NASA Solar System Treks and USGS Astrogeology (LRO, MGS, Viking, Mars Odyssey), AWS
+            Terrain Tiles (SRTM), Smithsonian GVP, ESA Sentinel-2, Natural Earth. NASA does not endorse this project. Known test sites
+            are used to train and test our model, not shown as discoveries.
           </p>
         </div>
         <div className="space-y-3 text-sm">
@@ -229,6 +230,9 @@ export function Footer() {
           >
             The challenge
           </a>
+          <a href="https://power.larc.nasa.gov/" className="block text-chrome hover:text-platinum" target="_blank" rel="noreferrer">
+            NASA POWER
+          </a>
           <a href="https://earthdata.nasa.gov/gibs" className="block text-chrome hover:text-platinum" target="_blank" rel="noreferrer">
             NASA GIBS
           </a>
@@ -240,7 +244,7 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 py-5 font-mono text-[11px] text-dim sm:px-6">
           <span>© 2026 ShadowAstra · Dhaka</span>
-          <span>v0.1 · preliminary-round prototype</span>
+          <span>v0.4 · open source</span>
         </div>
       </div>
     </footer>

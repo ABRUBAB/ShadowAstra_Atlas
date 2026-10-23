@@ -1,8 +1,39 @@
 # ShadowAstra Atlas: handoff for the next person or AI agent
 
-_Last updated: 14 Oct 2026, at the end of the first Claude Code build session (10–14 Oct 2026)._
+_Last updated: 23 Oct 2026 (v0.4). First build session 10–14 Oct 2026; second session 23 Oct 2026._
 
 Read this first. With this file, `../CLAUDE.md`, `PROJECT_PLAN.md` and `../DESIGN.md` you have the full context. The complete chat history is in `D:\NASA_space_apps_challenge_2026\_claude_history\` (outside the repo, because it is private).
+
+---
+
+## 0. v0.4 in one page (23 Oct 2026), read this first
+
+**What changed:** the site now has a real global data engine and a tested model. Section 3 below describes v0.3; everything here supersedes it.
+
+- **Data engine** (`pipeline/`, Python, see `pipeline/README.md`): every land cell on Earth at 0.5° (80,206 cells) measured from NASA POWER, MODIS via GIBS colormap inversion, AWS Terrain Tiles (SRTM), Smithsonian GVP, impact craters (`pipeline/catalogue.py`) and Natural Earth. Moon/Mars targets use full-precision 16-bit USGS LOLA (118 m) and MOLA (463 m) GeoTIFFs via HTTP range requests. Output: `public/data/grid.bin` (typed arrays, 4.3 MB) + `grid.json` (layout, names, targets, model evaluation). Cache: `pipeline/.cache/` (~700 MB, git-ignored).
+- **Model:** positive-unlabelled LightGBM on 38 known sites (`KNOWN_ANALOGS`), 4 bags, physical features only. Spatial hold-out (hide each site and all known sites within 300 km): Moon median rank top 0.8% (rule 35.3%), Mars top 4.9% (rule 31.1%); in top 10%: 82% / 71% (rule 14% / 14%).
+- **Terrain encoder** (`s07_patches.py`, `s08_encoder.py`): self-supervised CNN on 42×42 height patches from Earth, Moon and Mars, trained on the local CPU. Result in `pipeline/.cache/shape_eval.json`.
+- **New page `/discover` (Find new sites):** pick a job and a target, all cells scored live (`src/lib/grid.ts` → `scoreAll`), 3D score globe (`components/three/ScoreGlobe.tsx`) or flat map, ranked distinct places (`rankPlaces`, 400 km spacing; "only new" hides places within 150 km of known sites), place report, search (towns, regions, countries), saved places (localStorage), model test chart. URL: `?target=&task=&at=lat,lon`.
+- **Compare (`/lab`)** accepts any coordinates: `earth=@lat,lon` (`src/lib/places.ts`). Rocks, cold and bare-ground scores now come from the grid (Computed), not demo values.
+- **Home** rebuilt: town checker (`components/CheckTown.tsx`), Earth or Mars game (`components/EarthOrMars.tsx`), Meet Astra with 10 reactions and a badge log (`lib/fieldlog.ts`, `ui/BadgeToast.tsx`).
+- **UI kit** `components/ui/kit.tsx`: `.surface` spotlight cards (one global pointer listener, `useSpotlight`), Counter, Ring, Meter, Chip, Tip, Seg, Magnetic, WordCycler, RevealWords, Kicker (outlined numbers), Toaster/`toast()`, BackToTop, GlyphTile. Command palette (Ctrl K or /) in `ui/CommandPalette.tsx`.
+- **Astra:** new moods `cold`, `hot`; actions `shiver`, `fan`, `point`, `binoculars`; typed speech; `climateReaction()`; Ask Astra answers from the grid (`astraAnswerAsync`: "How Mars-like is Cairo?", "Best new site for Jezero?").
+- **Plain names:** Analog Lab → Compare, Atlas → Maps, Data & Method → How it works, About → Team (routes unchanged). Analog Fit → Match score; Shadow Lab → shadow map; Light Twin → sunlight match; Reality gap → "Earth can't copy". Task labels are plain ("Drive a rover or walk").
+- **Fixed:** infinite loop between the two linked Leaflet maps in Compare (BodyMap `setMetresPerPixel` now goes silent before `map.stop()`).
+
+### 0.1 Gotchas learned in v0.4
+- NASA POWER returns HTTP 429 when hit hard: `common.fetch` backs off 15 s × attempt on 429/503; `s02_power.py` uses 2 threads. A rerun only fetches failed boxes (disk cache).
+- GIBS IGBP water entry is `sourceValue="0,17"`: categorical lists use the last number, intervals use the midpoint.
+- On the Compare page the 4 MB grid loads while the 3D terrain is computed, so the rocks/cold rows can take 10 to 30 s on slow machines (they show "Demo" until then).
+- README screenshots: a Playwright script with `channel="msedge"` and `--use-angle=swiftshader` (sandbox disabled in Claude Code). Plain `msedge --headless --screenshot` returns before data loads.
+- Dev server runs on port 3000 (teammate change in `vite.config.ts`).
+
+### 0.2 Next TODOs (hackathon, 14 to 15 Nov)
+1. 28 Oct: read the challenge Resources tab and add the official datasets as new `pipeline/sNN_*.py` steps.
+2. EMIT minerals (Earth), Diviner (Moon) for the rocks and cold scores.
+3. Field test plan PDF export from the place report; Bangla mode.
+4. Kaggle GPUs (owner has 2 accounts): only needed if the encoder grows (bigger patches, HiRISE). Put `kaggle.json` in `C:\Users\user\.kaggle\`; never paste keys in chat.
+5. New portrait for Mohammed Mahmud Parvez; YouTube link in README.
 
 ---
 
@@ -97,7 +128,7 @@ ShadowAstra_Atlas/
   docs/                      PROJECT_PLAN.md, HANDOFF.md (this), SUBMISSION.md, readme/ (README images, animated SVGs)
 ```
 
-Commands: `npm install` · `npm run dev` (port 5173) · `npm run build` · `npm run typecheck`.
+Commands: `npm install` · `npm run dev` (port 3000) · `npm run build` · `npm run typecheck`.
 Stack: React 19, TypeScript 7, Vite 8, Tailwind 4, three.js + R3F 9 (no drei), Leaflet, GSAP + Lenis, Motion.
 
 ---

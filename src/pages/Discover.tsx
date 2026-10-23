@@ -77,6 +77,13 @@ const TASK_HINT: Record<TaskId, string> = {
   polar: "Long shadows like the lunar pole",
 };
 
+const TIPS = [
+  "Brighter colour means a better match. Numbered pins are the best new places.",
+  "Click any land to check it, or search a town at the top.",
+  "Move the sliders on the left and the whole planet re-ranks.",
+  "Hollow rings are places teams already use. We hide them from the list.",
+];
+
 type Within = { field: "n_country" | "n_region"; value: number; label: string } | null;
 
 /* ===================================================================== page */
@@ -197,6 +204,13 @@ export default function Discover() {
     return { title: grid.name(k).title, score: scores[k] };
   }, [grid, scores, hover]);
 
+  const [tip, setTip] = useState(0);
+  useEffect(() => {
+    if (sel !== null) return;
+    const t = setInterval(() => setTip((n) => (n + 1) % (TIPS.length + 1)), 7000);
+    return () => clearInterval(t);
+  }, [sel]);
+
   const reaction: Reaction = useMemo(() => {
     if (!grid || !scores) return { mood: "focused", action: "scan", say: `Loading ${(80206).toLocaleString()} places of NASA data…` };
     if (sel !== null) {
@@ -204,12 +218,13 @@ export default function Discover() {
       if (c) return c;
       return reactionFor(scores[sel], false);
     }
+    if (tip > 0) return { mood: "happy", action: "point", say: TIPS[tip - 1] };
     const top = places[0];
     if (!top) return { mood: "thinking", action: "binoculars", say: "Nothing here yet. Try another job or region." };
     const nm = grid.name(top.k).title;
     if (top.score >= 0.72) return { mood: "happy", action: "celebrate", say: `Top pick: ${nm} (${top.score.toFixed(2)}). Click it to see why.` };
     return { mood: "thinking", action: "binoculars", say: `Best match is ${nm} at ${top.score.toFixed(2)}. Move the sliders to explore.` };
-  }, [grid, scores, sel, places]);
+  }, [grid, scores, sel, places, tip]);
 
   return (
     <div className="bg-void">

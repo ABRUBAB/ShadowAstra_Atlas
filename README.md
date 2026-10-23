@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://shadowastra-atlas.vercel.app">
-    <img src="docs/readme/banner.svg" alt="ShadowAstra Atlas: rehearse other worlds on this one" width="100%" />
+    <img src="docs/readme/banner.svg" alt="ShadowAstra Atlas: practise for other worlds on this one" width="100%" />
   </a>
 </p>
 
@@ -19,21 +19,22 @@
 
 <p align="center">
   <b>Where on Earth can we practise for a Moon base or a Mars mission?</b><br/>
-  ShadowAstra Atlas matches each mission task to real places on Earth, compares the ground at the same scale,<br/>
-  checks the sunlight, and says plainly what Earth can never copy.
+  ShadowAstra Atlas measures every land area on Earth with open NASA data, compares it with Moon and Mars places<br/>
+  at the same scale, ranks the whole planet for the job you pick, and says plainly what Earth can never copy.
 </p>
 
 <p align="center">
   <a href="https://shadowastra-atlas.vercel.app"><b>Open the live site</b></a> ·
-  <a href="https://shadowastra-atlas.vercel.app/lab"><b>Analog Lab</b></a> ·
-  <a href="docs/PROJECT_PLAN.md"><b>Project plan</b></a> ·
+  <a href="https://shadowastra-atlas.vercel.app/discover"><b>Find new sites</b></a> ·
+  <a href="https://shadowastra-atlas.vercel.app/lab"><b>Compare in 3D</b></a> ·
+  <a href="pipeline/README.md"><b>Data pipeline</b></a> ·
   <a href="#-team-shadowastra"><b>Team</b></a>
 </p>
 
 ---
 
 <p align="center">
-  <img src="docs/readme/hero.jpg" alt="ShadowAstra Atlas home page with a 3D Earth built from NASA Blue Marble and Black Marble" width="100%" />
+  <img src="docs/readme/discover.jpg" alt="Find new sites: the whole Earth ranked live for a Mars life-search mission, with a 3D score globe and a ranked list" width="100%" />
 </p>
 
 ## 🌑 The challenge
@@ -41,157 +42,169 @@
 > *“Places on Earth that have analogous characteristics to the Moon or Mars allow mission teams to test equipment and methods before they fly; however, such terrestrial analog sites are not entirely well characterized. Your challenge is to use open Earth, Moon, and Mars data from NASA and other space agencies to identify and characterize new terrestrial analogs.”*
 > NASA Space Apps Challenge 2026, **Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars**
 
-Famous analogs such as Atacama, Haughton Crater and Death Valley are chosen by reputation. A place can **look** like Mars and still be the wrong place to test a rover. We call that a **false friend**, and ShadowAstra Atlas is built to catch it.
+Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by reputation and access. A place can **look** like Mars and still be the wrong place to test a rover. So we did the opposite of picking by eye: **we measured all of Earth's land the same way, and let the mission decide.**
 
-## ✨ What makes it different
+## 📊 In numbers
 
-| | Idea | What you can do |
+| | |
+|---|---|
+| **80,206** | land areas measured (every 0.5° cell, about 55 km wide) |
+| **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters… |
+| **18** | Moon and Mars targets measured at full precision (LRO LOLA 118 m, MGS MOLA 463 m) |
+| **38** | known analog sites used to teach and test the model |
+| **top 0.8%** | where hidden Moon test sites rank among all land in a fair hold-out test (a simple rule: top 35%) |
+| **top 4.9%** | the same for Mars sites (simple rule: top 31%) |
+
+## ✨ What you can do
+
+| | Feature | What it does |
 |---|---|---|
-| 🎯 | **Matched to the job** | Pick a task (rover driving, ice search, lava tubes, base life…). The score changes with the task. There is no single “Mars-like” number. |
-| ⛰️ | **Terrain slabs** | See real Earth, Moon and Mars ground side by side in 3D, cut to the same size, with real satellite images on top. |
-| 🌗 | **Shadow Lab** | Move a low lunar-polar Sun around both places and see which ground never gets light. That is where ice can hide. |
-| 📅 | **Light Twin calendar** | Our Sun maths tells field teams which month on Earth has sunlight most like the target. |
-| 🌱 | **Rehearse closer** | Find the nearest good site to your team’s city, with the distance and a rough CO₂ estimate. |
-| 🏷️ | **Honest labels** | Every number is marked **Computed**, **Demo** or **Reality gap**. Gravity, vacuum and radiation are never hidden. |
-| 🧑‍🚀 | **Ask Astra** | Our field-test astronaut answers questions from our own data, with no made-up facts. |
+| 🌍 | **Find new sites** | Pick a job (base life, rover drive, ice hunt, lava tubes, life search, craters, low Sun) and a Moon or Mars place. All 80,206 land areas are re-scored live on a 3D globe or flat map. Click any land for a full report. |
+| 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
+| ⛰️ | **Compare in 3D** | Any Earth place next to its Moon or Mars target: real heights, real imagery, a movable Sun, a shadow map, best months to go and travel CO₂. |
+| 🎮 | **Earth or Mars?** | A game with real orbital images of known look-alike pairs, same scale, colour off. |
+| 🧑‍🚀 | **Astra** | Our field-test astronaut shivers in the cold, sweats in the heat, cheers good matches and answers questions from the real data. |
+| 🏷️ | **Honest labels** | Every value is **Computed**, **Learned** or **Earth can't copy**. Gravity, air and radiation are never hidden. |
+| ⌨️ | **Search everything** | `Ctrl K` or `/` searches pages, Moon and Mars places, known sites and any town on Earth. |
 
 ## 🔭 Tour
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/lab-compare.jpg" alt="Analog Lab comparing Atacama Desert with Gale crater at matched scale"/><br/><sub><b>Analog Lab: compare.</b> Sentinel-2 Atacama next to Viking Gale crater, locked to the same metres per pixel. Astra reacts to the score.</sub></td>
-    <td width="50%"><img src="docs/readme/lab-terrain.jpg" alt="3D terrain slabs from real elevation data"/><br/><sub><b>Terrain slabs.</b> Real SRTM and MOLA elevation, real imagery on top, plus the gold slice line used for the cross-section.</sub></td>
+    <td width="50%"><img src="docs/readme/discover-report.jpg" alt="Place report for Kunlun Mountains"/><br/><sub><b>Place report.</b> Kunlun Mountains scores 0.90 for a Mars life search at Jezero: top 0.1% of all land. Astra shivers: nights reach −26 °C.</sub></td>
+    <td width="50%"><img src="docs/readme/town.jpg" alt="Town checker with Dhaka"/><br/><sub><b>Check your town.</b> Dhaka: green and wet, 2,071 mm of rain a year. Astra points to the nearest strong site instead.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/lab-geology.jpg" alt="Matched-scale real imagery plates"/><br/><sub><b>Geology plates.</b> Same-size, north-up satellite crops of both worlds.</sub></td>
-    <td><img src="docs/readme/lab-shadow.jpg" alt="Shadow Lab illumination maps"/><br/><sub><b>Shadow Lab.</b> Ground that never sees a low Sun (deep blue) on McMurdo Dry Valleys and Shackleton crater.</sub></td>
+    <td><img src="docs/readme/lab-compare.jpg" alt="Compare a new candidate with Jezero crater"/><br/><sub><b>Compare.</b> A new candidate (Tibesti, Chad) next to Jezero crater at the same metres per pixel. Every score row is measured.</sub></td>
+    <td><img src="docs/readme/game.jpg" alt="Earth or Mars game"/><br/><sub><b>Earth or Mars?</b> Real Sentinel-2, Viking and LROC images of known look-alike pairs.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/atlas.jpg" alt="Atlas with 3D Earth globe and site details"/><br/><sub><b>Atlas.</b> 3D globes and 13 live map layers for Earth, Moon and Mars.</sub></td>
-    <td><img src="docs/readme/methods.jpg" alt="Data and method page"/><br/><sub><b>Data &amp; Method.</b> Pipeline, scoring formulas, mission weights and a filterable source list.</sub></td>
-  </tr>
-  <tr>
+    <td><img src="docs/readme/methods.jpg" alt="Model test results"/><br/><sub><b>The model had to prove itself.</b> Hidden Moon sites land in the top 0.8% of land; a hand-made rule only reaches the top 35%.</sub></td>
     <td><img src="docs/readme/light-mode.jpg" alt="Light mode"/><br/><sub><b>Light mode.</b> A warm paper theme with its own colours. Space scenes stay dark.</sub></td>
-    <td><img src="docs/readme/about.jpg" alt="About page"/><br/><sub><b>About.</b> The real lunar south pole with a sweeping Sun: we study the shadows.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/readme/hero.jpg" alt="Home page"/><br/><sub><b>Home.</b> A 3D Earth from NASA Blue Marble and Black Marble.</sub></td>
+    <td><img src="docs/readme/astra-moods.jpg" alt="Meet Astra"/><br/><sub><b>Meet Astra.</b> Ten reactions and a field log of badges you earn by exploring.</sub></td>
   </tr>
 </table>
-
-## 🧑‍🚀 Meet Astra
-
-<img align="right" src="docs/readme/astra.svg" width="140" alt="Astra waving"/>
-
-Astra is our field-test astronaut. His visor works like a screen and shows how he feels about the result:
-
-- **Happy and jumping** when a place is a strong match (0.75 or more)
-- **Thinking** when it is useful for some tests (0.50 to 0.74)
-- **Sad** when a place will not copy the mission well
-- **Scanning** while NASA terrain tiles load
-
-Click **Ask Astra** on any page and ask things like *“Best Earth site for Gale crater?”*, *“Closest Mars analog to Dhaka”* or *“How is the score made?”*. Every answer is built from our catalogue, our Sun maths and our distance maths. There is no AI model and no internet lookup, so he cannot invent facts.
-
-<br clear="right"/>
 
 ## ⚙️ How it works
 
 ```mermaid
 flowchart LR
-  A["🎯 Mission task<br/>rover · ice · caves · base"] --> B["🌕 Target<br/>Moon base region or Mars site"]
-  B --> C["⛰️ Measure the ground<br/>LOLA · MOLA · SRTM<br/>same grid, same scale"]
-  B --> D["☀️ Sun & shadow<br/>orbital geometry<br/>horizon model"]
-  C --> E["📊 Analog Fit<br/>mission-weighted<br/>Computed / Demo / Gap"]
-  D --> E
-  E --> F["🌱 Rehearse closer<br/>distance · CO₂ · permits"]
-  E --> G["🧾 Site passport<br/>coming at the hackathon"]
+  A["🎯 Pick a job<br/>base · rover · ice · caves · life"] --> B["🌕 Pick a target<br/>Moon base region or Mars site"]
+  B --> C["⛰️ Measure the target<br/>full-precision LOLA · MOLA<br/>50 km at 1.19 km spacing"]
+  E["🌍 Measure all of Earth<br/>NASA POWER · MODIS · SRTM<br/>volcanoes · craters"] --> D
+  C --> D["📊 Score 80,206 places<br/>5 measured scores + learned model<br/>in your browser"]
+  D --> F["📍 Place report<br/>why · facts · best months"]
+  F --> G["⛰️ Compare in 3D<br/>shadow map · travel CO₂"]
 ```
 
-### Analog Fit
+### The match score
 
-| Part | How it is measured | Status |
+| Part | How it is measured | Data |
 |---|---|---|
-| **Topography** | `0.65 · overlap(slope histograms) + 0.35 · relief agreement`, on one shared grid | ✅ Computed live |
-| **Lighting** | `1 − W₁(sun elevations) / 25°`, using the earth-mover distance in the best season | ✅ Computed live |
-| Geology · Temperature · Regolith | From published research for now, replaced by our model | 🟡 Demo |
-| Radiation · Gravity · Atmosphere | Shown next to every score, never added in | 🔴 Reality gap |
+| **Ground shape** | `0.65 · overlap(slope histograms) + 0.35 · height-range agreement`, same 50 km grid on both worlds | SRTM terrain tiles vs LOLA / MOLA |
+| **Rocks & craters** | volcano and impact-crater proximity plus bare rock, depending on the job | Smithsonian GVP, Earth Impact Database, MODIS land cover |
+| **Cold & heat** | coldest monthly night and the day-to-night swing (ice jobs add snow and ice) | MODIS land surface temperature, NASA POWER |
+| **Sunlight angle** | `1 − W₁(Sun heights) / 25°`, earth-mover distance in Earth's best month | our solar geometry |
+| **Bare, dry ground** | little rain and few plants | NASA POWER rain, MODIS NDVI |
+| **Learned model** | LightGBM trained on 38 known sites (positive-unlabelled), 30% of the total by default | all of the above |
+| Gravity · Air · Radiation | shown next to every score, never added in | Earth can't copy |
 
-Overall score = `Σ weightᵢ · valueᵢ / Σ weightᵢ`, where the weights come from the mission task. **0.75+** is a high match and **0.50 to 0.74** is medium.
+Total = `(1 − m) · Σ wᵢ·vᵢ / Σ wᵢ + m · model`, with weights `wᵢ` from the job. Every slider re-ranks the planet live.
+
+### A fair test
+
+For every known test site we hid it **and every other known site within 300 km**, retrained the model, and checked where the hidden site ranked among all 80,206 places.
+
+| | Moon sites (22) | Mars sites (28) |
+|---|---|---|
+| Learned model, typical rank | **top 0.8%** | **top 4.9%** |
+| Simple hand-made rule | top 35.3% | top 31.1% |
+| Hidden sites found in the top 10% | **82%** (rule 14%) | **71%** (rule 14%) |
+
+Honest limits: the known-site list is small and biased toward reachable places, and volcano and crater distance help the model a lot. That is why the mission formula counts most and every place shows its raw data.
 
 ## 🛰️ Open data
 
 | World | Data | Used for | From |
 |---|---|---|---|
-| 🌍 Earth | Blue Marble · Black Marble · MODIS · ASTER GDEM · LST | Globe, maps, thumbnails | NASA GIBS |
-| 🌍 Earth | SRTM elevation (Terrain Tiles) | 3D terrain, slopes, shadows | NASA SRTM via AWS Open Data |
-| 🌍 Earth | Sentinel-2 cloudless 2020 (10 m) | True-colour comparison, 3D drape | ESA Copernicus via EOX |
-| 🌕 Moon | LRO LROC WAC · LRO LOLA DEM & hillshade | Maps, globe, south-pole map, 3D terrain | NASA Solar System Treks |
-| 🔴 Mars | Viking MDIM 2.1 · MGS MOLA DEM · Odyssey THEMIS | Maps, globe, 3D terrain, thermal plates | NASA Solar System Treks |
+| 🌍 Earth | POWER climatology (MERRA-2) | air temperature, coldest and hottest months, rain, humidity, sunshine | NASA LaRC |
+| 🌍 Earth | MODIS land surface temperature, NDVI, snow, land cover | night cold, day heat, plants, snow months, bare ground | NASA GIBS |
+| 🌍 Earth | SRTM elevation (Terrain Tiles) | slopes, height range, roughness; 3D ground | NASA SRTM via AWS Open Data |
+| 🌍 Earth | Holocene volcanoes · impact craters · place names | rocks score, report facts, readable names | Smithsonian GVP · Earth Impact Database · Natural Earth |
+| 🌍 Earth | Sentinel-2 cloudless 2020 · Blue Marble · ASTER | imagery, 3D drape, globe, game | ESA Copernicus via EOX · NASA GIBS |
+| 🌕 Moon | LRO LOLA global DEM (16-bit, 118 m) · LROC WAC | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
+| 🔴 Mars | MGS MOLA global DEM (16-bit, 463 m) · Viking MDIM · THEMIS | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
 
-**Next in the pipeline:** NASADEM, HLS, EMIT, LRO Diviner, MRO HiRISE / CTX / CRISM, ESA Copernicus DEM and HRSC, JAXA Kaguya, ISRO Chandrayaan-2.
+**Next:** the official 2026 challenge datasets (released 28 Oct), NASA EMIT minerals, LRO Diviner, NASADEM, MRO HiRISE, JAXA Kaguya, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
 
 | Award | Where to see it |
 |---|---|
-| Best Use of Science | Mission-weighted scoring, same-scale terrain stats, shadow model, reality gaps |
-| Best Use of Data | 13 live layers + LOLA, MOLA and SRTM elevation; every value tagged by source |
-| Best Use of Technology | WebGL terrain slabs from real elevation, in-browser shadow maths, three-world GIS |
-| Galactic Impact | Tells field teams where and when to practise, and what the practice can’t prove |
-| Best Mission Concept | “What mission can we test here?” becomes a site passport with a best season |
-| Most Inspirational | Astra shows the search succeed and fail, honestly |
-| Best Storytelling | Earth → Moon → Mars, the false friend, light and shadow |
-| Global Connection | Search analogs anywhere; Rehearse closer works from any city |
-| Art & Technology | NASA-mosaic globes, sunlight-and-shadow palette, light and dark themes |
-| Local Impact | Dhaka-first STEM workshops and a Bangla-friendly classroom mode (planned) |
+| Best Use of Science | Every land area measured the same way as the target, at the same scale; a model tested by hiding known sites |
+| Best Use of Data | NASA POWER, MODIS, SRTM, full-precision LOLA and MOLA, volcano and crater records in one open global dataset |
+| Best Use of Technology | 80,206 places re-ranked live in the browser, 3D score globe, WebGL terrain from real heights, shadow model |
+| Galactic Impact | Tells field teams where and when to practise, and what the practice can't prove |
+| Best Mission Concept | Pick a job and a destination; the whole planet answers with places, reasons and best months |
+| Most Inspirational | Astra reacts to cold, heat and honest results; anyone can check their own town |
+| Best Storytelling | Earth to Moon to Mars, “looks alike is not enough”, light and shadow |
+| Global Connection | Check any town on Earth; find the closest strong site from any city |
+| Art & Technology | NASA-mosaic globes, a sunlight-and-shadow palette, light and dark themes |
+| Local Impact | Dhaka-first workshops and a Bangla classroom mode (next) |
 
 </details>
 
 ## 🌱 Sustainability & stewardship
 
-- **Fewer trips.** Screen sites remotely and fly only to the shortlist. The Lab shows each trip’s distance and rough CO₂.
+- **Fewer trips.** Screen the whole planet remotely and fly only to the shortlist. Compare shows each trip's distance and rough CO₂.
 - **Closest credible site.** The default home city is Dhaka; any team can choose its own.
-- **Consent before coordinates.** Antarctic Treaty areas, national parks, sacred and Indigenous land are flagged on every site.
+- **Consent before coordinates.** Antarctic Treaty areas, national parks, sacred and Indigenous land are flagged.
 
 ## 🧪 Run it locally
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:3000
 npm run build        # production build in dist/
 ```
 
-Requires Node 20+. Python 3 with Pillow and NumPy is only needed to rebuild textures (`npm run textures`, `python scripts/build_thumbs.py`).
+Requires Node 20+. To rebuild the global data from scratch see [`pipeline/README.md`](pipeline/README.md) (Python 3, no logins needed).
 
-**Handy links:** `?theme=light` opens light mode · `?splash=0` skips the intro · `/lab#geology` jumps to a Lab section · `/lab?earth=atacama&target=gale&task=traverse` opens a pair.
+**Handy links:** `?theme=light` · `?splash=0` skips the intro · `/discover?target=shackleton&task=polar` · `/discover?at=23.81,90.41` opens a place report · `/lab?earth=@21.25,17.75&target=jezero` compares any coordinates.
 
 ## 🚀 Deploy
 
-Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atlas.vercel.app). The framework is Vite, the build command is `npm run build` and the output is `dist`. `vercel.json` sends every route to `index.html`, and every push to `main` redeploys.
+Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atlas.vercel.app). Vite build, output `dist`, every push to `main` redeploys.
 
 ## 🧱 Tech
 
-React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP ScrollTrigger & SplitText · Lenis · Motion
+React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP · Lenis · Motion · Python (NumPy, SciPy, LightGBM) for the data pipeline
 
-**Performance:** WebP textures in 1K, 2K and 4K (1K paints first, then the sharper one streams in), a poster image before WebGL starts, lazy routes, idle-time prefetch, and no heavy 3D helper libraries.
+**Performance:** the global dataset is 4.3 MB of typed arrays (1.8 MB gzipped), scored in under 20 ms per change; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch.
 
 ```
+pipeline/      Python: download, measure and model all of Earth (s01 to s08)
+public/data/   grid.bin + grid.json: the measured planet the website loads
 src/
-  data/        sites, Moon/Mars targets, tasks, screening regions, NASA layer list
-  lib/         geo · terrain (elevation, slopes, shadows, imagery) · sun · scoring · astra
-  components/  three (globes, terrain slabs) · map (Leaflet, swipe) · ui (Astra, splash, nav)
-  pages/       Home · Atlas · Lab · Methods · About
-scripts/       rebuild NASA textures and thumbnails
-docs/          PROJECT_PLAN.md · readme assets
+  lib/         grid (load, score, rank, search) · terrain · sun · scoring · astra
+  components/  three (score globe, terrain slabs) · map · ui kit · Astra · game · town check
+  pages/       Home · Discover · Lab (Compare) · Atlas (Maps) · Methods · About
 ```
 
 ## 🗺️ Roadmap
 
 - [x] Live NASA maps for three worlds, 3D globes, lunar south-pole map
-- [x] Analog Lab: matched-scale comparison, terrain slabs, Shadow Lab, Light Twin, rehearse closer
-- [x] Ask Astra, light mode, branded loading screen
-- [ ] Full-precision elevation (LOLA 5–20 m polar, HiRISE 1 m, NASADEM 30 m)
-- [ ] Geology, temperature and regolith from EMIT, Diviner, THEMIS and CRISM
-- [ ] Physical baseline ranker, then our trained terrain model on Kaggle
-- [ ] Screen the 8 queued regions for **new** analogs and export site passports
+- [x] Compare in 3D: matched scale, terrain, shadow map, best months, travel CO₂
+- [x] Every land area on Earth measured; full-precision LOLA and MOLA targets
+- [x] Learned model with a spatial hold-out test
+- [x] Find new sites, town checker, game, badges, search, Astra's live answers
+- [ ] Terrain encoder (self-supervised CNN on height patches from all three worlds)
+- [ ] Official 2026 challenge datasets, EMIT minerals, Diviner temperatures
+- [ ] Field test plan export (PDF) and a Bangla classroom mode
 
 ## 👩‍🚀 Team ShadowAstra
 
@@ -210,8 +223,8 @@ docs/          PROJECT_PLAN.md · readme assets
 
 ## 📜 Credits & license
 
-Data: NASA GIBS / ESDIS; NASA Solar System Treks (JPL); LRO (LROC, LOLA), MGS MOLA, Viking, Mars Odyssey THEMIS, Terra MODIS & ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
+Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA Solar System Treks (JPL); USGS Astrogeology; LRO (LROC, LOLA), MGS MOLA, Viking, Mars Odyssey THEMIS, Terra MODIS & ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
 
-NASA does not endorse this project. The 8-bit Trek elevation calibrations are our own approximations, CO₂ numbers are rough estimates and site coordinates are approximate. Field visits need permission, local partners and care for the land.
+NASA does not endorse this project. The 8-bit Trek elevation used for the 3D view is our own calibration (scores use the 16-bit USGS data), CO₂ numbers are rough estimates and site coordinates are approximate. Field visits need permission, local partners and care for the land.
 
 Code is released under the [MIT License](LICENSE).

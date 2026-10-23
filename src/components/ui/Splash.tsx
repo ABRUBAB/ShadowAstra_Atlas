@@ -126,7 +126,7 @@ export function Splash() {
               <motion.div className="h-px bg-flare" animate={{ width: `${progress * 100}%` }} transition={{ ease: "easeOut", duration: 0.3 }} />
             </div>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1, duration: 0.8 }} className="mt-5 font-serif text-[17px] text-chrome italic">
-              Rehearse other worlds on this one.
+              Practise for other worlds on this one.
             </motion.p>
           </motion.div>
           <div className="absolute bottom-8 font-mono text-[10px] tracking-[0.3em] text-dim uppercase">NASA Space Apps 2026 · Dhaka</div>

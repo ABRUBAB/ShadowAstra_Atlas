@@ -155,7 +155,7 @@ export function astraAnswer(raw: string): AstraReply {
   if (/\b(hi|hello|hey|salam|assalamu)\b/.test(q) && q.trim().split(" ").length <= 3)
     return { text: "Hello! Tell me a Moon or Mars place, or a task like “lava tubes” or “rover driving”, and I'll find Earth places to practise.", mood: "happy", suggestions: STARTERS };
 
-  if (/fact|fun|trivia|surprise/.test(q)) return { text: FACTS[Math.floor(Math.random() * FACTS.length)], mood: "wow", suggestions: ["Another fact", "Where can I rehearse a Moon base?"] };
+  if (/fact|fun|trivia|surprise/.test(q)) return { text: FACTS[Math.floor(Math.random() * FACTS.length)], mood: "wow", suggestions: ["Another fact", "Where can I practise for a Moon base?"] };
 
   if (/team|who (are|made|built)|member/.test(q))
     return {
@@ -171,7 +171,7 @@ export function astraAnswer(raw: string): AstraReply {
     return {
       text: "An analog is a place on Earth that is similar to a place on the Moon or Mars in a useful way. Teams test rovers, tools and plans there before they fly. A good analog depends on the task: a place can be great for driving tests but useless for ice tests.",
       mood: "neutral",
-      suggestions: ["How is the score made?", "Where can I rehearse a Moon base?"],
+      suggestions: ["How is the score made?", "Where can I practise for a Moon base?"],
     };
 
   if (/score|calculat|how .*(work|made|compute)|weight|formula/.test(q))
@@ -261,7 +261,7 @@ export function astraAnswer(raw: string): AstraReply {
       return { text: `We don't have a catalogued Earth analog for ${target.name} yet. That makes it a good target for our new-analog screening.`, mood: "sad", links: [{ label: "Open the Atlas", to: "/atlas" }] };
     const ranked = grounds.map((s) => ({ s, l: lightTwin(s.lat, target.body, target.lat) })).sort((a, b) => b.l.score - a.l.score);
     return {
-      text: `${target.name} (${target.body === "moon" ? "Moon" : "Mars"}): ${target.why} On Earth you can rehearse it at ${ranked.map((r) => r.s.name.split(",")[0]).join(", ")}. The best light match is ${ranked[0].s.name.split(",")[0]}, in ${ranked[0].l.best.join(" or ")}.`,
+      text: `${target.name} (${target.body === "moon" ? "Moon" : "Mars"}): ${target.why} On Earth you can practise for it at ${ranked.map((r) => r.s.name.split(",")[0]).join(", ")}. The best light match is ${ranked[0].s.name.split(",")[0]}, in ${ranked[0].l.best.join(" or ")}.`,
       mood: "happy",
       links: ranked.slice(0, 2).map((r) => ({ label: `${r.s.name.split(",")[0]} → ${target.name}`, to: lab(r.s.id, target.id) })),
     };
@@ -270,7 +270,7 @@ export function astraAnswer(raw: string): AstraReply {
   if (site) {
     const pairs = site.pairs.map((p) => TARGETS.find((t) => t.id === p)!.name);
     return {
-      text: `${site.name} (${site.country}): ${site.summary} It can rehearse ${pairs.join(", ")}. What Earth can't copy there: ${site.gaps.join("; ").toLowerCase()}.`,
+      text: `${site.name} (${site.country}): ${site.summary} It can be used to practise for ${pairs.join(", ")}. What Earth can't copy there: ${site.gaps.join("; ").toLowerCase()}.`,
       mood: "happy",
       links: [{ label: "Compare in 3D", to: lab(site.id, site.pairs[0]) }],
     };
