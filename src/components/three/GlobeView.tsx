@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Planet, PlanetPlaceholder, SUN_DIR, type GlobeMarker } from "./Planet";
 import { Starfield } from "./Starfield";
-import { Orbit } from "./Controls";
+import { FitSphere, Orbit } from "./Controls";
 import type { Body } from "../../data/sites";
 
 interface Props {
@@ -29,6 +29,7 @@ export default function GlobeView({ body, markers, activeId, onSelect, focus, lo
       <Suspense fallback={<PlanetPlaceholder body={body} />}>
         <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus} spin={0.035} lod={lod} onPick={onPick} />
       </Suspense>
+      <FitSphere radius={1.1} />
       <Orbit wheel={wheel} />
     </Canvas>
   );

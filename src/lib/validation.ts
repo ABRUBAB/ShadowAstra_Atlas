@@ -53,6 +53,7 @@ export interface Validation {
   mixing?: { curve: { mix: number; known_median: number; known_top10: number }[]; chosen: number; independent_median: number; independent_ci: [number, number]; independent_top10: number };
   robustness: { target: string; task: string; weights_spearman: number; weights_top10: number; weights_top10_p10: number; noise_spearman: number; noise_top10: number }[];
   ablation: Record<string, { independent_median: number; known_median: number }>;
+  model_zoo?: { rows: { id: string; name: string; hidden: number; hidden_top10: number; independent: number | null; members?: string[] | null }[]; chosen: string; minutes: number };
   notes: string[];
 }
 

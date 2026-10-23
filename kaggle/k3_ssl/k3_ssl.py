@@ -156,7 +156,7 @@ def main():
     g.manual_seed(1000 + rank)
 
     data = Data()
-    per_gpu = 8 if SMOKE else int(os.environ.get("SA_BATCH", 192))
+    per_gpu = 8 if SMOKE else int(os.environ.get("SA_BATCH", 64))
     student, teacher = Net().to(dev), Net().to(dev)
     teacher.load_state_dict(student.state_dict())
     for p in teacher.parameters():

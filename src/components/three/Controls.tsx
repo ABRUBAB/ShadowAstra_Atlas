@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { ctrlWheelZoom } from "../../lib/wheel";
@@ -6,7 +7,7 @@ import { ctrlWheelZoom } from "../../lib/wheel";
 /** Thin OrbitControls wrapper (avoids pulling in a whole helper library). Updated inside the R3F frame loop. */
 export function Orbit({
   min = 1.6,
-  max = 6,
+  max = 9,
   pan = false,
   target = [0, 0, 0],
   maxPolar,
@@ -45,5 +46,23 @@ export function Orbit({
   useFrame(() => {
     ctl.current?.update();
   });
+  return null;
+}
+
+/**
+ * Move the camera back or forward so a sphere of this radius (plus its glow) always fits
+ * inside the canvas, whatever its shape: wide screens, tall phones, zoomed-out browsers.
+ */
+export function FitSphere({ radius = 1.08, fill = 0.92 }: { radius?: number; fill?: number }) {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera;
+    if (!cam.isPerspectiveCamera || !size.width || !size.height) return;
+    const vHalf = ((cam.fov * Math.PI) / 180) / 2;
+    const hHalf = Math.atan(Math.tan(vHalf) * (size.width / size.height));
+    const d = radius / Math.sin(Math.min(vHalf, hHalf) * fill);
+    cam.position.setLength(d);
+    cam.updateProjectionMatrix();
+  }, [camera, size.width, size.height, radius, fill]);
   return null;
 }

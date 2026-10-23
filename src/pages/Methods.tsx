@@ -673,6 +673,8 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
           <div className="surface rounded-3xl p-5 sm:p-6">{v ? <Ablation rows={abl} /> : <ChartWait />}</div>
         </div>
 
+        {v?.model_zoo && <ModelZoo zoo={v.model_zoo} />}
+
         <div className="mt-20">
           <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">Where it fails, and why</h3>
           <p className="mt-2 max-w-[640px] text-[14px] leading-relaxed text-chrome">The three test sites it ranks lowest. Each was chosen for something small inside a green landscape.</p>
@@ -682,6 +684,57 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
         {grid && <ModelLooks grid={grid} />}
       </div>
     </section>
+  );
+}
+
+/** Nine models under the same two tests (Kaggle K5). Best value per column marked. */
+function ModelZoo({ zoo }: { zoo: NonNullable<Validation["model_zoo"]> }) {
+  const bestH = Math.min(...zoo.rows.map((r) => r.hidden));
+  const bestI = Math.min(...zoo.rows.map((r) => r.independent ?? 1e9));
+  const max = 40;
+  return (
+    <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(320px,0.55fr)_1fr] lg:gap-12">
+      <div>
+        <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">Nine models, one honest test</h3>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">
+          On Kaggle we trained gradient-boosted trees, a linear model, a positive-unlabelled neural network and a nearest-site baseline, tuned the best with Optuna on the known sites only, then checked the 28 new sites once. {Math.round(zoo.minutes / 60)} hours of computing.
+        </p>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">The ensemble wins both tests. The neural network did not work with only 38 examples, and we show that too.</p>
+      </div>
+      <div className="surface overflow-x-auto rounded-3xl p-5 sm:p-6">
+        <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-chrome">
+          <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-full bg-[var(--color-chart-1)]" /> Hidden known sites</span>
+          <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-full bg-[var(--color-chart-2)]" /> 28 new sites</span>
+          <span className="text-dim">typical rank, top % of land, shorter is better</span>
+        </div>
+        <table className="w-full min-w-[520px] text-left text-[12.5px]">
+          <tbody>
+            {zoo.rows.map((r, i) => (
+              <tr key={r.id} className="border-t border-line">
+                <td className={clsx("py-2 pr-3", r.id === zoo.chosen ? "text-platinum" : "text-chrome")}>
+                  {r.name}
+                  {r.id === zoo.chosen && <span className="ml-2 rounded-full border border-flare/40 px-1.5 py-0.5 text-[10px] text-flare">chosen</span>}
+                </td>
+                {(["hidden", "independent"] as const).map((key) => {
+                  const val = r[key];
+                  const best = key === "hidden" ? val === bestH : val === bestI;
+                  return (
+                    <td key={key} className="w-[38%] py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
+                          <motion.span className="block h-full rounded-r-[4px]" style={{ background: key === "hidden" ? "var(--color-chart-1)" : "var(--color-chart-2)" }} initial={{ width: 0 }} whileInView={{ width: `${Math.min(100, ((val ?? 0) / max) * 100)}%` }} viewport={{ once: true }} transition={{ duration: 0.9, ease: EASE, delay: i * 0.04 }} />
+                        </span>
+                        <span className={clsx("w-14 text-right font-mono tabular-nums", best ? "text-platinum" : "text-dim")}>{val === null ? "n/a" : `${val.toFixed(1)}%`}</span>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 

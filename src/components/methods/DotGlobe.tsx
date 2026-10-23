@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Grid } from "../../lib/grid";
 import { latLonToVec3 } from "../../lib/geo";
+import { FitSphere } from "../three/Controls";
 
 /**
  * Earth drawn as its 80,206 measured land areas, one dot each. The dots take a data
@@ -255,6 +256,7 @@ export default function DotGlobe({ grid, values, tint, startLon = 40, tilt = 0.3
   return (
     <div ref={wrap} className={className}>
       <Canvas frameloop={visible ? "always" : "never"} dpr={[1, 2]} camera={{ position: [0, 0, 3.15], fov: 38 }} gl={{ antialias: true, alpha: true }}>
+        <FitSphere radius={1.08} fill={0.9} />
         {grid && <Dots grid={grid} values={values} tint={tint} size={size} startLon={startLon} tilt={tilt} spin={reduced ? 0 : spin} rings={rings} />}
       </Canvas>
     </div>

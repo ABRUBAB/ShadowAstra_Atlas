@@ -42,6 +42,7 @@ import { logBadge } from "../lib/fieldlog";
 
 const ScoreGlobe = lazy(() => import("../components/three/ScoreGlobe"));
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
+const BodyMap = lazy(() => import("../components/map/BodyMap").then((m) => ({ default: m.BodyMap })));
 
 /* =============================================================== URL state */
 
@@ -91,6 +92,7 @@ export default function Find() {
   const [focus, setFocus] = useState<{ lat: number; lon: number; key: number } | null>(null);
   const [world, setWorld] = useState<World>(TARGET_BY_ID[init.m.target].body);
   const [picked, setPicked] = useState<number[]>([]);
+  const [closeUp, setCloseUp] = useState(true);
   const [comparing, setComparing] = useState(false);
   const togglePick = (k: number) => setPicked((p) => (p.includes(k) ? p.filter((x) => x !== k) : p.length >= 4 ? p : [...p, k]));
   const target = TARGET_BY_ID[m.target];
@@ -245,7 +247,16 @@ export default function Find() {
           )}
         >
           <Suspense fallback={<StageLoading label="Starting the globe" progress={1} />}>
-            {earthStage ? (
+            {step === "results" && sel !== null && closeUp && grid ? (
+              <BodyMap
+                key={sel}
+                body="earth"
+                layerId={Math.abs(grid.lat(sel)) > 60 ? "earth-bluemarble" : "earth-s2"}
+                markers={[{ id: "pick", lat: grid.lat(sel), lon: grid.lon(sel), color: "#f2c879", label: grid.name(sel).title }]}
+                activeId="pick"
+                initial={{ lat: grid.lat(sel), lon: grid.lon(sel), zoom: 10.4 }}
+              />
+            ) : earthStage ? (
               grid && heat ? (
                 <ScoreGlobe
                   heat={heat}
@@ -277,7 +288,17 @@ export default function Find() {
               <Astronaut size={82} mood={reaction.mood} action={reaction.action} say={reaction.say} sayAlign="left" />
             </div>
           </div>
-          {earthStage && <StageLegend step={step} range={range} m={m} />}
+          {earthStage && !(step === "results" && sel !== null && closeUp) && <StageLegend step={step} range={range} m={m} />}
+          {step === "results" && sel !== null && (
+            <div className="absolute top-3 left-1/2 z-[650] flex -translate-x-1/2 gap-1 rounded-full border border-line-2 bg-void/80 p-1 text-[12px] backdrop-blur-xl">
+              {([true, false] as const).map((v) => (
+                <button key={String(v)} onClick={() => setCloseUp(v)} aria-pressed={closeUp === v} className={clsx("relative rounded-full px-3.5 py-1.5 transition-colors", closeUp === v ? "text-void" : "text-chrome hover:text-platinum")}>
+                  {closeUp === v && <motion.span layoutId="stage-mode" className="absolute inset-0 rounded-full bg-platinum" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                  <span className="relative">{v ? "Close-up map" : "3D globe"}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <AnimatePresence>{scanning && step === "results" && result && <ScanCounters total={grid?.n ?? 80206} pass={result.screening.passCount} found={result.places.length} />}</AnimatePresence>
         </div>
 
