@@ -105,7 +105,7 @@ export function AskAstra() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, ease: EASE, delay: 0.4 }}
-            className="group fixed right-4 bottom-4 z-[900] flex items-center gap-2 rounded-full border border-line-2 bg-panel/95 py-1.5 pr-4 pl-1.5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-colors hover:border-chrome sm:right-6 sm:bottom-6"
+            className="group fixed right-4 bottom-4 z-[900] flex items-center gap-2 rounded-full border border-line-2 bg-panel py-1.5 pr-4 pl-1.5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] transition-colors hover:border-chrome sm:right-6 sm:bottom-6"
             aria-label="Ask Astra"
           >
             <span className="grid size-9 place-items-center overflow-hidden rounded-full bg-ink">

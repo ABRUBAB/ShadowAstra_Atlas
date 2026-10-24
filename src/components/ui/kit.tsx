@@ -42,6 +42,25 @@ export function useSpotlight() {
   }, []);
 }
 
+/** Marks the page as scrolling (html.is-scrolling) until 150 ms after the last scroll, so hover effects pause. */
+export function useScrollingFlag() {
+  useEffect(() => {
+    const root = document.documentElement;
+    let t = 0;
+    const on = () => {
+      if (!root.classList.contains("is-scrolling")) root.classList.add("is-scrolling");
+      clearTimeout(t);
+      t = window.setTimeout(() => root.classList.remove("is-scrolling"), 150);
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", on);
+      clearTimeout(t);
+      root.classList.remove("is-scrolling");
+    };
+  }, []);
+}
+
 /* ------------------------------------------------------------- numbers */
 
 /** Counts from the previous value to the new one; starts when scrolled into view. */

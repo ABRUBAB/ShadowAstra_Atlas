@@ -24,6 +24,7 @@ import { DEFAULT_LAYER, LAYERS, LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord } from "../lib/geo";
 import { useGrid, type Candidate, type Grid } from "../lib/grid";
 import { aiTwins, findTwins, spotTerrain, type SpotTerrain } from "../lib/twins";
+import { hasWebGL } from "../components/ui/Safe";
 
 type TwinMode = "like" | "ground" | "ai";
 import { useEarthThumb } from "../lib/thumbs";
@@ -49,7 +50,8 @@ export default function Atlas() {
   const [params, setParams] = useSearchParams();
   const initialSite = params.get("site");
   const [body, setBody] = useState<Body>(() => (params.get("body") as Body) || "earth");
-  const [view, setView] = useState<"3d" | "2d">(() => (params.get("layer") ? "2d" : "3d"));
+  // without WebGL the 2D map is the useful view, so open it straight away
+  const [view, setView] = useState<"3d" | "2d">(() => (params.get("layer") || !hasWebGL() ? "2d" : "3d"));
   const [layerByBody, setLayerByBody] = useState<Record<Body, string>>(() => {
     const l = params.get("layer");
     const base = { ...DEFAULT_LAYER };

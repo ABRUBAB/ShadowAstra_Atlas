@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { Grid } from "../../lib/grid";
 import { latLonToVec3 } from "../../lib/geo";
 import { FitSphere } from "../three/Controls";
+import { Scene, StaticGlobe } from "../ui/Safe";
 
 /**
  * Earth drawn as its 80,206 measured land areas, one dot each. The dots take a data
@@ -26,6 +27,8 @@ export interface DotGlobeProps {
   size?: number;
   /** Optional rings, e.g. test sites. */
   rings?: { lat: number; lon: number; color: string }[];
+  /** Show the "3D is off" caption under the still image used without WebGL. */
+  stillNote?: boolean;
 }
 
 const BASE = new THREE.Color("#2b2d34");
@@ -242,7 +245,7 @@ function Ring({ lat, lon, color }: { lat: number; lon: number; color: string }) 
   );
 }
 
-export default function DotGlobe({ grid, values, tint, startLon = 40, tilt = 0.32, spin = 0.05, className, size = 2.2, rings }: DotGlobeProps) {
+export default function DotGlobe({ grid, values, tint, startLon = 40, tilt = 0.32, spin = 0.05, className, size = 2.2, rings, stillNote = true }: DotGlobeProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
   useEffect(() => {
@@ -255,10 +258,12 @@ export default function DotGlobe({ grid, values, tint, startLon = 40, tilt = 0.3
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <div ref={wrap} className={className}>
-      <Canvas frameloop={visible ? "always" : "never"} dpr={[1, 2]} camera={{ position: [0, 0, 3.15], fov: 38 }} gl={{ antialias: true, alpha: true }}>
-        <FitSphere radius={1.08} fill={0.9} />
-        {grid && <Dots grid={grid} values={values} tint={tint} size={size} startLon={startLon} tilt={tilt} spin={reduced ? 0 : spin} rings={rings} />}
-      </Canvas>
+      <Scene fallback={<StaticGlobe note={stillNote} />}>
+        <Canvas frameloop={visible ? "always" : "never"} dpr={[1, 2]} camera={{ position: [0, 0, 3.15], fov: 38 }} gl={{ antialias: true, alpha: true }}>
+          <FitSphere radius={1.08} fill={0.9} />
+          {grid && <Dots grid={grid} values={values} tint={tint} size={size} startLon={startLon} tilt={tilt} spin={reduced ? 0 : spin} rings={rings} />}
+        </Canvas>
+      </Scene>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useInView, useScroll, useSpring, useTransform 
 import clsx from "clsx";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDashed, Database, Flame, Mountain, Scale, ShieldCheck, Snowflake, Sun, Target } from "lucide-react";
 import { DATASET_URL, Footer, Nav, WorldDot } from "../components/ui/Chrome";
+import { hasWebGL } from "../components/ui/Safe";
 import { Astronaut } from "../components/ui/Astronaut";
 import { Counter, EASE, Kicker, Magnetic, RevealWords } from "../components/ui/kit";
 import { Ablation, JobSlope, MixCurve, RankStrip, type SlopeRow, type StripPoint } from "../components/methods/Charts";
@@ -116,7 +117,7 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_72%_42%,rgba(242,200,121,0.10),transparent_65%),radial-gradient(40%_50%_at_10%_90%,rgba(143,180,234,0.08),transparent_70%)]" />
       <motion.div style={{ y, opacity: fade }} className="absolute inset-y-0 right-[-18vw] w-[100vw] sm:right-[-10vw] lg:right-[-6vw] lg:w-[64vw]">
         <Suspense fallback={null}>
-          <DotGlobe grid={grid} values={values} tint="#f2c879" startLon={30} className="h-full w-full" size={2.3} />
+          <DotGlobe grid={grid} values={values} tint="#f2c879" startLon={30} className="h-full w-full" size={2.3} stillNote={false} />
         </Suspense>
         <AnimatePresence>
           {!grid && (
@@ -132,7 +133,7 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
       {/* phones: the globe sits behind the text, so shade it where the words are */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,10,0.9)_0%,rgba(7,8,10,0.6)_65%,rgba(7,8,10,0.2)_100%)] sm:hidden" />
 
-      <div className="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-28 pb-10 sm:px-6">
+      <div className="pointer-events-none relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-28 pb-10 sm:px-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }} className="flex items-center gap-4 font-mono text-[11px] tracking-[0.24em] text-chrome uppercase">
           <span className="h-px w-8 bg-chrome/50" /> How it works
         </motion.div>
@@ -146,7 +147,7 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
         <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: 0.6 }} className="mt-7 max-w-[520px] text-[17px] leading-relaxed text-chrome">
           Every dot is one of the {grid ? grid.n.toLocaleString() : "80,206"} land areas we measured with NASA data. The brighter it glows, the more it is like the Moon or Mars.
         </motion.p>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE, delay: 0.8 }} className="mt-9 flex flex-wrap gap-3">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE, delay: 0.8 }} className="pointer-events-auto mt-9 flex w-fit flex-wrap gap-3">
           <Magnetic>
             <a href="#factors" className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-medium">
               See how <ArrowDown size={16} />
@@ -177,7 +178,7 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
       </motion.dl>
       <div className="pointer-events-none absolute right-4 bottom-28 hidden xl:block">
         <div className="pointer-events-auto">
-          <Astronaut size={92} mood="happy" action="point" say="Drag the globe. Every dot is real data." sayAlign="left" />
+          <Astronaut size={92} mood="happy" action="point" say={hasWebGL() ? "Drag the globe. Every dot is real data." : "Every place below is real NASA data."} sayAlign="left" />
         </div>
       </div>
     </section>

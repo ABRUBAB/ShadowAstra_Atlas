@@ -379,6 +379,7 @@ export function loadGrid(): Promise<Grid> {
       const meta: GridMeta = await (await fetch("/data/grid.json")).json();
       emit(0.08);
       const buf = await fetchWithProgress("/data/grid.bin", meta.bin_bytes, (got, total) => total && emit(0.08 + 0.9 * Math.min(1, got / total)));
+      checkGrid(meta, buf);
       const g = new Grid(meta, buf);
       emit(1);
       return g;
@@ -390,24 +391,44 @@ export function loadGrid(): Promise<Grid> {
   return cache;
 }
 
-/** React hook: the grid once loaded, plus download progress (0 to 1). */
+/**
+ * The data contract between pipeline/s06_build.py and this file: refuse files that do not match
+ * (wrong size, a field outside the file, an unknown type) instead of drawing nonsense.
+ */
+export function checkGrid(meta: GridMeta, buf: ArrayBuffer) {
+  if (meta.bin_bytes !== undefined && buf.byteLength !== meta.bin_bytes) throw new Error(`grid.bin is ${buf.byteLength} bytes, grid.json expects ${meta.bin_bytes}`);
+  if (buf.byteLength < meta.mask_bytes) throw new Error("grid.bin is too short for its land mask");
+  for (const f of meta.layout) {
+    const ctor = CTOR[f.dtype];
+    if (!ctor) throw new Error(`grid field ${f.name} has an unknown type ${f.dtype}`);
+    if (f.offset % ctor.BYTES_PER_ELEMENT !== 0 || f.offset + meta.count * ctor.BYTES_PER_ELEMENT > buf.byteLength) throw new Error(`grid field ${f.name} does not fit in grid.bin`);
+  }
+  for (const need of ["model_moon", "model_mars", "f_relief", "q_cover", "h0"]) if (!meta.layout.some((f) => f.name === need)) throw new Error(`grid.json has no ${need}`);
+}
+
+/** React hook: the grid once loaded, download progress (0 to 1), and a retry after a failure. */
 export function useGrid() {
   const [grid, setGrid] = useState<Grid | null>(null);
   const [progress, setProgress] = useState(lastProgress);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let alive = true;
     const on = (p: number) => alive && setProgress(p);
     listeners.add(on);
+    setError(null);
     loadGrid()
       .then((g) => alive && setGrid(g))
-      .catch(() => alive && setError("The global data could not be loaded. Check your connection and try again."));
+      .catch((e: Error) => {
+        console.error("Grid load failed:", e.message);
+        if (alive) setError("The global data could not be loaded. Check your connection and try again.");
+      });
     return () => {
       alive = false;
       listeners.delete(on);
     };
-  }, []);
-  return { grid, progress, error };
+  }, [attempt]);
+  return { grid, progress, error, retry: () => setAttempt((a) => a + 1) };
 }
 
 /* ------------------------------------------------------------------ scoring */

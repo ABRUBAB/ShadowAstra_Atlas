@@ -123,7 +123,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
       className={clsx(
         "z-50 w-full transition-colors duration-300",
         overlay ? "fixed top-0" : "sticky top-0",
-        overlay && !scrolled ? "bg-transparent" : "border-b border-line bg-void/80 backdrop-blur-xl",
+        overlay && !scrolled ? "bg-transparent" : "border-b border-line bg-void/90 backdrop-blur-md",
       )}
     >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6">

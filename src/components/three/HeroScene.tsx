@@ -1,3 +1,4 @@
+import { Scene, StaticGlobe, hasWebGL } from "../ui/Safe";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -90,8 +91,10 @@ export default function HeroScene({ compact = false, onReady }: { compact?: bool
     [],
   );
 
+  if (!hasWebGL()) return <StillHero compact={compact} onReady={onReady} />;
   return (
     <div ref={wrap} className="absolute inset-0" aria-hidden>
+      <Scene fallback={<StillHero compact={compact} onReady={onReady} />}>
       <Canvas
         dpr={[1, 1.6]}
         frameloop={visible ? "always" : "never"}
@@ -114,6 +117,19 @@ export default function HeroScene({ compact = false, onReady }: { compact?: bool
         </Suspense>
         {!reduced && <Rig pointer={pointer} />}
       </Canvas>
+      </Scene>
+    </div>
+  );
+}
+
+/** The hero without WebGL: the same NASA Earth, still, where the 3D one would be. */
+function StillHero({ compact, onReady }: { compact: boolean; onReady?: () => void }) {
+  useEffect(() => onReady?.(), [onReady]);
+  return (
+    <div className="absolute inset-0 bg-void" aria-hidden>
+      <div className={compact ? "absolute top-[6%] left-1/2 h-[46%] w-[90%] -translate-x-1/2" : "absolute top-1/2 right-[4%] h-[86%] w-[52%] -translate-y-1/2"}>
+        <StaticGlobe note={false} />
+      </div>
     </div>
   );
 }

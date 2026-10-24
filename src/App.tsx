@@ -4,9 +4,11 @@ import { motion, useReducedMotion, useScroll, useSpring } from "motion/react";
 import Home from "./pages/Home";
 import { MiniLoader, Splash } from "./components/ui/Splash";
 import { AskAstra } from "./components/ui/AskAstra";
-import { BackToTop, Toaster, useSpotlight } from "./components/ui/kit";
+import { BackToTop, Toaster, useScrollingFlag, useSpotlight } from "./components/ui/kit";
 import { CommandPalette } from "./components/ui/CommandPalette";
 import { BadgeToast } from "./components/ui/BadgeToast";
+import { NotFound, PageBoundary } from "./components/ui/Safe";
+import { Nav } from "./components/ui/Chrome";
 
 const Atlas = lazy(() => import("./pages/Atlas"));
 const Lab = lazy(() => import("./pages/Lab"));
@@ -92,7 +94,9 @@ function Loading() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
   useSpotlight();
+  useScrollingFlag();
   useEffect(() => {
     const w = window as Window & {
       requestIdleCallback?: (cb: () => void) => number;
@@ -108,6 +112,7 @@ export default function App() {
       <ScrollToTop />
       <RouteBeam />
       <ScrollProgress />
+      <PageBoundary key={pathname}>
       <Suspense fallback={<Loading />}>
         <PageFade>
           <Routes>
@@ -121,10 +126,19 @@ export default function App() {
             <Route path="/methods" element={<Methods />} />
             <Route path="/about" element={<About />} />
             <Route path="/learn" element={<Learn />} />
-            <Route path="*" element={<Home />} />
+            <Route
+              path="*"
+              element={
+                <>
+                  <Nav />
+                  <NotFound />
+                </>
+              }
+            />
           </Routes>
         </PageFade>
       </Suspense>
+      </PageBoundary>
       <AskAstra />
       <CommandPalette />
       <BackToTop />

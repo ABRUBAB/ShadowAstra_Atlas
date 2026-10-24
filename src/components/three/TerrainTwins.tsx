@@ -1,3 +1,4 @@
+import { Scene } from "../ui/Safe";
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -207,6 +208,13 @@ export default function TerrainTwins(props: Props) {
   const { earth, target, drapeEarth, drapeTarget, litEarth, litTarget, footprintKm, exaggeration, overlay } = props;
   const narrow = typeof window !== "undefined" && window.innerWidth < 640;
   return (
+    <Scene
+      fallback={
+        <div className="grid h-full place-items-center p-6 text-center">
+          <p className="max-w-sm text-[13px] leading-relaxed text-chrome">The 3D ground needs WebGL, which this browser has turned off. The maps, the slice profile and the slope numbers on this page still work.</p>
+        </div>
+      }
+    >
     <Canvas shadows dpr={[1, 1.75]} camera={{ position: narrow ? [0, 22, 30] : [0, 9.5, 17], fov: 36 }} gl={{ antialias: true }}>
       <color attach="background" args={["#0b0c0f"]} />
       <fog attach="fog" args={["#0b0c0f", 30, 55]} />
@@ -221,5 +229,6 @@ export default function TerrainTwins(props: Props) {
       </mesh>
       <Orbit min={7} max={36} maxPolar={1.45} />
     </Canvas>
+    </Scene>
   );
 }

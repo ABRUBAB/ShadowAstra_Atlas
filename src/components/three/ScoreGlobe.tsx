@@ -1,3 +1,4 @@
+import { Scene, StaticGlobe } from "../ui/Safe";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
@@ -338,6 +339,7 @@ function Rig({ focus }: { focus: Props["focus"] }) {
 
 export default function ScoreGlobe(p: Props) {
   return (
+    <Scene fallback={<StaticGlobe />}>
     <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0.9, 2.9], fov: 40 }} aria-label="Earth globe coloured by match score">
       <color attach="background" args={["#07080a"]} />
       <Starfield count={1400} />
@@ -352,5 +354,6 @@ export default function ScoreGlobe(p: Props) {
       </Suspense>
       <Rig focus={p.focus} />
     </Canvas>
+    </Scene>
   );
 }

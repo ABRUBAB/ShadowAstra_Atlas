@@ -40,7 +40,7 @@ const tickLabel = (t: number) => (t === 100 ? "all land" : `top ${t}%`);
 export function Tooltip({ x, y, children, w }: { x: number; y: number; w: number; children: ReactNode }) {
   const left = Math.min(Math.max(8, x - 110), Math.max(8, w - 228));
   return (
-    <div className="pointer-events-none absolute z-20 w-[220px] rounded-xl border border-line-2 bg-panel/95 px-3 py-2.5 text-[12px] shadow-[0_18px_50px_-20px_rgba(0,0,0,0.7)] backdrop-blur" style={{ left, top: y }}>
+    <div className="pointer-events-none absolute z-20 w-[220px] rounded-xl border border-line-2 bg-panel px-3 py-2.5 text-[12px] shadow-[0_18px_50px_-20px_rgba(0,0,0,0.7)]" style={{ left, top: y }}>
       {children}
     </div>
   );

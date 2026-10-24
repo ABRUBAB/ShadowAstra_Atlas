@@ -96,7 +96,7 @@ function writeMission(m: Mission, step: StepId, at: [number, number] | null) {
 /* ===================================================================== page */
 
 export default function Find() {
-  const { grid, progress, error } = useGrid();
+  const { grid, progress, error, retry } = useGrid();
   const [params, setParams] = useSearchParams();
   const init = useMemo(() => readMission(params), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [step, setStep] = useState<StepId>(init.step);
@@ -294,7 +294,7 @@ export default function Find() {
                   onPin={(id) => id.startsWith("c") && openPlace(+id.slice(1))}
                 />
               ) : (
-                <StageLoading label={error ?? "Loading the planet"} progress={progress} />
+                <StageLoading label={error ?? "Loading the planet"} progress={progress} onRetry={error ? retry : undefined} />
               )
             ) : (
               <GlobeView key={world} body={world} markers={markers} activeId={m.target} onSelect={(id) => update({ target: id })} focus={{ lat: target.body === world ? target.lat : 0, lon: target.body === world ? target.lon : 0 }} />
@@ -798,15 +798,21 @@ function NextBar({ onNext, onBack, label }: { onNext: () => void; onBack?: () =>
 
 /* ================================================================ stage bits */
 
-function StageLoading({ label, progress }: { label: string; progress: number }) {
+function StageLoading({ label, progress, onRetry }: { label: string; progress: number; onRetry?: () => void }) {
   return (
-    <div className="grid size-full place-items-center">
-      <div className="flex flex-col items-center">
-        <Astronaut size={86} mood="focused" action="scan" />
+    <div className="grid size-full place-items-center" role="status" aria-live="polite">
+      <div className="flex max-w-sm flex-col items-center text-center">
+        <Astronaut size={86} mood={onRetry ? "sad" : "focused"} action={onRetry ? "slump" : "scan"} />
         <div className="mt-4 font-mono text-[11px] tracking-widest text-chrome uppercase">{label}</div>
-        <div className="mt-3 h-px w-56 bg-line">
-          <motion.div className="h-px bg-flare" animate={{ width: `${Math.max(3, progress * 100)}%` }} transition={{ ease: EASE, duration: 0.4 }} />
-        </div>
+        {onRetry ? (
+          <button onClick={onRetry} className="btn-primary mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium">
+            <RotateCcw size={14} /> Try again
+          </button>
+        ) : (
+          <div className="mt-3 h-px w-56 bg-line">
+            <motion.div className="h-px bg-flare" animate={{ width: `${Math.max(3, progress * 100)}%` }} transition={{ ease: EASE, duration: 0.4 }} />
+          </div>
+        )}
       </div>
     </div>
   );
