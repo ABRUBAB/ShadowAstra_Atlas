@@ -18,6 +18,7 @@ python s06_build.py     # indicators, learned ensemble + hold-out test, export t
 python s19_k3_export.py # Kaggle K3 terrain AI: shape.bin, AI twin bands, its tests                ~10 s
 python s14_validate.py  # every test on the website's own files → validation.json                ~40 min
 python s16_model_zoo.py # adds the Kaggle K5 nine-model comparison to validation.json               ~1 s
+python s21_open_dataset.py      # the open dataset (add --push with HF_TOKEN set to publish)          ~1 min
 ```
 
 Optional: `s18_minerals_test.py` (run with `SA_MINERALS=1`, ~16 min) decides whether EMIT minerals join the learned model. They did not help, so `s06_build.py` leaves them out by default.

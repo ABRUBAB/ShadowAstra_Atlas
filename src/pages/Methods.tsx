@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useInView, useScroll, useSpring, useTransform } from "motion/react";
 import clsx from "clsx";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDashed, Database, Flame, Mountain, Scale, ShieldCheck, Snowflake, Sun, Target } from "lucide-react";
-import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
+import { DATASET_URL, Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
 import { Counter, EASE, Kicker, Magnetic, RevealWords } from "../components/ui/kit";
 import { Ablation, JobSlope, MixCurve, RankStrip, type SlopeRow, type StripPoint } from "../components/methods/Charts";
@@ -966,7 +966,13 @@ function Closing() {
           <Link to="/lab" className="inline-flex items-center gap-2 rounded-full border border-line-2 px-7 py-4 text-[15px] text-platinum hover:border-chrome">
             Compare in 3D
           </Link>
+          <a href={DATASET_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-line-2 px-7 py-4 text-[15px] text-platinum hover:border-chrome">
+            <Database size={16} /> Download every score <ArrowUpRight size={15} />
+          </a>
         </div>
+        <p className="mt-5 max-w-[560px] text-[13px] leading-relaxed text-dim">
+          All 80,206 places, every target score, the AI twins and every test are open on Hugging Face under CC BY 4.0, ready for anyone to check or reuse.
+        </p>
       </div>
     </section>
   );

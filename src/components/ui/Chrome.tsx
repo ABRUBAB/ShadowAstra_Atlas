@@ -15,6 +15,8 @@ export function Github({ size = 16 }: { size?: number }) {
 }
 
 export const REPO_URL = "https://github.com/ABRUBAB/ShadowAstra_Atlas";
+/** Every score as open tables (pipeline/s21_open_dataset.py). */
+export const DATASET_URL = "https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas";
 
 export function Logo({ size = 34, withWord = true }: { size?: number; withWord?: boolean }) {
   return (
@@ -205,8 +207,8 @@ export function Footer() {
             Locations that Analog the Permanent Moon Base Locations and Mars.”
           </p>
           <p className="max-w-md text-xs leading-relaxed text-dim">
-            Data: NASA POWER, NASA GIBS (MODIS), NASA Solar System Treks and USGS Astrogeology (LRO, MGS, Viking, Mars Odyssey), AWS
-            Terrain Tiles (SRTM), Smithsonian GVP, ESA Sentinel-2, Natural Earth. NASA does not endorse this project. Known test sites
+            Data: NASA POWER, NASA GIBS (MODIS), NASA EMIT, NASA Solar System Treks, USGS Astrogeology and PDS (LRO, MGS, Viking, Mars
+            Odyssey), AWS Terrain Tiles (SRTM), Smithsonian GVP, ESA Sentinel-2, Natural Earth. NASA does not endorse this project. Known test sites
             are used to train and test our model, not shown as discoveries.
           </p>
         </div>
@@ -222,6 +224,9 @@ export function Footer() {
           <div className="font-mono text-[11px] tracking-widest text-dim uppercase">Project</div>
           <a href={REPO_URL} className="block text-chrome hover:text-platinum" target="_blank" rel="noreferrer">
             GitHub repository
+          </a>
+          <a href={DATASET_URL} className="block text-chrome hover:text-platinum" target="_blank" rel="noreferrer">
+            Open dataset (Hugging Face)
           </a>
           <a
             href="https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/"
@@ -245,7 +250,7 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 py-5 font-mono text-[11px] text-dim sm:px-6">
           <span>© 2026 ShadowAstra · Dhaka</span>
-          <span>v0.4 · open source</span>
+          <span>v0.6 · open source · open data</span>
         </div>
       </div>
     </footer>

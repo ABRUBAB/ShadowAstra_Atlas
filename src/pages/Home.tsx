@@ -926,12 +926,12 @@ function Progress() {
     "A terrain AI, trained on Kaggle GPUs with heights from three worlds, that finds Earth twins for any spot on the Moon or Mars",
     "Find new sites: a mission builder that searches the planet, compares places and prints a site report",
     "Compare any place in 3D with a movable Sun, a shadow map, minerals and travel CO₂; lessons in English, Spanish and Bangla",
+    "An open dataset of every score on Hugging Face (CC BY 4.0), for anyone to check or reuse",
   ];
   const next = [
     "Add the official 2026 challenge datasets as new pipeline steps (released 28 Oct)",
     "Pinpoint the best 10 km spot inside each 55 km candidate",
     "Expert review of the top new sites by our scientific validation lead",
-    "An open dataset of every score, ready for anyone to reuse",
   ];
   return (
     <Section>

@@ -8,7 +8,7 @@ _Last updated 25 Oct 2026 (v0.6). Read this first. Together with `../CLAUDE.md`,
 
 - **Event:** NASA International Space Apps Challenge 2026, Dhaka. Bangladesh hackathon 13 to 14 Nov, global window 14 to 15 Nov (confirm with the Local Lead). Official challenge datasets released 28 Oct.
 - **Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*: use open Earth, Moon and Mars data from NASA and other agencies to **identify and characterize new** terrestrial analogs, by **topography, geology, environment and resources**.
-- **Live:** https://shadowastra-atlas.vercel.app (Vercel deploys every push to `main`). **Repo:** https://github.com/ABRUBAB/ShadowAstra_Atlas (public).
+- **Live:** https://shadowastra-atlas.vercel.app (Vercel deploys every push to `main`). **Repo:** https://github.com/ABRUBAB/ShadowAstra_Atlas (public). **Open dataset:** https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas (public, CC BY 4.0; rebuilt and pushed by `pipeline/s21_open_dataset.py --push` with `HF_TOKEN` set from `_secrets/huggingface_tokens.txt`).
 - **Owner:** Abdullah Rubab, GitHub **ABRUBAB**, rubab2712@gmail.com.
 - **Team:** Abdullah Rubab (lead) · Tanvir Hossin (planetary terrain) · Md. Tanvir Hasan (scientific validation) · Mohammad Saniul Alam (experience design) · Tasnuva Arif (development and testing, film narrator) · Mohammed Mahmud Parvez (film editing; his site photo is an old crop). Original photos: `D:\NASA_space_apps_challenge_2026\team-photos\`, site copies `public/team/*.webp` (4:5, 800×1000).
 
@@ -64,6 +64,7 @@ Commands: `npm install` · `npm run dev` (http://localhost:3000; `.claude/launch
 | s18_minerals_test | minerals as model inputs, paired test (`SA_MINERALS=1`): no gain, so they stay out |
 | s19_k3_export | Kaggle K3 terrain AI → `shape.bin`, AI twin bands `terrain/*/tNN.bin`, its tests |
 | s20_target_resources | LRO Diviner (south pole) and Mars Odyssey GRS for the targets → `.cache/target_resources.json` |
+| s21_open_dataset | the Hugging Face dataset: places, target scores, targets, sites, AI twins, validation (card: `pipeline/dataset_card.md`) |
 
 `catalogue.py` holds `KNOWN_ANALOGS` (38 training sites), `KNOWN_JOBS`, `VALIDATION_SITES` (28, never trained on), `IMPACTS`, GLiM classes and target rock families.
 

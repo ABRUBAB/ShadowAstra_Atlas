@@ -49,15 +49,15 @@
 
 ## 4. Roadmap, in priority order
 
-Done in v0.6 (25 Oct): K5 ensemble shipped; K3 terrain AI tested and shipped (AI twins, option in Find); EMIT minerals, Diviner and Odyssey facts; fresh README screenshots.
+Done in v0.6 (25 Oct): K5 ensemble shipped; K3 terrain AI tested and shipped (AI twins, option in Find); EMIT minerals, Diviner and Odyssey facts; fresh README screenshots; the open dataset on Hugging Face (https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas).
 
 1. **Official challenge datasets** (released 28 Oct): read the Resources tab, add each as a `pipeline/sNN_*.py` step, and test each under the rule for new data.
 2. **Pinpoint**: the best 10 km spot inside each 55 km candidate (Earth terrain tiles at higher zoom).
 3. **Expert review** by Md. Tanvir Hasan of the top 20 candidates with a short rubric; show it on How it works.
 4. **More target-side facts:** Diviner for the three non-polar Moon targets (global products on PDS), Mars SWIM ice depth, Lunar Prospector hydrogen.
 5. **Finer rock types** (GLiM vector or 0.1° fractions), then re-test rock scoring.
-6. **Open dataset**: publish the scores (grid, validation, K3 twins) on Hugging Face or Zenodo with a short data card (owner's decision; tokens are in `_secrets`).
-7. The video; a new portrait for Mohammed Mahmud Parvez.
+6. The video; a new portrait for Mohammed Mahmud Parvez.
+7. After each data or model change, rerun `pipeline/s21_open_dataset.py --push` so the open dataset (https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas) matches the site.
 
 ## 5. What the team needs to provide
 

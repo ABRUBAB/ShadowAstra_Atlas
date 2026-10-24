@@ -8,7 +8,7 @@
 **Which NASA Data Source Are You Using? (161 characters, limit 200)**
 > NASA POWER; GIBS MODIS; SRTM; EMIT L3 minerals; LRO LOLA and Diviner; MGS MOLA; Mars Odyssey GRS; Solar System Treks (LROC, Kaguya, CTX, Viking); Smithsonian GVP
 
-**Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas
+**Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas · open data https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas
 
 ## YouTube
 
@@ -42,6 +42,7 @@ NASA POWER, NASA GIBS (MODIS, Blue Marble, Black Marble), SRTM elevation, NASA E
 🔗 LINKS
 Live website: https://shadowastra-atlas.vercel.app
 Source code: https://github.com/ABRUBAB/ShadowAstra_Atlas
+Open dataset: https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas
 Challenge: https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/
 
 👩‍🚀 TEAM SHADOWASTRA
