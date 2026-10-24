@@ -427,7 +427,7 @@ export function GlyphTile({ children, tone = "var(--color-flare)", className }: 
 export function ConfidenceChip({ level, cover, spread, className }: { level: "high" | "medium" | "low"; cover: number; spread: number; className?: string }) {
   const text = level === "high" ? "High confidence" : level === "medium" ? "Medium confidence" : "Not enough evidence";
   const tone = level === "high" ? "strong" : level === "medium" ? "partial" : "weak";
-  const why = `${Math.round(cover * 100)}% of the measurements here are real, not filled in. The learned model's 8 runs agree to within ${Math.round(spread * 100)} points.`;
+  const why = `${Math.round(cover * 100)}% of the measurements here are real, not filled in. The learned model's 24 runs (3 models × 8 bags) agree to within ${Math.round(spread * 100)} points.`;
   return (
     <span title={why} className={className}>
       <Chip tone={tone}>

@@ -7,6 +7,7 @@ import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
 import { Counter, EASE, Kicker, Magnetic, RevealWords } from "../components/ui/kit";
 import { Ablation, JobSlope, MixCurve, RankStrip, type SlopeRow, type StripPoint } from "../components/methods/Charts";
+import { NewEvidence } from "../components/methods/NewEvidence";
 import { MODEL_MIX, rankPlaces, scoreAll, topoSimilarity, useGrid, type Grid } from "../lib/grid";
 import { sunRegime } from "../lib/sun";
 import { useValidation, type Validation } from "../lib/validation";
@@ -93,6 +94,7 @@ export default function Methods() {
       <Factors grid={grid} />
       <Story grid={grid} layers={layers} />
       <Proof v={v} grid={grid} />
+      <NewEvidence v={v} grid={grid} />
       <Sources />
       <Rules />
       <Closing />
@@ -127,6 +129,8 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
         </AnimatePresence>
       </motion.div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-void to-transparent" />
+      {/* phones: the globe sits behind the text, so shade it where the words are */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,10,0.9)_0%,rgba(7,8,10,0.6)_65%,rgba(7,8,10,0.2)_100%)] sm:hidden" />
 
       <div className="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-28 pb-10 sm:px-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }} className="flex items-center gap-4 font-mono text-[11px] tracking-[0.24em] text-chrome uppercase">
@@ -407,7 +411,7 @@ const STORY = [
   { id: "regolith", t: "Find bare, dry ground", d: "Little rain and few plants, so rock and soil show, like regolith.", src: "NASA POWER · MODIS", tint: "#e08a5f", lo: "green", hi: "bare" },
   { id: "shape", t: "Compare the ground", d: "Slopes and height range next to Jezero crater on Mars.", src: "SRTM · MGS MOLA", tint: "#edeae4", lo: "different", hi: "alike" },
   { id: "mission", t: "Weigh it for the job", d: "Looking for signs of life? Rocks and dryness count most.", src: "Five factors", tint: "#f2c879", lo: "poor", hi: "strong" },
-  { id: "model", t: "Ask what experts chose", d: "A model learned from 38 places NASA, ESA and others use.", src: "LightGBM · 8 bags", tint: "#f2c879", lo: "unlike", hi: "alike" },
+  { id: "model", t: "Ask what experts chose", d: "A model learned from 38 places NASA, ESA and others use.", src: "3-model ensemble · 8 bags", tint: "#f2c879", lo: "unlike", hi: "alike" },
   { id: "final", t: "Shortlist new places", d: "60% model, 40% factors. 300 km apart. Known sites left out.", src: "Top 10 for Jezero", tint: "#f2c879", lo: "", hi: "" },
 ] as const;
 
@@ -637,7 +641,8 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
           <div>
             <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">How much should the model count?</h3>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">
-              We let the 38 known sites decide, then only checked the new ones. More model finds hidden sites better, but the model knows nothing about your target or job, so we stop at {Math.round(MODEL_MIX * 100)}%. You can change it.
+              We let the 38 known sites speak, then only checked the new ones. More model finds hidden sites better
+              {v?.mixing ? `, and the known sites alone would pick ${Math.round(v.mixing.best_on_known * 100)}%` : ""}. But the model knows nothing about your target or job, and at that share your choices would hardly change the list, so we keep {Math.round(MODEL_MIX * 100)}%. You can change it in step 3 of Find new sites.
             </p>
           </div>
           <div className="surface rounded-3xl p-5 sm:p-6">{v?.mixing ? <MixCurve curve={v.mixing.curve} shipped={MODEL_MIX} /> : <ChartWait />}</div>
@@ -699,7 +704,7 @@ function ModelZoo({ zoo }: { zoo: NonNullable<Validation["model_zoo"]> }) {
         <p className="mt-3 text-[14px] leading-relaxed text-chrome">
           On Kaggle we trained gradient-boosted trees, a linear model, a positive-unlabelled neural network and a nearest-site baseline, tuned the best with Optuna on the known sites only, then checked the 28 new sites once. {Math.round(zoo.minutes / 60)} hours of computing.
         </p>
-        <p className="mt-3 text-[14px] leading-relaxed text-chrome">The ensemble wins both tests. The neural network did not work with only 38 examples, and we show that too.</p>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">The ensemble wins both tests, so it is now the learned model on the site. The neural network did not work with only 38 examples, and we show that too.</p>
       </div>
       <div className="surface overflow-x-auto rounded-3xl p-5 sm:p-6">
         <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-chrome">
@@ -827,17 +832,18 @@ const SOURCES: Source[] = [
   { body: "earth", name: "Blue Marble, ASTER relief", agency: "NASA GIBS · NASA/METI", use: "Globe, polar imagery, shaded relief", res: "30 m to 1 km", status: "live", link: "https://earthdata.nasa.gov/gibs" },
   { body: "earth", name: "Natural Earth", agency: "Public domain", use: "Country, region and town names for every place", res: "1:10 m", status: "live", link: "https://www.naturalearthdata.com/" },
   { body: "earth", name: "Official 2026 challenge datasets", agency: "NASA + partner agencies", use: "Released 28 October; we add them to the same pipeline", res: "various", status: "planned", link: "https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/" },
-  { body: "earth", name: "EMIT surface minerals", agency: "NASA / JPL", use: "What the rocks are made of", res: "60 m", status: "planned", link: "https://earth.jpl.nasa.gov/emit/" },
+  { body: "earth", name: "EMIT surface minerals (L3 ASA v2)", agency: "NASA / JPL · LP DAAC", use: "Clays, sulfates, carbonates and iron oxides in dry, bare land; Mars mineral match", res: "0.5° from 60 m", status: "live", link: "https://doi.org/10.5067/EMIT/EMITL3ASA.002" },
   { body: "moon", name: "LRO LOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Moon targets", res: "118 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m" },
   { body: "moon", name: "LOLA tiles and polar hillshade", agency: "NASA Solar System Treks", use: "3D ground, shadow map, polar map", res: "118 to 237 m", status: "live", link: "https://trek.nasa.gov/moon/" },
   { body: "moon", name: "LROC WAC mosaic", agency: "NASA / ASU", use: "Visible imagery, 3D drape, game", res: "100 m", status: "live", link: "https://lroc.im-ldi.com/" },
   { body: "moon", name: "LROC lunar pits", agency: "NASA / ASU", use: "278 pits and skylights for cave missions", res: "points", status: "live", link: "https://lroc.im-ldi.com/" },
-  { body: "moon", name: "LRO Diviner", agency: "NASA / UCLA", use: "Moon surface temperature and cold traps", res: "~240 m", status: "planned", link: "https://www.diviner.ucla.edu/" },
+  { body: "moon", name: "LRO Diviner polar resources", agency: "NASA / UCLA · PDS", use: "Average and warmest ground temperature and stable ice near the south-pole targets", res: "0.5 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" },
   { body: "mars", name: "MGS MOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Mars targets", res: "463 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m" },
   { body: "mars", name: "Viking MDIM 2.1", agency: "NASA / USGS", use: "Colour imagery, 3D drape, game", res: "232 m", status: "live", link: "https://astrogeology.usgs.gov/" },
   { body: "mars", name: "MGS TES mineral maps", agency: "NASA / ASU", use: "Olivine, pyroxene, hematite, clays, dust and thermal inertia", res: "~7 km", status: "live", link: "https://jmars.mars.asu.edu/" },
   { body: "mars", name: "Mars craters and geology", agency: "Robbins catalogue · USGS SIM 3292", use: "384,343 craters and 1,311 geologic units", res: "points · 1:20M", status: "live", link: "https://astrogeology.usgs.gov/" },
   { body: "mars", name: "Human landing Exploration Zones", agency: "NASA · USGS CTX mosaics", use: "39 candidate zones for the first crews", res: "zones", status: "live", link: "https://astrogeology.usgs.gov/" },
+  { body: "mars", name: "Mars Odyssey GRS water", agency: "NASA / U. Arizona · PDS", use: "Water-equivalent hydrogen in the topsoil at each Mars target", res: "5°", status: "live", link: "https://pds-geosciences.wustl.edu/missions/odyssey/grs.htm" },
   { body: "mars", name: "MRO HiRISE DTMs", agency: "NASA / UArizona", use: "Wheel-scale slopes for landing sites", res: "1 m", status: "planned", link: "https://www.uahirise.org/dtm/" },
 ];
 
@@ -847,7 +853,7 @@ function Sources() {
   return (
     <section className="border-t border-line px-4 py-28 sm:px-6">
       <div className="mx-auto max-w-[1400px]">
-        <Kicker n="04">Every dataset</Kicker>
+        <Kicker n="05">Every dataset</Kicker>
         <h2 className="mt-6 max-w-[900px] text-[clamp(32px,4.4vw,64px)] leading-[1.02] font-medium tracking-[-0.04em]">
           NASA first, <span className="font-serif font-normal text-chrome italic">checked against other agencies.</span>
         </h2>
@@ -925,7 +931,7 @@ function Rules() {
   return (
     <section className="border-t border-line bg-ink px-4 py-24 sm:px-6">
       <div className="mx-auto max-w-[1400px]">
-        <Kicker n="05">Our rules</Kicker>
+        <Kicker n="06">Our rules</Kicker>
         <div className="mt-10 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {RULES.map((r, i) => (
             <motion.div key={r.t} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.05 }} className="group flex items-start gap-4 bg-panel p-6 transition-colors hover:bg-panel-2">

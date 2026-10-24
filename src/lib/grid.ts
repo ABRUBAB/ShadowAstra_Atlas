@@ -34,7 +34,45 @@ export interface GridTarget {
   light_month: number[];
   /** The target's main rocks and how close each Earth rock class (GLiM) is to them, 0 to 1. */
   rock?: { family: string; label: string; aff: number[] };
+  /** Water-made mineral families found at the target from orbit or by rovers (Mars only). */
+  minerals?: { families: MineralFamily[]; source: string };
+  /** Measured on the target itself (pipeline/s20): LRO Diviner at the Moon's south pole, Mars Odyssey GRS on Mars. */
+  resources?: TargetResources;
 }
+
+export interface TargetResources {
+  source: string;
+  /** Moon: yearly average and maximum ground temperature within radius_km, and where water ice is stable. */
+  temp_avg_c?: number;
+  temp_avg_coldest_c?: number;
+  temp_max_c?: number;
+  temp_max_hottest_c?: number;
+  ice_surface_share?: number;
+  ice_1m_share?: number;
+  radius_km?: number;
+  /** Mars: water-equivalent hydrogen in the top tens of cm, weight %. */
+  h2o_wt_pct?: number | null;
+}
+
+export const MINERAL_FAMILIES = ["clay", "sulfate", "carbonate", "iron"] as const;
+export type MineralFamily = (typeof MINERAL_FAMILIES)[number];
+export const MINERAL_INFO: Record<MineralFamily, { label: string; plain: string; mars: string }> = {
+  clay: { label: "Clays", plain: "Kaolinite, smectite, illite, chlorite", mars: "Form when water and rock sit together for a long time" },
+  sulfate: { label: "Sulfates", plain: "Gypsum", mars: "Left behind when salty water dries out" },
+  carbonate: { label: "Carbonates", plain: "Calcite, dolomite", mars: "Form in lakes and can trap signs of life" },
+  iron: { label: "Iron oxides", plain: "Hematite, goethite", mars: "The rust that makes Mars red; grey hematite needs water" },
+};
+/**
+ * Whether the EMIT mineral match counts in "Rocks & craters" for Mars targets with known minerals.
+ * Tested in pipeline/s14_validate.py section 6: it ranked the known Mars sites a little worse, so it is off
+ * and minerals are shown as facts. Keep it identical to s14's USE_MINERALS.
+ */
+export const USE_MINERALS = false;
+/** Mineral match where EMIT saw nothing: unknown, so neutral (pipeline/s14_validate.py MIN_UNSEEN). */
+export const MIN_UNSEEN = 0.5;
+/** Share of "Rocks & craters" given to the mineral match, by job; other jobs 0.2 (s14 MIN_WEIGHT). */
+export const MIN_WEIGHT: Partial<Record<TaskId, number>> = { astrobio: 0.4, isru: 0.35 };
+export const MIN_WEIGHT_DEFAULT = 0.2;
 
 export interface KnownSite {
   id: string;
@@ -72,6 +110,8 @@ export interface GridMeta {
   known: KnownSite[];
   evaluation: Record<World, Evaluation>;
   sources: Record<string, string>;
+  /** Confidence badge limits (pipeline/s06_build.py). */
+  confidence?: { spread_medium: number; spread_low: number; cover_medium: number; cover_low: number };
 }
 
 type Arr = Uint8Array | Int8Array | Int16Array | Uint16Array;
@@ -209,13 +249,84 @@ export class Grid {
 
   /**
    * How much to trust a score here: share of measurements that are real (not gap-filled)
-   * and how much the learned model's eight bags disagree about the place.
+   * and how much the learned model's single runs (three models × eight bags) disagree about the place.
    */
   confidence(k: number, world: World): { level: "high" | "medium" | "low"; cover: number; spread: number } {
     const cover = this.value("q_cover", k) ?? 1;
     const spread = this.value(`u_${world}`, k) ?? 0;
-    const level = cover < 0.6 || spread > 0.2 ? "low" : cover < 0.85 || spread > 0.12 ? "medium" : "high";
+    const c = this.meta.confidence ?? { spread_medium: 0.12, spread_low: 0.2, cover_medium: 0.85, cover_low: 0.6 };
+    const level = cover < c.cover_low || spread > c.spread_low ? "low" : cover < c.cover_medium || spread > c.spread_medium ? "medium" : "high";
     return { level, cover, spread };
+  }
+
+  /** EMIT mineral shares (0 to 1) of a place, or null where EMIT has no clear view. */
+  minerals(k: number): Record<MineralFamily, number> | null {
+    if (!this.has("f_min_clay")) return null;
+    const out = {} as Record<MineralFamily, number>;
+    for (const f of MINERAL_FAMILIES) {
+      const v = this.value(`f_min_${f}`, k);
+      if (v === null) return null;
+      out[f] = v;
+    }
+    return out;
+  }
+
+  private mpct: Partial<Record<MineralFamily, Float32Array>> = {};
+  /** Percentile (0 to 1) of a place's mineral share among all places EMIT saw; NaN where unseen. */
+  mineralPct(f: MineralFamily): Float32Array {
+    let p = this.mpct[f];
+    if (!p) {
+      const a = this.a[`f_min_${f}`];
+      const nod = this.f[`f_min_${f}`]?.nodata;
+      p = new Float32Array(this.n).fill(NaN);
+      if (a) {
+        const idx: number[] = [];
+        for (let k = 0; k < this.n; k++) if (a[k] !== nod) idx.push(k);
+        idx.sort((x, y) => a[x] - a[y]);
+        const d = Math.max(1, idx.length - 1);
+        // equal shares (many places have exactly no gypsum) share their average rank
+        for (let i = 0; i < idx.length; ) {
+          let j = i;
+          while (j + 1 < idx.length && a[idx[j + 1]] === a[idx[i]]) j++;
+          const r = (i + j) / 2 / d;
+          for (let q = i; q <= j; q++) p[idx[q]] = r;
+          i = j + 1;
+        }
+      }
+      this.mpct[f] = p;
+    }
+    return p;
+  }
+
+  private mmAll = new Map<string, Float32Array | null>();
+  /** mineralMatch() for every place at once (cached per target), or null if the target has no minerals. */
+  mineralMatchAll(t: GridTarget): Float32Array | null {
+    if (!this.mmAll.has(t.id)) {
+      const fams = t.minerals?.families;
+      if (!fams?.length || !this.has("f_min_clay")) this.mmAll.set(t.id, null);
+      else {
+        const P = fams.map((f) => this.mineralPct(f));
+        const out = new Float32Array(this.n);
+        for (let k = 0; k < this.n; k++) {
+          let s = 0;
+          for (const p of P) s += p[k];
+          const m = s / P.length;
+          out[k] = Number.isFinite(m) ? m : MIN_UNSEEN;
+        }
+        this.mmAll.set(t.id, out);
+      }
+    }
+    return this.mmAll.get(t.id)!;
+  }
+
+  /** How strongly a place shows the target's water-made minerals (0 to 1), or null if the target has none. */
+  mineralMatch(k: number, t: GridTarget): number | null {
+    const fams = t.minerals?.families;
+    if (!fams?.length || !this.has("f_min_clay")) return null;
+    let s = 0;
+    for (const f of fams) s += this.mineralPct(f)[k];
+    const m = s / fams.length;
+    return Number.isFinite(m) ? m : MIN_UNSEEN;
   }
 
   volcano(k: number) {
@@ -381,9 +492,12 @@ export function scoreCell(g: Grid, k: number, o: ScoreOptions): CellScore {
   const formula = topoSimilarity(g.hist(k), g.value("f_relief", k) ?? 0, o.target);
   const sm = o.shape ? (o.shapeMix ?? 0.5) : 0;
   const neural = o.shape ? o.shape[k] / 254 : null;
+  const mm = USE_MINERALS ? g.mineralMatch(k, o.target) : null;
+  const mw = MIN_WEIGHT[o.task] ?? MIN_WEIGHT_DEFAULT;
+  const geo = geology(world, o.task, I("volcanic"), I("impact"), I("bare"), I("dry"));
   const dims: Record<Dim, number> = {
     topography: neural === null ? formula : (1 - sm) * formula + sm * neural,
-    geology: geology(world, o.task, I("volcanic"), I("impact"), I("bare"), I("dry")),
+    geology: mm === null ? geo : (1 - mw) * geo + mw * mm,
     temperature: temperature(world, o.task, I("cold"), I("swing"), I("airdry"), I("ice")),
     lighting: o.target.light[g.row[k]] / 100,
     regolith: 0.6 * I("bare") + 0.4 * I("dry"),
@@ -418,6 +532,8 @@ export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
   const light = o.target.light;
   const shape = o.shape ?? null;
   const sm = shape ? (o.shapeMix ?? 0.5) : 0;
+  const mm = USE_MINERALS ? g.mineralMatchAll(o.target) : null;
+  const mw = MIN_WEIGHT[o.task] ?? MIN_WEIGHT_DEFAULT;
   const out = new Float32Array(g.n);
   const K = 1 / 254;
   for (let k = 0; k < g.n; k++) {
@@ -426,7 +542,8 @@ export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
     const r = relief[k] === reliefNod ? 1 : Math.max(relief[k], 1);
     const rel = Math.min(1, Math.max(0, 1 - Math.abs(Math.log10(r / tRel))));
     const topo = shape ? (1 - sm) * (0.65 * ov + 0.35 * rel) + sm * shape[k] * K : 0.65 * ov + 0.35 * rel;
-    const geo = geology(world, o.task, volc[k] * K, imp[k] * K, bare[k] * K, dry[k] * K);
+    const g0 = geology(world, o.task, volc[k] * K, imp[k] * K, bare[k] * K, dry[k] * K);
+    const geo = mm ? (1 - mw) * g0 + mw * mm[k] : g0;
     const tem = temperature(world, o.task, cold[k] * K, swing[k] * K, airdry[k] * K, ice[k] * K);
     const lit = light[g.row[k]] / 100;
     const reg = 0.6 * bare[k] * K + 0.4 * dry[k] * K;
@@ -643,8 +760,18 @@ export interface ShapeData {
 }
 
 let shapeCache: Promise<ShapeData> | null = null;
+let shapeReady: ShapeData | null = null;
 
-/** Similarity of every land cell to every target, from our terrain encoder (loaded on demand). */
+export type ShapeSource = "formula" | "ai" | "both";
+
+/** Score options for a ground-shape choice, if the terrain AI maps are loaded (otherwise the formula). */
+export function shapeOptions(src: ShapeSource, targetId: string): Pick<ScoreOptions, "shape" | "shapeMix"> {
+  if (src === "formula" || !shapeReady) return {};
+  const row = shapeReady.row(targetId);
+  return row ? { shape: row, shapeMix: src === "ai" ? 1 : 0.5 } : {};
+}
+
+/** Similarity of every land cell to every target, from the K3 terrain AI (loaded on demand). */
 export function loadShape(): Promise<ShapeData> {
   if (!shapeCache) {
     shapeCache = (async () => {
@@ -652,7 +779,8 @@ export function loadShape(): Promise<ShapeData> {
       const data = new Uint8Array(await (await fetch("/data/shape.bin")).arrayBuffer());
       const ids: string[] = meta.targets;
       const n: number = meta.count;
-      return { ids, n, data, eval: meta.eval, row: (id: string) => (ids.includes(id) ? data.subarray(ids.indexOf(id) * n, (ids.indexOf(id) + 1) * n) : null) };
+      shapeReady = { ids, n, data, eval: meta.eval, row: (id: string) => (ids.includes(id) ? data.subarray(ids.indexOf(id) * n, (ids.indexOf(id) + 1) * n) : null) };
+      return shapeReady;
     })();
     shapeCache.catch(() => {
       shapeCache = null;

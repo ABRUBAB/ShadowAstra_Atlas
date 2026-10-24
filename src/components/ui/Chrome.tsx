@@ -28,7 +28,7 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
         style={{ width: size, height: size }}
       />
       {withWord && (
-        <span className="font-wide text-[12px] tracking-[0.18em] text-platinum">
+        <span className="font-wide text-[10.5px] tracking-[0.14em] whitespace-nowrap text-platinum min-[420px]:text-[12px] min-[420px]:tracking-[0.18em]">
           SHADOWASTRA <span className="text-earth">ATLAS</span>
         </span>
       )}

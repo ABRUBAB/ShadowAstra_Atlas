@@ -40,8 +40,8 @@ const VALUES = [
 const TIMELINE = [
   { d: "Sep 2026", t: "Team formed in Dhaka", s: "Six people, one challenge: find Earth's best practice grounds." },
   { d: "1 Oct", t: "Concept film submitted", s: "Who, why, what and what next, in under four minutes." },
-  { d: "Oct", t: "Working prototype", s: "Maps, 3D compare, the shadow map and Astra. Then every land area on Earth measured and a tested model." },
-  { d: "Nov", t: "Hackathon weekend", s: "The official 2026 datasets, minerals from EMIT, a terrain neural network and field test plans." },
+  { d: "Oct", t: "Working prototype", s: "Maps, 3D compare, the shadow map and Astra. Then every land area on Earth measured, a tested model, a terrain AI, EMIT minerals and lessons in three languages." },
+  { d: "Nov", t: "Hackathon weekend", s: "The official 2026 datasets, field test plans and expert review of the best new sites." },
   { d: "Next", t: "Community", s: "Expert review, an open dataset anyone can reuse, and a classroom pilot in Dhaka." },
 ];
 

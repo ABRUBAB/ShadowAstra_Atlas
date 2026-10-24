@@ -9,6 +9,7 @@ import { sunRegime } from "../lib/sun";
 import { MODEL_MIX, MONTHS, scoreCell, useGrid } from "../lib/grid";
 import { DHAKA, FACTORS, FIELD_TESTS } from "../lib/mission";
 import { useEarthThumb } from "../lib/thumbs";
+import { sharePct } from "../components/find/MineralCard";
 
 /** A clean, printable site report: the characterization dossier for a field team. */
 export default function Report() {
@@ -44,6 +45,10 @@ export default function Report() {
   const crater = grid.crater(k);
   const conf = grid.confidence(k, T.body);
   const today = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  const res = t.resources;
+  const mins = grid.minerals(k);
+  const mm = grid.mineralMatch(k, t);
+  const pc = sharePct;
 
   return (
     <div className="report min-h-dvh bg-[#ece7dc] py-8 text-[#1c1a16] print:bg-white print:py-0">
@@ -84,7 +89,7 @@ export default function Report() {
             </div>
             <div className="mt-4 text-[12px] text-[#888275]">Match score</div>
             <div className="font-mono text-[44px] leading-none font-light">{cs.total.toFixed(2)}</div>
-            <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with 60% from a model trained on 38 known test sites.</div>
+            <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with {Math.round(MODEL_MIX * 100)}% from three models trained together on 38 known test sites.</div>
             <div className="mt-2 text-[12px] text-[#55514a]">
               Confidence: <b>{conf.level === "high" ? "high" : conf.level === "medium" ? "medium" : "not enough evidence"}</b> ({Math.round(conf.cover * 100)}% of measurements real, model runs agree within {Math.round(conf.spread * 100)} points)
             </div>
@@ -136,11 +141,21 @@ export default function Report() {
                 </td>
               </tr>
               <tr className="border-t border-[#eee8dc]">
+                <td className="py-2">Minerals</td>
+                <td className="py-2">
+                  {mins
+                    ? `clays ${pc(mins.clay)}, sulfates ${pc(mins.sulfate)}, carbonates ${pc(mins.carbonate)}, iron oxides ${pc(mins.iron)} (NASA EMIT)${mm !== null ? `; match with ${T.name} ${mm.toFixed(2)}` : ""}`
+                    : "no clear EMIT view (plants, water, snow or cloud cover the ground, or beyond 52°)"}
+                </td>
+                <td className="py-2">{t.minerals ? `${t.minerals.families.join(", ")} (${t.minerals.source})` : T.body === "moon" ? "none: the Moon never had liquid water" : "no water-made minerals mapped"}</td>
+              </tr>
+              <tr className="border-t border-[#eee8dc]">
                 <td className="py-2">Cold & light</td>
                 <td className="py-2">
                   coldest night {fmt(v("f_lst_night_min"), " °C")}, hottest ground {fmt(v("f_lst_day_max"), " °C")}, best light in {MONTHS[t.light_month[grid.row[k]] ?? 0]}
                 </td>
                 <td className="py-2">
+                  {res?.temp_avg_c !== undefined ? `ground ${Math.round(res.temp_avg_c)} °C on average, typically ${Math.round(res.temp_max_c!)} °C at warmest (LRO Diviner, 10 km); ` : ""}
                   Sun at most {Math.round(sunT.maxElev)}°, typically {Math.round(sunT.medianElev)}°
                 </td>
               </tr>
@@ -149,7 +164,15 @@ export default function Report() {
                 <td className="py-2">
                   rain {fmt(v("f_precip"), " mm/yr")}, snow and ice {fmt(v("f_snowice") === null ? null : v("f_snowice")! * 100, "%")}
                 </td>
-                <td className="py-2">{T.tasks.includes("ice") || T.tasks.includes("polar") ? "water ice likely nearby" : "ice not the focus"}</td>
+                <td className="py-2">
+                  {res?.ice_1m_share !== undefined
+                    ? `water ice stable at the surface on ${Math.round(res.ice_surface_share! * 100)}% and within 1 m on ${Math.round(res.ice_1m_share * 100)}% of the ground within 10 km (LRO Diviner)`
+                    : res?.h2o_wt_pct != null
+                      ? `${res.h2o_wt_pct.toFixed(1)}% water by weight in the topsoil (Mars Odyssey GRS, 5° map)`
+                      : T.tasks.includes("ice") || T.tasks.includes("polar")
+                        ? "water ice likely nearby"
+                        : "ice not the focus"}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -184,8 +207,8 @@ export default function Report() {
         </section>
 
         <footer className="mt-8 border-t border-[#dcd5c7] pt-4 text-[10.5px] leading-relaxed text-[#888275]">
-          Data: SRTM terrain (AWS Terrain Tiles), NASA POWER climatology, NASA GIBS MODIS ground temperature, plants, snow and land cover, Smithsonian GVP volcanoes, Earth Impact Database, Natural Earth;
-          {T.body === "moon" ? " LRO LOLA 118 m" : " MGS MOLA 463 m"} heights (USGS Astrogeology) for {T.name}. Method and model tests: shadowastra-atlas.vercel.app/methods. Team ShadowAstra, Dhaka · NASA Space Apps
+          Data: SRTM terrain (AWS Terrain Tiles), NASA POWER climatology, NASA GIBS MODIS ground temperature, plants, snow and land cover, NASA EMIT L3 minerals (LP DAAC), Smithsonian GVP volcanoes, Earth Impact
+          Database, Natural Earth;{T.body === "moon" ? " LRO LOLA 118 m" : " MGS MOLA 463 m"} heights (USGS Astrogeology){res ? ` and ${res.source}` : ""} for {T.name}. Method and model tests: shadowastra-atlas.vercel.app/methods. Team ShadowAstra, Dhaka · NASA Space Apps
           Challenge 2026. NASA does not endorse this report.
         </footer>
       </article>

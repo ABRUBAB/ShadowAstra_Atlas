@@ -6,7 +6,7 @@
  * click, then compares that spot's ground with all 80,206 places on Earth using the same
  * ground-shape formula as the rest of the site.
  */
-import { rankPlaces, type Candidate, type Grid } from "./grid";
+import { haversineKm, nearestKnown, rankPlaces, type Candidate, type Grid } from "./grid";
 
 export interface SpotTerrain {
   body: "moon" | "mars";
@@ -70,4 +70,63 @@ export function findTwins(g: Grid, s: SpotTerrain, count = 8, alsoLike = true): 
   const shape = twinScores(g, s);
   if (alsoLike) for (let k = 0; k < g.n; k++) shape[k] = 0.5 * shape[k] + 0.5 * g.model(s.body, k);
   return rankPlaces(g, shape, { count, spacingKm: 400 });
+}
+
+/* ------------------------------------------------------------------ AI twins (Kaggle K3) */
+
+const AI_COLS = 360;
+const AI_ROWS = 10;
+const AI_PER = 5;
+const aiBands = new Map<string, Promise<Uint32Array>>();
+
+function aiBand(body: string, b: number) {
+  const key = `${body}/${b}`;
+  let p = aiBands.get(key);
+  if (!p) {
+    p = fetch(`/data/terrain/${body}/t${String(b).padStart(2, "0")}.bin`).then(async (r) => {
+      if (!r.ok) throw new Error(`AI twin band ${key}: ${r.status}`);
+      return new Uint32Array(await r.arrayBuffer());
+    });
+    p.catch(() => aiBands.delete(key));
+    aiBands.set(key, p);
+  }
+  return p;
+}
+
+/**
+ * Earth twins from the K3 terrain transformer: the five closest Earth places for every 1° cell,
+ * found by comparing learned descriptions of the ground. Votes over the tapped cell and its eight
+ * neighbours (closer ranks and the centre count more), then keeps places at least 400 km apart.
+ * `score` is the share of the best place's votes (agreement, not similarity).
+ */
+export async function aiTwins(g: Grid, body: "moon" | "mars", lat: number, lon: number, count = 8): Promise<Candidate[]> {
+  const r0 = Math.min(179, Math.max(0, Math.floor(90 - lat)));
+  const c0 = ((Math.floor(lon + 180) % AI_COLS) + AI_COLS) % AI_COLS;
+  const votes = new Map<number, number>();
+  for (let dr = -1; dr <= 1; dr++) {
+    const r = r0 + dr;
+    if (r < 0 || r > 179) continue;
+    const band = await aiBand(body, Math.floor(r / AI_ROWS));
+    for (let dc = -1; dc <= 1; dc++) {
+      const c = (c0 + dc + AI_COLS) % AI_COLS;
+      const at = ((r % AI_ROWS) * AI_COLS + c) * AI_PER;
+      const w = dr === 0 && dc === 0 ? 2 : 1;
+      for (let j = 0; j < AI_PER; j++) {
+        const k = band[at + j];
+        if (k < g.n) votes.set(k, (votes.get(k) ?? 0) + w * (AI_PER - j));
+      }
+    }
+  }
+  const order = [...votes.entries()].sort((a, b) => b[1] - a[1]);
+  const top = order[0]?.[1] ?? 1;
+  const out: Candidate[] = [];
+  for (const [k, v] of order) {
+    const la = g.lat(k);
+    const lo = g.lon(k);
+    if (out.some((c) => haversineKm(la, lo, c.lat, c.lon) < 400)) continue;
+    const nk = nearestKnown(g, la, lo);
+    out.push({ k, lat: la, lon: lo, score: v / top, known: nk.km < 150 ? nk.site : null, knownKm: nk.km });
+    if (out.length >= count) break;
+  }
+  return out;
 }

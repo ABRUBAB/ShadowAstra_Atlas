@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
-import { ArrowRight, Box, ChevronLeft, ChevronRight, ExternalLink, Map as MapIcon, Radar, X } from "lucide-react";
+import { ArrowRight, Box, ChevronLeft, ChevronRight, ExternalLink, Map as MapIcon, Radar, Sparkles, X } from "lucide-react";
 import { Nav, FitBadge, WorldDot, WORLD_COLOR } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
 import { BodyMap, type BodyMapHandle, type MapMarker } from "../components/map/BodyMap";
@@ -23,7 +23,9 @@ import {
 import { DEFAULT_LAYER, LAYERS, LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord } from "../lib/geo";
 import { useGrid, type Candidate, type Grid } from "../lib/grid";
-import { findTwins, spotTerrain, type SpotTerrain } from "../lib/twins";
+import { aiTwins, findTwins, spotTerrain, type SpotTerrain } from "../lib/twins";
+
+type TwinMode = "like" | "ground" | "ai";
 import { useEarthThumb } from "../lib/thumbs";
 import { EASE, Meter } from "../components/ui/kit";
 
@@ -63,7 +65,10 @@ export default function Atlas() {
     initialSite && EARTH_BY_ID[initialSite] ? { kind: "earth", id: initialSite } : null,
   );
   const mapRef = useRef<BodyMapHandle>(null);
-  const [spot, setSpot] = useState<{ lat: number; lon: number } | null>(null);
+  const [spot, setSpot] = useState<{ lat: number; lon: number } | null>(() => {
+    const m = /^(-?[\d.]+),(-?[\d.]+)$/.exec(params.get("spot") ?? "");
+    return m && params.get("body") !== "earth" && params.get("body") ? { lat: +m[1], lon: +m[2] } : null;
+  });
   const [earthFocus, setEarthFocus] = useState<{ lat: number; lon: number } | null>(null);
   useEffect(() => {
     if (body === "earth") setSpot(null);
@@ -75,8 +80,9 @@ export default function Atlas() {
     next.set("body", body);
     if (view === "2d") next.set("layer", layerByBody[body]);
     if (sel?.kind === "earth") next.set("site", sel.id);
+    if (spot && body !== "earth") next.set("spot", `${spot.lat.toFixed(2)},${spot.lon.toFixed(2)}`);
     setParams(next, { replace: true });
-  }, [body, view, layerByBody, sel, setParams]);
+  }, [body, view, layerByBody, sel, spot, setParams]);
 
   const matchEarth = (s: (typeof EARTH_SITES)[number]) =>
     (world === "both" || s.worlds.includes(world)) && (!task || s.tasks.includes(task));
@@ -388,9 +394,28 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
       alive = false;
     };
   }, [body, spot.lat, spot.lon]);
-  const [alsoLike, setAlsoLike] = useState(true);
-  const twins = useMemo(() => (grid && terrain ? findTwins(grid, terrain, 8, alsoLike) : null), [grid, terrain, alsoLike]);
+  const [mode, setMode] = useState<TwinMode>("like");
+  const formulaTwins = useMemo(() => (grid && terrain && mode !== "ai" ? findTwins(grid, terrain, 8, mode === "like") : null), [grid, terrain, mode]);
+  const [ai, setAi] = useState<{ key: string; list: Candidate[] } | null>(null);
+  const aiKey = `${body}|${spot.lat}|${spot.lon}`;
+  useEffect(() => {
+    if (mode !== "ai" || !grid || ai?.key === aiKey) return;
+    let alive = true;
+    aiTwins(grid, body, spot.lat, spot.lon, 8)
+      .then((list) => alive && setAi({ key: aiKey, list }))
+      .catch(() => alive && setFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [mode, grid, aiKey, ai?.key, body, spot.lat, spot.lon]);
+  const twins = mode === "ai" ? (ai?.key === aiKey ? ai.list : null) : formulaTwins;
   const name = body === "moon" ? "the Moon" : "Mars";
+  const short = body === "moon" ? "Moon" : "Mars";
+  const modes: { id: TwinMode; label: string }[] = [
+    { id: "like", label: `Ground + ${short}-like` },
+    { id: "ground", label: "Ground only" },
+    { id: "ai", label: "AI match" },
+  ];
   return (
     <div className="space-y-6 p-5">
       <PanelHeader eyebrow={`Your spot on ${name}`} title="Earth twins" sub={formatCoord(spot.lat, spot.lon)} onClose={onClose} />
@@ -408,25 +433,39 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
       ) : (
         <div className="shimmer h-[62px] rounded-xl" />
       )}
-      <div className="relative grid grid-cols-2 gap-1 rounded-xl border border-line bg-ink p-1 text-[12px]">
-        {([true, false] as const).map((v) => (
-          <button key={String(v)} onClick={() => setAlsoLike(v)} aria-pressed={alsoLike === v} className={clsx("relative rounded-lg py-1.5 transition-colors", alsoLike === v ? "text-platinum" : "text-dim hover:text-chrome")}>
-            {alsoLike === v && <motion.span layoutId="twin-mode" className="absolute inset-0 rounded-lg bg-platinum/[0.08]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-            <span className="relative">{v ? `Same ground, ${body === "moon" ? "Moon" : "Mars"}-like place` : "Same ground only"}</span>
+      <div className="relative grid grid-cols-3 gap-1 rounded-xl border border-line bg-ink p-1 text-[11.5px]">
+        {modes.map((m) => (
+          <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={mode === m.id} className={clsx("relative rounded-lg px-1 py-1.5 transition-colors", mode === m.id ? "text-platinum" : "text-dim hover:text-chrome")}>
+            {mode === m.id && <motion.span layoutId="twin-mode" className="absolute inset-0 rounded-lg bg-platinum/[0.08]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+            <span className="relative flex items-center justify-center gap-1">
+              {m.id === "ai" && <Sparkles size={11} className="text-flare" />}
+              {m.label}
+            </span>
           </button>
         ))}
       </div>
-      <p className="text-[12.5px] leading-relaxed text-chrome">
-        {alsoLike
-          ? `Places on Earth with the same slopes and height range as this spot, that are also like the places experts use to practise for ${name} (half and half).`
-          : `Places on Earth whose 50 km of ground has the same slopes and height range as this spot, measured the same way from ${body === "moon" ? "LRO LOLA 118 m" : "MGS MOLA 463 m"} heights.`}
-      </p>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.p key={mode} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="text-[12.5px] leading-relaxed text-chrome">
+          {mode === "like"
+            ? `Places on Earth with the same slopes and height range as this spot, that are also like the places experts use to practise for ${name} (half and half).`
+            : mode === "ground"
+              ? `Places on Earth whose 50 km of ground has the same slopes and height range as this spot, measured the same way from ${body === "moon" ? "LRO LOLA 118 m" : "MGS MOLA 463 m"} heights.`
+              : `Our terrain AI (a vision transformer trained on Kaggle GPUs with heights from all three worlds) compares how the ground looks, not just its numbers. It beat our formula on the known and the independent test sites.`}
+        </motion.p>
+      </AnimatePresence>
       {failed && <p className="text-[12.5px] text-weak">This spot's data could not be loaded.</p>}
       {!grid && <div className="text-[12px] text-dim">Loading Earth · {Math.round(progress * 100)}%</div>}
+      {grid && !twins && !failed && (
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="shimmer h-[72px] rounded-xl" />
+          ))}
+        </div>
+      )}
       {twins && (
         <ol className="space-y-2">
           {twins.map((c, i) => (
-            <TwinRow key={c.k} grid={grid!} c={c} rank={i + 1} onShow={() => onEarth(c.lat, c.lon)} />
+            <TwinRow key={`${mode}-${c.k}`} grid={grid!} c={c} rank={i + 1} ai={mode === "ai"} onShow={() => onEarth(c.lat, c.lon)} />
           ))}
         </ol>
       )}
@@ -435,7 +474,7 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
   );
 }
 
-function TwinRow({ grid, c, rank, onShow }: { grid: Grid; c: Candidate; rank: number; onShow: () => void }) {
+function TwinRow({ grid, c, rank, ai = false, onShow }: { grid: Grid; c: Candidate; rank: number; ai?: boolean; onShow: () => void }) {
   const thumb = useEarthThumb(c.lat, c.lon, 160);
   const nm = grid.name(c.k);
   return (
@@ -449,7 +488,16 @@ function TwinRow({ grid, c, rank, onShow }: { grid: Grid; c: Candidate; rank: nu
           <span className="block truncate text-[13px] text-platinum">{nm.title}</span>
           <span className="block truncate text-[11px] text-dim">{nm.subtitle || formatCoord(c.lat, c.lon)}</span>
         </span>
-        <span className="font-mono text-[13px] text-flare">{c.score.toFixed(2)}</span>
+        {ai ? (
+          <span className="flex w-12 flex-col items-end gap-1" title="How strongly the AI agrees across the spot and its neighbours">
+            <span className="h-1 w-full overflow-hidden rounded-full bg-line-2">
+              <span className="block h-full rounded-full bg-flare" style={{ width: `${Math.round(c.score * 100)}%` }} />
+            </span>
+            <span className="font-mono text-[9.5px] tracking-wider text-dim uppercase">agree</span>
+          </span>
+        ) : (
+          <span className="font-mono text-[13px] text-flare">{c.score.toFixed(2)}</span>
+        )}
         <ChevronRight size={14} className="text-dim group-hover:text-platinum" />
       </button>
     </motion.li>

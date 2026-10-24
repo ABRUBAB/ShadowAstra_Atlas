@@ -5,7 +5,10 @@
 import { TARGET_BY_ID, type TaskId, type World } from "../data/sites";
 import { TASK_WEIGHTS, type Weights } from "./scoring";
 import { sunRegime, sunSimilarity } from "./sun";
-import { MODEL_MIX, haversineKm, rankPlaces, scoreAll, type Candidate, type Grid, type GridTarget } from "./grid";
+import { MODEL_MIX, haversineKm, rankPlaces, scoreAll, shapeOptions, type Candidate, type Grid, type GridTarget, type ShapeSource } from "./grid";
+
+/** Default ground-shape judge, chosen on the known sites in the full score (pipeline/s14_validate.py, section 5b). */
+export const DEFAULT_SHAPE: ShapeSource = "formula";
 
 /* ------------------------------------------------------------------ mission */
 
@@ -28,6 +31,8 @@ export interface Mission {
   onlyNew: boolean;
   weights: Weights;
   modelMix: number;
+  /** What judges ground shape: our formula, the K3 terrain AI, or half and half. */
+  shape: ShapeSource;
 }
 
 export const DHAKA: Home = { name: "Dhaka", lat: 23.81, lon: 90.41 };
@@ -45,6 +50,7 @@ export function defaultMission(target = "jezero", task: TaskId = "astrobio"): Mi
     onlyNew: true,
     weights: { ...TASK_WEIGHTS[task] },
     modelMix: MODEL_MIX,
+    shape: DEFAULT_SHAPE,
   };
 }
 
@@ -221,10 +227,10 @@ function masked(scores: Float32Array, pass: Uint8Array) {
   return out;
 }
 
-export function runSearch(grid: Grid, m: Mission, distKm: Float32Array, shape?: Uint8Array | null, shapeMix = 0.5): SearchResult {
+export function runSearch(grid: Grid, m: Mission, distKm: Float32Array): SearchResult {
   const base = grid.targets[m.target];
   const target = targetForMonth(grid, base, m.month);
-  const scores = scoreAll(grid, { target, task: m.task, weights: m.weights, modelMix: m.modelMix, shape, shapeMix });
+  const scores = scoreAll(grid, { target, task: m.task, weights: m.weights, modelMix: m.modelMix, ...shapeOptions(m.shape, m.target) });
   const screening = screen(grid, m, distKm);
   // ten different places: spaced out, and no two with the same name
   const seen = new Set<string>();

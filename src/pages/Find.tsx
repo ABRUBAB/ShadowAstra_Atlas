@@ -14,7 +14,7 @@ import { TASK_WEIGHTS } from "../lib/scoring";
 import { formatCoord } from "../lib/geo";
 import { sunRegime } from "../lib/sun";
 import { greatCircleKm, tripCo2Tonnes } from "../lib/scoring";
-import { MONTHS, RAMP_CSS, displayRange, paintScores, scoreCell, searchGrid, useGrid, type Candidate, type Grid, type SearchHit } from "../lib/grid";
+import { MODEL_MIX, MONTHS, RAMP_CSS, displayRange, paintScores, scoreCell, searchGrid, shapeOptions, useGrid, useShape, type Candidate, type Grid, type SearchHit, type ShapeSource } from "../lib/grid";
 import {
   ALTITUDES,
   DHAKA,
@@ -26,6 +26,7 @@ import {
   PRESETS,
   RULE_TEXT,
   TOWN_LIMITS,
+  DEFAULT_SHAPE,
   defaultMission,
   factorLevel,
   homeKm,
@@ -39,12 +40,20 @@ import {
 import { useEarthThumb } from "../lib/thumbs";
 import { placeId, useSaved } from "../lib/saved";
 import { logBadge } from "../lib/fieldlog";
+import { MineralCard } from "../components/find/MineralCard";
 
 const ScoreGlobe = lazy(() => import("../components/three/ScoreGlobe"));
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
 const BodyMap = lazy(() => import("../components/map/BodyMap").then((m) => ({ default: m.BodyMap })));
 
 /* =============================================================== URL state */
+
+/** How much the learned model counts: a few clear levels instead of a slider. */
+const MIX_LEVELS = [
+  { v: 0.3, label: "A little" },
+  { v: MODEL_MIX, label: "Balanced" },
+  { v: 0.9, label: "A lot" },
+];
 
 function readMission(p: URLSearchParams): { m: Mission; step: StepId; at: [number, number] | null } {
   const target = TARGET_BY_ID[p.get("target") ?? ""] ? p.get("target")! : "jezero";
@@ -57,6 +66,10 @@ function readMission(p: URLSearchParams): { m: Mission; step: StepId; at: [numbe
   m.month = num("month");
   m.skipAntarctica = p.get("ant") === "0";
   m.onlyNew = p.get("new") !== "0";
+  const mix = num("mix");
+  if (mix !== null && MIX_LEVELS.some((x) => x.v === mix)) m.modelMix = mix;
+  const sh = p.get("shape");
+  if (sh === "formula" || sh === "ai" || sh === "both") m.shape = sh;
   const hl = num("hlat");
   const ho = num("hlon");
   if (hl !== null && ho !== null) m.home = { name: p.get("home") ?? "Home", lat: hl, lon: ho };
@@ -73,6 +86,8 @@ function writeMission(m: Mission, step: StepId, at: [number, number] | null) {
   if (m.month !== null) p.month = String(m.month);
   if (m.skipAntarctica) p.ant = "0";
   if (!m.onlyNew) p.new = "0";
+  if (m.shape !== DEFAULT_SHAPE) p.shape = m.shape;
+  if (m.modelMix !== MODEL_MIX) p.mix = String(m.modelMix);
   if (m.home.name !== DHAKA.name) Object.assign(p, { home: m.home.name, hlat: m.home.lat.toFixed(2), hlon: m.home.lon.toFixed(2) });
   if (at) p.at = `${at[0].toFixed(2)},${at[1].toFixed(2)}`;
   return p;
@@ -106,7 +121,9 @@ export default function Find() {
 
   const dist = useMemo(() => (grid ? homeKm(grid, m.home) : null), [grid, m.home]);
   const screening = useMemo(() => (grid && dist ? screen(grid, m, dist) : null), [grid, dist, m]);
-  const result = useMemo<SearchResult | null>(() => (grid && dist && step === "results" ? runSearch(grid, m, dist) : null), [grid, dist, m, step]);
+  const shapeData = useShape(m.shape !== "formula");
+  const shapeKey = m.shape !== "formula" && shapeData ? "ai" : "formula";
+  const result = useMemo<SearchResult | null>(() => (grid && dist && step === "results" ? runSearch(grid, m, dist) : null), [grid, dist, m, step, shapeKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // open a shared place once results are ready
   const [pendingAt, setPendingAt] = useState(init.at);
@@ -254,6 +271,7 @@ export default function Find() {
                 layerId={Math.abs(grid.lat(sel)) > 60 ? "earth-bluemarble" : "earth-s2"}
                 markers={[{ id: "pick", lat: grid.lat(sel), lon: grid.lon(sel), color: "#f2c879", label: grid.name(sel).title }]}
                 activeId="pick"
+                zoomPosition="topright"
                 initial={{ lat: grid.lat(sel), lon: grid.lon(sel), zoom: 10.4 }}
               />
             ) : earthStage ? (
@@ -687,6 +705,39 @@ function NeedsStep({ m, update, grid, screening, onSearch, onBack }: { m: Missio
             </div>
           ))}
         </div>
+        <div className="mt-4 border-t border-line pt-3">
+          <div className="flex items-center justify-between text-[12.5px] text-chrome">
+            <span className="flex items-center gap-1.5">
+              Who judges ground shape <Tip text="Our formula compares slopes and height range. The terrain AI, a vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars, compares how the ground looks. Both are tested on How it works." />
+            </span>
+          </div>
+          <Seg
+            size="sm"
+            className="mt-1.5"
+            value={m.shape}
+            onChange={(v) => update({ shape: v as ShapeSource })}
+            options={[
+              { id: "formula", label: "Formula" },
+              { id: "ai", label: "Terrain AI" },
+              { id: "both", label: "Both" },
+            ]}
+          />
+        </div>
+        <div className="mt-4 border-t border-line pt-3">
+          <div className="flex items-center justify-between text-[12.5px] text-chrome">
+            <span className="flex items-center gap-1.5">
+              Places experts already like <Tip text="How much the learned model counts. It knows what the 38 known test sites have in common, so more of it finds places like them. Less of it lets your target and job decide. 60% is our default; the test is on How it works." />
+            </span>
+            <span className="font-mono text-[11px] text-dim">{Math.round(m.modelMix * 100)}%</span>
+          </div>
+          <Seg
+            size="sm"
+            className="mt-1.5"
+            value={String(m.modelMix)}
+            onChange={(v) => update({ modelMix: +v })}
+            options={MIX_LEVELS.map((x) => ({ id: String(x.v), label: x.label }))}
+          />
+        </div>
       </div>
       <div className="mt-5 rounded-2xl border border-earth/30 bg-earth/[0.06] p-4">
         <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Places still possible</div>
@@ -848,7 +899,7 @@ function ResultCard({ grid, c, rank, m, onOpen, picked, onPick, full }: { grid: 
   const nm = grid.name(c.k);
   const thumb = useEarthThumb(c.lat, c.lon, 160);
   const t = grid.targets[m.target];
-  const cs = scoreCell(grid, c.k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix });
+  const cs = scoreCell(grid, c.k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix, ...shapeOptions(m.shape, m.target) });
   const best = FACTORS.map((f) => ({ f, v: f.dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / f.dims.length })).sort((a, b) => b.v - a.v)[0];
   return (
     <motion.li initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE, delay: 0.05 * rank }} className="relative">
@@ -984,7 +1035,7 @@ function ResultsPanel({
       </AnimatePresence>
       {!scanning && result.places.length > 0 && (
         <p className="mt-4 text-[11.5px] leading-relaxed text-dim">
-          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model (60%). Click a place for the full report.
+          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model ({Math.round(m.modelMix * 100)}%). Click a place for the full report.
         </p>
       )}
     </div>
@@ -1002,7 +1053,7 @@ function CompareSheet({ grid, m, ks, onClose, onOpen }: { grid: Grid; m: Mission
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
   const cols = ks.map((k) => {
-    const cs = scoreCell(grid, k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix });
+    const cs = scoreCell(grid, k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix, ...shapeOptions(m.shape, m.target) });
     const factor = (dims: readonly string[]) => dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / dims.length;
     const km = greatCircleKm(m.home.lat, m.home.lon, grid.lat(k), grid.lon(k));
     return { k, cs, factors: FACTORS.map((f) => factor(f.dims)), km, conf: grid.confidence(k, T.body) };
@@ -1131,7 +1182,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
   const nm = grid.name(k);
   const t = result.target;
   const T = TARGET_BY_ID[m.target];
-  const cs = scoreCell(grid, k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix });
+  const cs = scoreCell(grid, k, { target: t, task: m.task, weights: m.weights, modelMix: m.modelMix, ...shapeOptions(m.shape, m.target) });
   const thumb = useEarthThumb(lat, lon, 520);
   const v = (n: string) => grid.value(n, k);
   const climate = climateReaction(v("f_lst_night_min"), v("f_lst_day_max"));
@@ -1153,6 +1204,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
   const rm = grid.rockMatch(k, t);
   const rockWord = !rock ? "unknown" : rm >= 0.75 ? "close" : rm >= 0.45 ? "partly alike" : "different";
   const conf = grid.confidence(k, T.body);
+  const res = t.resources;
   useEffect(() => logBadge("find"), []);
 
   const factor = (dims: readonly string[]) => dims.reduce((a, d) => a + cs.dims[d as keyof typeof cs.dims], 0) / dims.length;
@@ -1162,6 +1214,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
       earth: [
         ["Average slope", v("f_slope") === null ? "n/a" : `${v("f_slope")!.toFixed(1)}°`],
         ["Height range", v("f_relief") === null ? "n/a" : `${(v("f_relief")! / 1000).toFixed(2)} km`],
+        ...(cs.neural !== null ? ([["Terrain AI says", `more alike than ${Math.round(cs.neural * 100)}% of land`]] as [string, string][]) : []),
       ],
       target: [
         ["Average slope", `${t.terrain.mean_slope.toFixed(1)}°`],
@@ -1190,6 +1243,12 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         ["Best month for light", bestMonth],
       ],
       target: [
+        ...(res?.temp_avg_c !== undefined
+          ? ([
+              ["Average ground", `${Math.round(res.temp_avg_c)} °C`],
+              ["Warmest (typical)", `${Math.round(res.temp_max_c!)} °C`],
+            ] as [string, string][])
+          : []),
         ["Highest Sun", `${Math.round(sunT.maxElev)}°`],
         ["Typical Sun", `${Math.round(sunT.medianElev)}°`],
       ],
@@ -1201,7 +1260,15 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         ["Plants", plantWord(v("f_ndvi"))],
         ["Snow and ice", v("f_snowice") === null ? "n/a" : `${Math.round(v("f_snowice")! * 100)}%`],
       ],
-      target: [["Water ice", T.tasks.includes("ice") || T.tasks.includes("polar") ? "likely nearby" : "not the focus"]],
+      target:
+        res?.ice_1m_share !== undefined
+          ? [
+              ["Ice stable at surface", `${Math.round(res.ice_surface_share! * 100)}% of ground`],
+              ["Ice within 1 m", `${Math.round(res.ice_1m_share * 100)}% of ground`],
+            ]
+          : res?.h2o_wt_pct != null
+            ? [["Water in topsoil", `${res.h2o_wt_pct.toFixed(1)}% by weight`]]
+            : [["Water ice", T.tasks.includes("ice") || T.tasks.includes("polar") ? "likely nearby" : "not the focus"]],
     },
   ];
 
@@ -1299,8 +1366,9 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
             </div>
           </div>
         ))}
+        <MineralCard grid={grid} k={k} target={t} targetName={T.name} />
         <div className="surface rounded-2xl p-4">
-          <Meter value={cs.model} label="Learned model" kind="model" tone="var(--color-earth)" hint={`Looks more ${T.body === "moon" ? "Moon" : "Mars"}-like than ${Math.round(cs.model * 100)}% of land, judged by a model trained on 38 known test sites.`} />
+          <Meter value={cs.model} label="Learned model" kind="model" tone="var(--color-earth)" hint={`Looks more ${T.body === "moon" ? "Moon" : "Mars"}-like than ${Math.round(cs.model * 100)}% of land, judged by three models trained together on 38 known test sites.`} />
         </div>
       </div>
 
@@ -1343,7 +1411,8 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         </p>
       </div>
       <p className="mt-4 text-[10.5px] leading-relaxed text-dim">
-        Data: SRTM terrain, NASA POWER, MODIS (NASA GIBS), Smithsonian GVP, impact craters, Natural Earth; {T.body === "moon" ? "LRO LOLA" : "MGS MOLA"} for {T.name}. Satellite view: ESA Sentinel-2 cloudless.
+        Data: SRTM terrain, NASA POWER, MODIS (NASA GIBS), NASA EMIT minerals, Smithsonian GVP, impact craters, Natural Earth; {T.body === "moon" ? "LRO LOLA" : "MGS MOLA"}
+        {res ? `, ${res.source}${res.radius_km ? ` within ${res.radius_km} km` : ""}` : ""} for {T.name}. Satellite view: ESA Sentinel-2 cloudless.
       </p>
     </div>
   );

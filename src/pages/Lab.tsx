@@ -12,6 +12,7 @@ import { EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS, type EarthSite, type TaskId 
 import { earthSite } from "../lib/places";
 import { logBadge } from "../lib/fieldlog";
 import { scoreCell, useGrid, type Grid } from "../lib/grid";
+import { MineralCard } from "../components/find/MineralCard";
 import { LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord, zoomForMercator } from "../lib/geo";
 import {
@@ -249,11 +250,26 @@ export default function Lab() {
                 Same scale, <Em>real surfaces.</Em>
               </>
             }
-            text="Real satellite images of the same size, north up. Compare texture, colour and shapes. The rocks score uses volcano and crater records and MODIS bare-ground maps. Mineral maps from NASA EMIT come next."
+            text="Real satellite images of the same size, north up. Compare texture, colour and shapes. The rocks score uses volcano and crater records and MODIS bare-ground maps; NASA EMIT minerals are shown next to the target's own."
             kind={cs ? "computed" : "demo"}
             aside={<span className="font-mono text-[13px] text-chrome">rocks {results[1].value?.toFixed(2) ?? "n/a"}</span>}
           />
           <GeologyPlates plates={plates} footprint={footprint} earthName={earthName} targetName={target.name} targetBody={target.body} earthLat={earth.lat} />
+          {grid && gt && cell >= 0 && grid.has("f_min_clay") && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+              <MineralCard grid={grid} k={cell} target={gt} targetName={target.name} />
+              <div className="surface rounded-2xl p-5">
+                <div className="font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Why minerals matter</div>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-chrome">
+                  Clays, sulfates, carbonates and grey hematite only form with water. Orbiters found them at Jezero, Gale, Meridiani and Mawrth Vallis, and rovers went to read them. NASA's EMIT spectrometer on the space station now maps the same mineral
+                  families across Earth's dry land, so a field team can rehearse finding them.
+                </p>
+                <p className="mt-3 text-[12px] leading-relaxed text-dim">
+                  We tested minerals two ways: as an extra input to the learned model, and as part of Rocks & craters for Mars targets with known minerals. Neither ranked the known test sites better, so minerals are shown as measured facts, not scored. The tests are on How it works.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
 
         <section id="light" className="scroll-mt-32">
@@ -686,7 +702,7 @@ function CompareStage({
       <div className="z-40 border-b border-line bg-void/90 backdrop-blur-xl lg:sticky lg:top-16">
         <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-6">
           <PairSelect step={1} hint="Earth site" world="earth" value={earthId} onChange={setEarthId} options={[...(earthId.startsWith("@") ? [{ id: earthId, label: `Your place: ${earth.name}` }] : []), ...EARTH_SITES.map((s) => ({ id: s.id, label: s.name }))]} />
-          <span className="font-serif text-lg text-dim italic">practises for</span>
+          <span className="hidden font-serif text-lg text-dim italic sm:inline">practises for</span>
           <PairSelect
             step={2}
             hint="Moon or Mars target"
@@ -773,7 +789,13 @@ function CompareStage({
             <SwipeStage className="h-[70vh] lg:h-full" value={swipe} onChange={setSwipe} left={earthMap} right={targetMap} leftLabel={earth.name.split(",")[0]} rightLabel={target.name} rightWorld={target.body} />
           )}
           <StageCoach />
-          <a href="#evidence" className="absolute bottom-5 left-1/2 z-[700] hidden -translate-x-1/2 items-center gap-2 rounded-full border border-line-2 bg-void/80 px-4 py-2 text-[12px] text-chrome backdrop-blur transition-colors hover:text-platinum lg:flex">
+          <a
+            href="#evidence"
+            className={clsx(
+              "absolute bottom-12 z-[700] hidden -translate-x-1/2 items-center gap-2 rounded-full border border-line-2 bg-void/80 px-4 py-2 text-[12px] text-chrome backdrop-blur transition-colors hover:text-platinum lg:flex",
+              mode === "split" ? "left-3/4" : "left-1/2",
+            )}
+          >
             Ground, rocks, light and travel <ArrowDown size={13} className="animate-bounce" />
           </a>
         </div>
@@ -1620,8 +1642,10 @@ function Insight({
 function ModelRoadmap() {
   const steps = [
     { k: "Done", t: "Every place measured", d: "80,206 land areas scored from NASA POWER, MODIS, terrain tiles, volcanoes and craters.", on: true },
-    { k: "Done", t: "Learned model, tested", d: "Trained on 38 known sites. Hidden sites come back in the top few percent of all land.", on: true },
-    { k: "Next", t: "Terrain encoder", d: "A neural network that compares the shape of the ground directly, trained on GPUs." },
+    { k: "Done", t: "Learned model, tested", d: "Three models trained together on 38 known sites. Hidden sites come back in the top 1 to 2% of all land.", on: true },
+    { k: "Done", t: "Terrain AI", d: "A vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars. Try “AI match” in Maps.", on: true },
+    { k: "Done", t: "Minerals and the far side", d: "NASA EMIT minerals on Earth; LRO Diviner cold and ice at the Moon's south pole; Mars Odyssey water on Mars.", on: true },
+    { k: "Next", t: "Official 2026 datasets", d: "The challenge's own data, released 28 October, added as new pipeline steps." },
   ];
   return (
     <Reveal delay={0.08}>

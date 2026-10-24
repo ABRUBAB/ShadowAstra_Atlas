@@ -31,15 +31,29 @@ export function AskAstra() {
     setMsgs([{ from: "astra", reply: pageGreeting(pathname) }]);
   }, [pathname]);
 
-  // Gentle one-time nudge so people notice Astra can talk.
+  // Gentle nudge on a first visit only, and never over the full-screen tools, so people notice Astra can talk.
   useEffect(() => {
-    const t = setTimeout(() => setNudge(true), 9000);
+    if (pathname.startsWith("/atlas") || pathname.startsWith("/lab")) return;
+    try {
+      if (localStorage.getItem("sa-nudged")) return;
+    } catch {
+      /* storage blocked: still nudge once per load */
+    }
+    const t = setTimeout(() => {
+      setNudge(true);
+      try {
+        localStorage.setItem("sa-nudged", "1");
+      } catch {
+        /* ignore */
+      }
+    }, 9000);
     const t2 = setTimeout(() => setNudge(false), 17000);
     return () => {
       clearTimeout(t);
       clearTimeout(t2);
+      setNudge(false);
     };
-  }, []);
+  }, [pathname]);
 
   // Other parts of the site can open Astra with a question: askAstra("…")
   useEffect(() => {

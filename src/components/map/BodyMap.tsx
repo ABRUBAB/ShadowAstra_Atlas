@@ -49,6 +49,8 @@ interface Props {
   className?: string;
   /** "ctrl" (default): the wheel scrolls the page and Ctrl or ⌘ + wheel zooms. "always": a full-screen map. */
   wheelZoom?: "ctrl" | "always";
+  /** Where the + and − buttons sit (keep them clear of floating page buttons). */
+  zoomPosition?: L.ControlPosition;
 }
 
 const LAYER_BY_ID = Object.fromEntries(LAYERS.map((l) => [l.id, l])) as Record<string, MapLayer>;
@@ -80,7 +82,7 @@ function pinIcon(m: MapMarker, active: boolean) {
 }
 
 export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
-  { body, layerId, overlayIds = [], markers, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl" },
+  { body, layerId, overlayIds = [], markers, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl", zoomPosition = "bottomright" },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -120,7 +122,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
             : undefined,
       maxBoundsViscosity: 0.8,
     });
-    L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.control.zoom({ position: zoomPosition }).addTo(map);
     map.attributionControl.setPrefix(false);
     markerLayer.current = L.layerGroup().addTo(map);
 

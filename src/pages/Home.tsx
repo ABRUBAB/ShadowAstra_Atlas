@@ -16,6 +16,8 @@ import { EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS } from "../data/sites";
 import { formatCoord, polarPixel, POLAR_IMAGE_SIZE } from "../lib/geo";
 import { useSmoothScroll } from "../lib/useSmoothScroll";
 import { BADGES, useFieldLog } from "../lib/fieldlog";
+import { useValidation } from "../lib/validation";
+import { MODEL_MIX } from "../lib/grid";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -248,11 +250,20 @@ function SourceMarquee() {
 /* ------------------------------------------------------------- numbers */
 
 function Numbers() {
+  const { v } = useValidation();
+  const newSites = v?.independent.all.blend?.median ?? null;
   const stats = [
     { n: 80206, d: 0, s: "", label: "land areas measured", note: "every 55 km square of land on Earth", icon: Globe },
-    { n: 24, d: 0, s: "", label: "measurements each", note: "slopes, cold, heat, rain, plants, volcanoes, craters", icon: Layers },
+    { n: 24, d: 0, s: "", label: "measurements each", note: "slopes, cold, heat, rain, plants, volcanoes, craters, plus EMIT minerals in dry land", icon: Layers },
     { n: 38, d: 0, s: "", label: "known sites learned from", note: "used by NASA, ESA, CSA and universities", icon: Target },
-    { n: 0.9, d: 1, s: "%", label: "where hidden Moon sites rank", note: "the model finds them in the top 0.9% of land", icon: Radar },
+    {
+      n: newSites ?? 0,
+      d: 1,
+      s: "%",
+      label: "where 28 sites it never saw rank",
+      note: newSites === null ? "published test sites kept out of training" : `published test sites kept out of training land in the top ${newSites.toFixed(1)}% of all land`,
+      icon: Radar,
+    },
   ];
   return (
     <Section>
@@ -903,20 +914,24 @@ function Library() {
 /* ---------------------------------------------------------------- progress */
 
 function Progress() {
+  const { v } = useValidation();
+  const hidden = v?.mixing?.curve.find((c) => Math.abs(c.mix - MODEL_MIX) < 0.01)?.known_median;
+  const fresh = v?.independent.all.blend?.median;
   const done = [
-    "Global data engine: 80,206 land areas measured from NASA POWER, MODIS, SRTM terrain, volcanoes and craters",
-    "Full-precision Moon and Mars terrain (LRO LOLA 118 m, MGS MOLA 463 m)",
-    "A learned model, tested by hiding known sites: hidden Moon sites come back in the top 0.9% of land, and 28 sites it never saw rank in the top 21%",
-    "Find new sites: the whole planet ranked live, with search, filters and saved places",
-    "Compare any place in 3D, with a movable Sun, a shadow map, best months and travel CO₂",
-    "Astra reacts to cold, heat and match scores; badges, a game and search for everything",
+    "Global data engine: 80,206 land areas measured from NASA POWER, MODIS, SRTM terrain, NASA EMIT minerals, volcanoes and craters",
+    "The Moon and Mars measured everywhere at full precision (LRO LOLA, MGS MOLA), with Diviner cold and ice at the lunar south pole and Odyssey water on Mars",
+    hidden !== undefined && fresh !== undefined
+      ? `A learned model picked from nine on Kaggle: hidden known sites come back in the top ${hidden.toFixed(1)}% of land, and 28 published sites it never saw rank in the top ${fresh.toFixed(1)}%`
+      : "A learned model picked from nine on Kaggle and tested on 28 published sites it never saw",
+    "A terrain AI, trained on Kaggle GPUs with heights from three worlds, that finds Earth twins for any spot on the Moon or Mars",
+    "Find new sites: a mission builder that searches the planet, compares places and prints a site report",
+    "Compare any place in 3D with a movable Sun, a shadow map, minerals and travel CO₂; lessons in English, Spanish and Bangla",
   ];
   const next = [
-    "Add the official 2026 challenge datasets as soon as NASA releases them (28 Oct)",
-    "Minerals from NASA EMIT and Moon surface temperature from LRO Diviner",
-    "A bigger terrain neural network on Kaggle GPUs (our first one is tested, but does not beat the formula yet)",
-    "A field test plan you can download as a PDF for any place",
-    "A Bangla mode for schools in Dhaka",
+    "Add the official 2026 challenge datasets as new pipeline steps (released 28 Oct)",
+    "Pinpoint the best 10 km spot inside each 55 km candidate",
+    "Expert review of the top new sites by our scientific validation lead",
+    "An open dataset of every score, ready for anyone to reuse",
   ];
   return (
     <Section>

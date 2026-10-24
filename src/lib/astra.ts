@@ -219,14 +219,14 @@ export function astraAnswer(raw: string): AstraReply {
 
   if (/data|dataset|nasa|source|satellite|map/.test(q))
     return {
-      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. For the Moon and Mars: full-precision LOLA and MOLA heights, plus LROC, Viking and THEMIS images. Next: the official 2026 datasets, EMIT minerals and Diviner.",
+      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. Minerals from NASA EMIT on the space station. For the Moon and Mars: full-precision LOLA and MOLA heights, LRO Diviner temperatures and ice at the south pole, Mars Odyssey water, plus LROC, Viking and THEMIS images. Next: the official 2026 datasets.",
       mood: "neutral",
       links: [{ label: "Open the source list", to: "/methods" }],
     };
 
   if (/model|ai|machine learning|train|kaggle/.test(q))
     return {
-      text: "Our model learned what 38 known test sites have in common, using only physical measurements like cold, bare ground, volcanoes and roughness. It beats a simple rule by a wide margin in a fair test. Next we train a terrain neural network on Kaggle GPUs.",
+      text: "Three models (tuned XGBoost, LightGBM and a simple linear model) learned together what 38 known test sites have in common, using only physical measurements like cold, bare ground, volcanoes and roughness. We picked them out of nine on Kaggle with a fair test. A terrain AI, a vision transformer trained on Kaggle GPUs with heights from all three worlds, also finds Earth twins for any spot on the Moon or Mars.",
       mood: "thinking",
       links: [{ label: "Read the model plan", to: "/methods" }],
     };
