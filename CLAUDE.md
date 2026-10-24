@@ -20,6 +20,7 @@ Live: https://shadowastra-atlas.vercel.app · Repo: https://github.com/ABRUBAB/S
 `npm install` · `npm run dev` (http://localhost:3000) · `npm run build` · `npm run typecheck` · data: see `pipeline/README.md`
 URL helpers: `?theme=light|dark`, `?splash=0`, `/lab?earth=<id or @lat,lon>&target=<id>&task=<id>#geology`, `/discover?step=results&target=<id>&task=<id>&at=<lat,lon>`, `/learn?lang=es|bn`.
 Kaggle: `python kaggle/run.py whoami|push|status|files|fetch|output <kernel> --account 1|2` (tokens in `../_secrets/kaggle1|kaggle2/access_token`; see `docs/HANDOFF.md §5`).
+Data rebuild order: `s17_emit` → `s20_target_resources` → `s06_build` → `s19_k3_export` → `s14_validate` (about 40 min) → `s16_model_zoo` (see `pipeline/README.md`).
 
 ## Key gotchas
 - Theme-sensitive colours use `var(--color-*)`. Space scenes are wrapped in `data-theme="dark"`. SVG colours go in `style`, not attributes.
@@ -32,3 +33,5 @@ Kaggle: `python kaggle/run.py whoami|push|status|files|fetch|output <kernel> --a
 - Every R3F globe needs `<FitSphere />` (`components/three/Controls.tsx`) so it fits any window size or browser zoom.
 - Sharper imagery when zooming in comes from `detail` layers in `src/data/layers.ts` (Esri, CTX, Kaguya); they are for viewing only.
 - Git Bash on Windows: long inline heredocs with quotes break; write a script file and run it.
+- New data only changes the score if it ranks the known sites better (the independent sites are reported, never used to choose); otherwise show it as a fact and report the test on How it works.
+- `src/lib/grid.ts` and `pipeline/s14_validate.py` must agree on the mineral term (`USE_MINERALS`, `MIN_WEIGHT`, `MIN_UNSEEN`, average ranks for ties) and the confidence limits in `grid.json → confidence`.

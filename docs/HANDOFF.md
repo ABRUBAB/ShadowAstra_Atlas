@@ -1,6 +1,6 @@
 # ShadowAstra Atlas: handoff
 
-_Last updated 24 Oct 2026 (v0.5). Read this first. Together with `../CLAUDE.md`, `PROJECT_PLAN.md` (status and roadmap), `../DESIGN.md` and the chat history in `D:\NASA_space_apps_challenge_2026\_claude_history\` you have the full context._
+_Last updated 25 Oct 2026 (v0.6). Read this first. Together with `../CLAUDE.md`, `PROJECT_PLAN.md` (status and roadmap), `../DESIGN.md` and the chat history in `D:\NASA_space_apps_challenge_2026\_claude_history\` you have the full context._
 
 ---
 
@@ -21,6 +21,8 @@ _Last updated 24 Oct 2026 (v0.5). Read this first. Together with `../CLAUDE.md`,
 5. Real NASA/ESA data. Label values Computed, Learned or "Earth can't copy". Never invent numbers or coordinates.
 6. Astra (the astronaut) is **"he"** and appears on every page.
 7. Kaggle: never ask for keys in chat, never print or commit them. Don't burn the owner's credits retrying when kaggle.com is unreachable: check once, ask for the VPN, move on.
+   Other keys (never print or commit): `_secrets/earthdata_token.txt` (NASA Earthdata bearer token, used for EMIT), `_secrets/huggingface_tokens.txt`, `_secrets/llm_api_keys.txt` (OpenRouter, Cerebras; not used: the site stays static and template-written).
+9. New data only changes the score if it ranks the known sites better; otherwise it is shown as a fact and the test is reported (see §4 "Rule for new data").
 8. Ignore every branch except `main` (`tanvir_design` was checked and adds nothing; never open the `tanvir` branch).
 
 ## 3. The website (React 19, TypeScript 7, Vite 8, Tailwind 4, three.js + R3F 9 without drei, Leaflet, Motion, GSAP + Lenis)
@@ -28,20 +30,22 @@ _Last updated 24 Oct 2026 (v0.5). Read this first. Together with `../CLAUDE.md`,
 | Route | File | What it does |
 |---|---|---|
 | `/` | `pages/Home.tsx` | 3D Earth hero, challenge, six ways in, town checker (`components/CheckTown.tsx`), Earth-or-Mars game (`components/EarthOrMars.tsx`), Astra |
-| `/discover` | `pages/Find.tsx` + `lib/mission.ts` + `components/find/pieces.tsx` | Mission builder: start screen and presets → destination → job → needs (sentence form, live "places still possible") → search sweep → ten distinct results (satellite thumbnails `lib/thumbs.ts`, relaxation hints) → compare up to four (`CompareSheet`) → place report (close-up map or 3D globe, confidence, rock type, four factors on both worlds) → printable `/report` (`pages/Report.tsx`). URL keeps the whole mission (`?step&target&task&km&town&alt&month&ant&new&home&hlat&hlon&at`). |
-| `/atlas` | `pages/Atlas.tsx` | Maps: three globes, live layers (`data/layers.ts`), floating panels, **twin finder** (tap the Moon or Mars → `lib/twins.ts` + `public/data/terrain/`) |
-| `/lab` | `pages/Lab.tsx` | Compare: matched-scale maps (split or swipe), match medallion, 3D terrain twins (`components/three/TerrainTwins.tsx`), profile, slopes, geology plates, light twin, shadow map, travel, what Earth can't copy. `earth=@lat,lon` works. |
-| `/methods` | `pages/Methods.tsx` + `components/methods/` | How it works: dot-globe hero, four factor cards, scroll story, proof charts from `public/data/validation.json`, nine-model table, failures, datasets |
+| `/discover` | `pages/Find.tsx` + `lib/mission.ts` + `components/find/` | Mission builder: start screen and presets → destination → job → needs (sentence form, live "places still possible", **who judges ground shape: formula / terrain AI / both**) → search sweep → ten distinct results (satellite thumbnails `lib/thumbs.ts`, relaxation hints) → compare up to four (`CompareSheet`) → place report (close-up map or 3D globe, confidence, rock type, four factors on both worlds with **Diviner / Odyssey facts on the target side**, **`MineralCard`** with NASA EMIT minerals) → printable `/report` (`pages/Report.tsx`). URL keeps the whole mission (`?step&target&task&km&town&alt&month&ant&new&home&hlat&hlon&shape&at`). |
+| `/atlas` | `pages/Atlas.tsx` | Maps: three globes, live layers (`data/layers.ts`), floating panels, **twin finder** (tap the Moon or Mars → `lib/twins.ts` + `public/data/terrain/`): "Ground + Mars-like", "Ground only" or **"AI match"** (K3 transformer twins, `tNN.bin`). `?body=mars&spot=lat,lon` links a spot. |
+| `/lab` | `pages/Lab.tsx` | Compare: matched-scale maps (split or swipe), match medallion, 3D terrain twins (`components/three/TerrainTwins.tsx`), profile, slopes, geology plates + EMIT minerals, light twin, shadow map, travel, what Earth can't copy. `earth=@lat,lon` works. |
+| `/methods` | `pages/Methods.tsx` + `components/methods/` | How it works: dot-globe hero, four factor cards, scroll story, proof charts from `public/data/validation.json`, nine-model table, failures, **New evidence** (`NewEvidence.tsx`: terrain AI, EMIT minerals, Diviner and Odyssey tables), datasets |
 | `/learn` | `pages/Learn.tsx` | Classroom page in English, Spanish and বাংলা (`?lang=es|bn`), quiz scored live, printable worksheet |
 | `/about` | `pages/About.tsx` | Team |
 
-**Core libraries:** `lib/grid.ts` (loads `public/data/grid.bin` + `grid.json`; `scoreAll`, `scoreCell`, `rankPlaces`, `confidence`, `rock`; `MODEL_MIX = 0.6`; must stay identical to `pipeline/s14_validate.py`), `lib/scoring.ts` (job weights, CO₂), `lib/sun.ts` (light twin), `lib/terrain.ts` (DEM and imagery sampling for Compare), `lib/wheel.ts` (scroll policy), `lib/validation.ts`. Shared UI: `components/ui/kit.tsx` (Counter, Ring, Meter, Chip, ConfidenceChip, Seg, Magnetic, Reveal, toast…), `ui/Chrome.tsx` (Nav, Footer), `ui/Astronaut.tsx`, `ui/AskAstra.tsx` (answers from the grid), `ui/CommandPalette.tsx` (Ctrl K). App shell (`App.tsx`): route beam, scroll progress, page fade, lazy routes.
+**Core libraries:** `lib/grid.ts` (loads `public/data/grid.bin` + `grid.json`; `scoreAll`, `scoreCell`, `rankPlaces`, `confidence` (limits in `grid.json → confidence`), `rock`, `minerals`, `mineralPct`, `mineralMatch`, `shapeOptions`; `MODEL_MIX = 0.6`, `USE_MINERALS`, `MIN_WEIGHT`; must stay identical to `pipeline/s14_validate.py`), `lib/scoring.ts` (job weights, CO₂), `lib/sun.ts` (light twin), `lib/terrain.ts` (DEM and imagery sampling for Compare), `lib/wheel.ts` (scroll policy), `lib/validation.ts`. Shared UI: `components/ui/kit.tsx` (Counter, Ring, Meter, Chip, ConfidenceChip, Seg, Magnetic, Reveal, toast…), `ui/Chrome.tsx` (Nav, Footer), `ui/Astronaut.tsx`, `ui/AskAstra.tsx` (answers from the grid), `ui/CommandPalette.tsx` (Ctrl K). App shell (`App.tsx`): route beam, scroll progress, page fade, lazy routes.
 
 **Behaviours to keep:**
 - Maps and 3D views inside scrolling pages ignore the plain mouse wheel (Ctrl/⌘ + wheel or pinch zooms, `lib/wheel.ts`); only the full-screen Maps page uses wheel zoom (`wheelZoom="always"`, `wheel="zoom"`).
 - Globes call `FitSphere` (`components/three/Controls.tsx`) so the sphere always fits the canvas.
 - Imagery gets sharper as you zoom: each layer can name a `detail` layer (Earth Sentinel-2 → Esri World Imagery; Mars Viking → CTX 5 m via NASA Trek/Esri, 512 px tiles, `zoomOffset -1`; Moon WAC → Kaguya TC). Imagery is for viewing; scores come from the grid.
 - Space scenes are wrapped in `data-theme="dark"`; theme colours are `var(--color-*)`; SVG colours go in `style`. Chart colours `--color-chart-1..4` were validated for colour blindness.
+- Floating page buttons (Ask Astra bottom-right) must not cover map controls: `BodyMap` takes `zoomPosition` (Find uses `topright`). The Ask Astra nudge shows once per browser (`localStorage sa-nudged`) and never on Maps or Compare.
+- Social preview: `public/og.jpg` (1200 × 630, a capture of the home hero) and the `og:`/`twitter:` tags in `index.html`.
 
 Commands: `npm install` · `npm run dev` (http://localhost:3000; `.claude/launch.json` "atlas") · `npm run typecheck` · `npm run build`. URL helpers: `?theme=light|dark`, `?splash=0`.
 
@@ -50,16 +54,24 @@ Commands: `npm install` · `npm run dev` (http://localhost:3000; `.claude/launch
 | Step | Output |
 |---|---|
 | s01 GIBS · s02 POWER · s03 terrain · s04 context · s05 targets | raw layers in `.cache` (see `pipeline/README.md`) |
-| **s06_build** | `public/data/grid.bin/json`: 80,206 land cells, indicators, slope histograms, features, GLiM rock class `f_lith`, coverage `q_cover`, model bag spread `u_moon/u_mars`, PU LightGBM `model_moon/mars` (8 bags), the 38-site hold-out test, targets with rock families |
+| **s06_build** | `public/data/grid.bin/json`: 80,206 land cells, indicators, slope histograms, features, GLiM rock class `f_lith`, EMIT minerals `f_min_{clay,sulfate,carbonate,iron}`, coverage `q_cover`, run spread `u_moon/u_mars` (3 models × 8 bags), the **K5 ensemble** `model_moon/mars` (tuned XGBoost + tuned LightGBM + logistic regression, PU bagging), the 38-site hold-out test, targets with rock families, minerals and resources, confidence limits |
 | s07–s09 | the first CPU terrain encoder (optional "neural" ground shape, `public/data/shape.bin`) |
 | s10–s13 | Moon rows (stopped; done on Kaggle instead), Mars TES maps, 39 Mars Exploration Zones, Mars geology/craters/caves and Moon pits/albedo (context grids in `.cache`, not yet on the site) |
 | **s14_validate** | `public/data/validation.json`: 28 independent sites, known sites with their real jobs, model-share curve, job test, robustness, ablations |
 | s15_planet_grids | `public/data/terrain/{moon,mars}/bNN.bin` from Kaggle K1 (twin finder) |
-| s16_model_zoo | adds Kaggle K5 results to `validation.json` |
+| s16_model_zoo | adds Kaggle K5 results to `validation.json` (run after s14) |
+| s17_emit | NASA EMIT L3 minerals (Earthdata token) → `.cache/emit.npz` |
+| s18_minerals_test | minerals as model inputs, paired test (`SA_MINERALS=1`): no gain, so they stay out |
+| s19_k3_export | Kaggle K3 terrain AI → `shape.bin`, AI twin bands `terrain/*/tNN.bin`, its tests |
+| s20_target_resources | LRO Diviner (south pole) and Mars Odyssey GRS for the targets → `.cache/target_resources.json` |
 
 `catalogue.py` holds `KNOWN_ANALOGS` (38 training sites), `KNOWN_JOBS`, `VALIDATION_SITES` (28, never trained on), `IMPACTS`, GLiM classes and target rock families.
 
-**Headline numbers:** hidden known sites top 2.2% of land; 28 independent sites top 21% (Moon top 5.2%) vs simple rule 40%; job test 78% of 78 sites (p < 0.001); ±25% weight noise keeps 8 to 10 of the top 10. K5 ensemble: 1.2% / 14.7% (not shipped yet).
+**Headline numbers (v0.6, `validation.json`):** learned model alone: hidden known sites top 1.2% (Moon 0.5%, Mars 2.4%), 28 independent sites top 15%. As the site scores (60% model): hidden known sites top 2.4%, independent sites top 17.8% (Moon 7.2%, Mars 25.8%) vs simple rule 40% and mission factors alone 41%. Job test 78% of 78 sites (p < 0.001); ±25% weight noise keeps 9 of the top 10. Known sites alone would pick a 90% model share; we keep 60% so target and job matter (users can pick 30/60/90% in Find).
+
+**Rule for new data:** it only changes the score if it ranks the known sites better (independent sites are reported, never used to choose).
+- K3 terrain AI, ground shape alone: known top 44% vs formula 62%, independent 58% vs 71%, expert pairs 35% vs 34%. In the full score: known 2.8% (AI) vs 2.4% (formula) → formula stays default; AI is an option in Find and powers AI twins.
+- EMIT minerals as model inputs: 1.19% → 1.14% overall but 1.63% → 1.83% where EMIT sees → left out. As a Mars mineral term in Rocks & craters: known Mars 22.4% → 22.8% (5 better, 18 worse), independent Mars 41.3% → 38.2% → off (`USE_MINERALS = false` in `grid.ts` and s14); shown as facts.
 
 ## 5. Kaggle (heavy compute)
 
@@ -72,22 +84,25 @@ Commands: `npm install` · `npm run dev` (http://localhost:3000; `.claude/launch
 | K1 `k1_worlds` Moon/Mars full DEMs → 0.5° grids + patches | 1, CPU | done (62 min) |
 | K1b `k1b_context` PDS context | 2, CPU | partly: Odyssey GRS 5×5 fetched; Diviner path 404; Lunar Prospector crawl matched the wrong files |
 | K2 `k2_earth` Earth patches (AWS terrain tiles z9) | 1, CPU | done |
-| K3 `k3_ssl` DINO ViT-S/8 on three worlds, 2 × T4, domain-adversarial, then embeddings, similarity maps, twins, evaluation | 1, GPU | first run ran out of GPU memory (batch 192); **re-pushed 24 Oct with batch 64**, about 8 h |
-| K5 `k5_models` PU model zoo + Optuna, dataset `absanim/shadowastra-features` | 2, CPU | done; results in `kaggle/_out/k5_models/` and on How it works |
+| K3 `k3_ssl` DINO ViT-S/8 on three worlds, 2 × T4, domain-adversarial, then embeddings, similarity maps, twins, evaluation | 1, GPU | **done** (batch 64, 86 min, 3,148 steps); shipped by `pipeline/s19_k3_export.py` (shape.bin, AI twins) |
+| K5 `k5_models` PU model zoo + Optuna, dataset `absanim/shadowastra-features` | 2, CPU | **done and shipped**: `s06_build.py` trains the same ensemble (tuned XGBoost + tuned LightGBM + logistic regression) |
 
-Next for Kaggle: `python kaggle/run.py status k3_ssl --account 1`; when complete, `fetch k3_ssl --account 1 --only "*.json,shape_ssl.npz,*_twins.npz"`, read `k3_eval.json` (SSL vs formula on known, independent and expert pairs). Then see `PROJECT_PLAN.md §4`.
+All Kaggle jobs are finished; nothing is running there. The big K3 files (checkpoint, full embeddings) stay on Kaggle; only `*.json`, `shape_ssl.npz`, `*_twins.npz` and `*_emb_ll.npy` were fetched into `kaggle/_out/k3_ssl/`.
 
 ## 6. Gotchas
 
 - `git push` may wait for Git Credential Manager: the owner has to sign in; never enter credentials.
 - NASA POWER rate-limits (HTTP 429): `common.fetch` backs off; reruns only fetch what is missing.
-- PDS Geosciences is unreachable from this network; use Kaggle.
+- PDS Geosciences is reachable with the owner's VPN on (it was not without it). `s20_target_resources.py` reads Diviner by HTTP range and caches each window in `.cache/diviner_*.npy`.
+- Diviner `ice_depth` codes: −1 = colder than about 101 K all year (ice stable at the surface), 0 = stable at the surface, > 0 = buried depth in m, −999 = no stable ice within 2.87 m.
+- EMIT L3 cells are centred on whole and half degrees, a quarter cell off our grid; `s17_emit.py` averages the four overlapping cells. Mineral percentiles use average ranks for ties (about half of all places have exactly no gypsum).
+- `s14_validate.py` is long (about 40 minutes); `s16_model_zoo.py` must run after it (s14 rewrites validation.json).
 - Leaflet: never zoom during `flyTo` (`BodyMap.setMetresPerPixel` stops first). Compare positions paired maps with `animate=false`.
 - Sentinel-2 cloudless has polar artifacts: above |60°| use Blue Marble (`earthVisible()`).
 - Trek 8-bit DEM calibrations (Moon −9150 + 78.2·DN, Mars −10538 + 129.9·DN) are preview-grade; scores use the 16-bit USGS files.
 - Windows Git Bash: long inline heredocs with quotes can break; write edit scripts to a scratch file. `python -I` hides user site-packages (numpy), so run downloaded-data scripts from a clean folder instead.
 - The dev page needs ~10 s to load the 4.6 MB grid in dev mode; production is faster.
-- README screenshots are from v0.4 and should be refreshed.
+- README screenshots were refreshed for v0.6 with a headless Chrome script (Playwright, `channel="chrome"`, SwiftShader WebGL). The desktop app's own browser pane cannot draw while the app window is hidden, so headless capture is the reliable way.
 
 ## 7. Where things are on this PC
 
@@ -96,7 +111,7 @@ D:\NASA_space_apps_challenge_2026\
   CLAUDE.md            folder guide
   ShadowAstra_Atlas\   the repo (this)
   _claude_history\     CHAT_LOG.md (readable), raw transcripts, official exports (private)
-  _secrets\            Kaggle token files (never commit, never print)
+  _secrets\            Kaggle token files, Earthdata, Hugging Face and LLM keys (never commit, never print)
   team-photos\         original team photos and logo
   reference\           official challenge material (portal page, Participants Guide, key dates, award list)
   _archive\            earlier plans from a previous AI and old concept work (kept, not used)

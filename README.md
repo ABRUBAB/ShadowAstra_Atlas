@@ -49,13 +49,14 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | | |
 |---|---|
 | **80,206** | land areas measured (every 0.5° cell, about 55 km wide) |
-| **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters… |
+| **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters…, plus NASA EMIT minerals for 16,868 dry places |
 | **18** | Moon and Mars targets measured at full precision (LRO LOLA 118 m, MGS MOLA 463 m) |
 | **38 + 28** | known analog sites to teach and test the model, plus 28 published sites kept out of training as an untouched test |
-| **top 2.2%** | where hidden known sites rank among all land, as the site shows them (hold-out: each site and its neighbours within 300 km hidden, model retrained) |
-| **top 21%** | where the 28 never-seen sites rank (Moon sites: top 5%); a simple rule manages top 40% |
+| **top 1.2%** | where hidden known sites rank for the learned model (Moon 0.5%, Mars 2.4%; each site and its neighbours within 300 km hidden, model retrained) |
+| **top 17.8%** | where the 28 never-seen sites rank as the site scores them (Moon sites: top 7%); a simple rule manages top 40% |
 | **78%** | of 78 sites rank higher when scored for the job they were really used for (sign test p < 0.001) |
 | **9 of 10** | top places that stay put when every weight shifts by ±25% |
+| **3 worlds** | Earth, Moon and Mars heights taught one terrain AI (a vision transformer, 2 × T4 GPUs on Kaggle) |
 
 ## ✨ What you can do
 
@@ -63,9 +64,11 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 |---|---|---|
 | 🌍 | **Find new sites** | A mission builder: pick a Moon or Mars destination, the job (landing, base life, rover drive, ice, lava tubes, life search, craters, low Sun) and your team's needs in plain words (how far from home, near a town, altitude, month). All 80,206 land areas are searched live; you get ten distinct new places with satellite views, reasons and hints about which rule hides better sites. |
 | ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
-| 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth. |
+| 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth, by our formula or by **a terrain AI** (a vision transformer trained on Kaggle GPUs with heights from all three worlds). |
+| 💎 | **Minerals from orbit** | Every place report shows what NASA's EMIT spectrometer sees in the ground (clays, sulfates, carbonates, iron oxides) next to the minerals orbiters and rovers found at Jezero, Gale, Meridiani and Mawrth Vallis. |
+| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too: LRO Diviner ground temperatures and stable ice at the lunar south pole, Mars Odyssey water in the topsoil on Mars. |
 | 🎓 | **Learn, in English, Spanish or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
-| 📄 | **Site report** | A printable one-page dossier for any place: the four factors on Earth and the target, field tests, planning, permission and what Earth can't copy. |
+| 📄 | **Site report** | A printable one-page dossier for any place: the four factors and minerals on Earth and the target, field tests, planning, permission and what Earth can't copy. |
 | 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
 | ⛰️ | **Compare in 3D** | Any Earth place next to its Moon or Mars target: real heights, real imagery, a movable Sun, a shadow map, best months to go and travel CO₂. |
 | 🎮 | **Earth or Mars?** | A game with real orbital images of known look-alike pairs, same scale, colour off. |
@@ -77,19 +80,23 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/discover-report.jpg" alt="Place report for Kunlun Mountains"/><br/><sub><b>Place report.</b> Why a place scores for the job, its four factors next to the target, rock type, confidence and a close-up map. Astra reacts to the real night cold.</sub></td>
-    <td width="50%"><img src="docs/readme/town.jpg" alt="Town checker with Dhaka"/><br/><sub><b>Check your town.</b> Dhaka: green and wet, 2,071 mm of rain a year. Astra points to the nearest strong site instead.</sub></td>
+    <td width="50%"><img src="docs/readme/discover-report.jpg" alt="Place report for Altun Mountains"/><br/><sub><b>Place report.</b> Why a place scores for the job, its four factors next to the target with real Moon or Mars numbers, confidence and a close-up map.</sub></td>
+    <td width="50%"><img src="docs/readme/minerals.jpg" alt="Minerals from orbit in a place report"/><br/><sub><b>Minerals from orbit.</b> NASA EMIT sees Gale crater's clays, sulfates and iron oxides in the Altun Mountains.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/lab-compare.jpg" alt="Compare a new candidate with Jezero crater"/><br/><sub><b>Compare.</b> A new candidate (Tibesti, Chad) next to Jezero crater at the same metres per pixel. Every score row is measured.</sub></td>
-    <td><img src="docs/readme/game.jpg" alt="Earth or Mars game"/><br/><sub><b>Earth or Mars?</b> Real Sentinel-2, Viking and LROC images of known look-alike pairs.</sub></td>
+    <td><img src="docs/readme/lab-compare.jpg" alt="Compare the Atacama with Gale crater"/><br/><sub><b>Compare.</b> The Atacama next to Gale crater at the same metres per pixel. Every score row is measured.</sub></td>
+    <td><img src="docs/readme/twins-ai.jpg" alt="AI twins of Jezero crater"/><br/><sub><b>AI twins.</b> Tap Jezero crater; the terrain AI finds Svalbard and the Atacama, two real Mars analogs, plus new candidates.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/methods.jpg" alt="Model test results"/><br/><sub><b>The model had to prove itself.</b> Hidden known sites land in the top 2.2% of land; 28 sites it never saw land in the top 21%.</sub></td>
+    <td><img src="docs/readme/methods.jpg" alt="New evidence on How it works"/><br/><sub><b>Every new dataset is tested.</b> Terrain AI, EMIT minerals, Diviner and Odyssey on How it works, with what helped and what did not.</sub></td>
     <td><img src="docs/readme/light-mode.jpg" alt="Light mode"/><br/><sub><b>Light mode.</b> A warm paper theme with its own colours. Space scenes stay dark.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/readme/hero.jpg" alt="Home page"/><br/><sub><b>Home.</b> A 3D Earth from NASA Blue Marble and Black Marble.</sub></td>
+    <td><img src="docs/readme/learn.jpg" alt="Learn page in Bangla"/><br/><sub><b>Learn.</b> Lessons, a live quiz and a worksheet in English, Spanish and বাংলা.</sub></td>
+    <td><img src="docs/readme/town.jpg" alt="Town checker with Dhaka"/><br/><sub><b>Check your town.</b> Dhaka: green and wet, 2,071 mm of rain a year. Astra points to the nearest strong site instead.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/readme/game.jpg" alt="Earth or Mars game"/><br/><sub><b>Earth or Mars?</b> Real Sentinel-2, Viking and LROC images of known look-alike pairs.</sub></td>
     <td><img src="docs/readme/astra-moods.jpg" alt="Meet Astra"/><br/><sub><b>Meet Astra.</b> Ten reactions and a field log of badges you earn by exploring.</sub></td>
   </tr>
 </table>
@@ -115,7 +122,7 @@ flowchart LR
 | **Cold & heat** | coldest monthly night and the day-to-night swing (ice jobs add snow and ice) | MODIS land surface temperature, NASA POWER |
 | **Sunlight angle** | `1 − W₁(Sun heights) / 25°`, earth-mover distance in Earth's best month | our solar geometry |
 | **Bare, dry ground** | little rain and few plants | NASA POWER rain, MODIS NDVI |
-| **Learned model** | LightGBM trained on 38 known sites (positive-unlabelled, 8 bags), 60% of the total by default (the share was chosen on the known sites only) | all of the above, plus GLiM rock groups |
+| **Learned model** | a rank-average of tuned XGBoost, tuned LightGBM and logistic regression, trained on 38 known sites (positive-unlabelled, 8 bags), picked from nine models on Kaggle; 60% of the total by default (you can choose 30% or 90%) | all of the above, plus GLiM rock groups |
 | Gravity · Air · Radiation | shown next to every score, never added in | Earth can't copy |
 
 Total = `(1 − m) · Σ wᵢ·vᵢ / Σ wᵢ + m · model`, with weights `wᵢ` from the job. Every slider re-ranks the planet live.
@@ -126,11 +133,15 @@ For every known test site we hid it **and every other known site within 300 km**
 
 | | Learned model | What the site shows (60% model) | Mission factors only | Simple rule |
 |---|---|---|---|---|
-| Hidden known sites, typical rank | top 2.6% | **top 2.2%** | top 19% | top 31 to 35% |
-| 28 never-seen sites, typical rank | top 18% | **top 21%** | top 41% | top 40% |
-| Never-seen Moon sites | top 1.1% | **top 5.2%** | top 48% | top 36% |
+| Hidden known sites, typical rank | top 1.2% | **top 2.4%** | top 19% | top 31 to 35% |
+| 28 never-seen sites, typical rank | top 15% | **top 18%** | top 41% | top 40% |
+| Never-seen Moon sites | top 0.8% | **top 7.2%** | top 48% | top 36% |
 
-More tests: choosing the job a site was really used for ranks it higher for 78% of 78 sites (p < 0.001); shifting every weight by ±25% keeps 8 to 10 of the top 10 places; taking out *Rocks & craters* hurts most. Honest limits: the mission factors alone find known sites only about as well as a simple rule, because many analog sites were chosen for something smaller than our 55 km cells (an ice cave, a small lake, hot springs). Their job is to explain why a place matches and to tune it to your target and job; the learned model finds them. The How it works page shows where it fails and why.
+More tests: choosing the job a site was really used for ranks it higher for 78% of 78 sites (p < 0.001); shifting every weight by ±25% keeps 9 or 10 of the top 10 places; taking out *Rocks & craters* hurts most. The known sites alone would let the model count for 90%; we keep 60% so your target and job still shape the list.
+
+**New data has to earn its place.** It only changes the score if it ranks the known sites better:
+- **Terrain AI (Kaggle K3).** For ground shape alone it beats our formula on the known sites (top 44% vs 62%) and the never-seen sites (58% vs 71%), and ties on expert pairs. In the full score it adds nothing (known sites 2.8% vs 2.4%), so it powers the AI twin finder and is an option in Find, not the default.
+- **NASA EMIT minerals.** As a model input they did not help where EMIT can see (1.6% → 1.8%). As a Mars mineral match in Rocks & craters they helped the never-seen Mars sites (41% → 38%) but not the known ones (22.4% → 22.8%), so they are shown as measured facts, not scored. Honest limits: the mission factors alone find known sites only about as well as a simple rule, because many analog sites were chosen for something smaller than our 55 km cells (an ice cave, a small lake, hot springs). Their job is to explain why a place matches and to tune it to your target and job; the learned model finds them. The How it works page shows where it fails and why.
 
 ## 🛰️ Open data
 
@@ -143,8 +154,12 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 | 🌍 Earth | Sentinel-2 cloudless 2020 · Blue Marble · ASTER | imagery, 3D drape, globe, game | ESA Copernicus via EOX · NASA GIBS |
 | 🌕 Moon | LRO LOLA global DEM (16-bit, 118 m) · LROC WAC | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
 | 🔴 Mars | MGS MOLA global DEM (16-bit, 463 m) · Viking MDIM · THEMIS | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
+| 🌍 Earth | EMIT L3 Aggregated Mineral Spectral Abundance 0.5° | clays, sulfates, carbonates and iron oxides in dry, bare land | NASA JPL · LP DAAC (Earthdata) |
+| 🌕 Moon | LRO Diviner polar resource product | ground temperatures and stable water ice around the south-pole targets | NASA · UCLA · PDS Geosciences |
+| 🔴 Mars | Mars Odyssey GRS 5° water map | water in the topsoil at each Mars target | NASA · U. Arizona · PDS Geosciences |
+| 🪐 All | Kaggle K1, K3, K5 | Moon and Mars measured everywhere; terrain AI; nine-model comparison | our notebooks on Kaggle (2 × T4) |
 
-**Next:** the official 2026 challenge datasets (released 28 Oct), NASA EMIT minerals, LRO Diviner, NASADEM, MRO HiRISE, JAXA Kaguya, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
+**Next:** the official 2026 challenge datasets (released 28 Oct), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
@@ -178,7 +193,7 @@ npm run dev          # http://localhost:3000
 npm run build        # production build in dist/
 ```
 
-Requires Node 20+. To rebuild the global data from scratch see [`pipeline/README.md`](pipeline/README.md) (Python 3, no logins needed).
+Requires Node 20+. To rebuild the global data from scratch see [`pipeline/README.md`](pipeline/README.md) (Python 3; only the EMIT step needs a free NASA Earthdata token).
 
 **Handy links:** `?theme=light` · `?splash=0` skips the intro · `/discover?target=shackleton&task=polar` · `/discover?at=23.81,90.41` opens a place report · `/lab?earth=@21.25,17.75&target=jezero` compares any coordinates.
 
@@ -188,13 +203,14 @@ Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atl
 
 ## 🧱 Tech
 
-React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP · Lenis · Motion · Python (NumPy, SciPy, LightGBM) for the data pipeline
+React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP · Lenis · Motion · Python (NumPy, SciPy, LightGBM, XGBoost, scikit-learn) for the data pipeline · PyTorch (DINO ViT) on Kaggle
 
-**Performance:** the global dataset is 4.3 MB of typed arrays (1.8 MB gzipped), scored in under 20 ms per change; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch.
+**Performance:** the global dataset is 5.2 MB of typed arrays (2.2 MB compressed), scored in under 20 ms per change; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch.
 
 ```
-pipeline/      Python: download, measure and model all of Earth (s01 to s08)
-public/data/   grid.bin + grid.json: the measured planet the website loads
+pipeline/      Python: download, measure, model and test all of Earth (s01 to s20)
+kaggle/        GPU and CPU notebooks run on Kaggle (K1 to K5) and their runner
+public/data/   grid.bin + grid.json (the measured planet), validation.json (every test), shape.bin (terrain AI), terrain/ (Moon and Mars bands, AI twins)
 src/
   lib/         grid (load, score, rank, search) · terrain · sun · scoring · astra
   components/  three (score globe, terrain slabs) · map · ui kit · Astra · game · town check
@@ -208,14 +224,15 @@ src/
 - [x] Every land area on Earth measured; full-precision LOLA and MOLA targets
 - [x] Learned model with a spatial hold-out test
 - [x] Find new sites, town checker, game, badges, search, Astra's live answers
-- [x] Terrain encoder, first test: a self-supervised CNN on 86,000 height patches from all three worlds. On 49 expert pairs it ranks them in the top 44% vs 34% for the formula, so it stays optional
+- [x] Terrain encoder, first test: a self-supervised CNN on 86,000 height patches from all three worlds; it lost to the formula, which led to K3
 - [x] Mission builder, compare up to four, Earth twins of any Moon or Mars spot, Learn page in English, Spanish and Bangla
 - [x] Independent validation on 28 published sites, model-share curve, job test, robustness and ablations
 - [x] Kaggle K1: full-precision LOLA and MOLA measured everywhere; K2: Earth patches; K5: model zoo with Optuna
-- [ ] Kaggle K3: a self-supervised terrain transformer for three worlds on 2 × T4
-- [ ] Official 2026 challenge datasets, EMIT minerals, Diviner temperatures
+- [x] Kaggle K3: a self-supervised terrain transformer for three worlds on 2 × T4, tested and shipped as AI twins and an option in Find
 - [x] Sharper imagery as you zoom (Esri on Earth, CTX on Mars, Kaguya on the Moon), close-up map of each result
-- [ ] Ship the K5 ensemble as the site model; pinpoint the best 10 km spot inside each place; expert review of the top 20
+- [x] K5 ensemble as the site model; EMIT minerals, Diviner temperatures and ice, Odyssey water, each tested before it counts
+- [ ] Official 2026 challenge datasets (released 28 Oct)
+- [ ] Pinpoint the best 10 km spot inside each place; expert review of the top 20
 
 ## 👩‍🚀 Team ShadowAstra
 
@@ -234,7 +251,7 @@ src/
 
 ## 📜 Credits & license
 
-Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA Solar System Treks (JPL); USGS Astrogeology; LRO (LROC, LOLA), MGS MOLA, Viking, Mars Odyssey THEMIS, Terra MODIS & ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
+Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner), MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
 
 NASA does not endorse this project. The 8-bit Trek elevation used for the 3D view is our own calibration (scores use the 16-bit USGS data), CO₂ numbers are rough estimates and site coordinates are approximate. Field visits need permission, local partners and care for the land.
 
