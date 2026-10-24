@@ -12,28 +12,38 @@ Rock types come from GLiM (Hartmann & Moosdorf 2012, 0.5° dominant class). Each
 Mars target has a rock family (catalogue.TARGET_ROCK); the browser scores how close a
 place's rock is to it with the table exported in grid.json.
 
-The analog model is a positive–unlabelled LightGBM classifier: known field analog
-sites are positives, the rest of the land is unlabelled background. We test it by
-leaving each known site out in turn and asking where it would rank among all land.
+The analog model is positive–unlabelled learning: known field analog sites are positives,
+the rest of the land is unlabelled background. Kaggle K5 compared nine models under the
+same test and picked a rank-average of tuned XGBoost, tuned LightGBM and logistic
+regression (chosen on the hidden known sites only); this file trains exactly that. We test
+it by leaving each known site out in turn and asking where it would rank among all land.
 We also export, for every place, how much of it was measured (coverage) and how much
 the model's bags disagree (spread), so the site can say "not enough evidence".
 
-    python pipeline/s06_build.py      (needs steps 1–5)
+EMIT minerals (step 17) are exported for every place EMIT saw, and used by the model only
+if MINERALS_IN_MODEL is on (s18_minerals_test.py decides that with the same tests).
+
+    python pipeline/s06_build.py      (needs steps 1–5, optionally 17)
 """
 
 from __future__ import annotations
 
 import json
+import os
 from types import SimpleNamespace
 
 import lightgbm as lgb
 import numpy as np
 
-from catalogue import KNOWN_ANALOGS, LITHOLOGY, ROCK_FAMILY, TARGET_ROCK
+from catalogue import KNOWN_ANALOGS, LITHOLOGY, ROCK_FAMILY, TARGET_MINERALS, TARGET_ROCK
 from common import CACHE, LAT, LON, OUT, fetch_json, load
 
 RNG = np.random.default_rng(42)
 GLIM = CACHE / "dl_glim" / "glim_wgs84_0point5deg.txt.asc"
+EMIT = CACHE / "emit.npz"
+MINERAL_GROUPS = ("clay", "sulfate", "carbonate", "iron")
+# s18_minerals_test.py: minerals did not make the model better (worse at the places EMIT sees), so they stay out
+MINERALS_IN_MODEL = os.environ.get("SA_MINERALS", "0") == "1"
 LITH_GROUPS = {
     "lith_volcanic": ("vb", "va", "vi", "py"),
     "lith_plutonic": ("pb", "pa", "pi"),
@@ -42,10 +52,15 @@ LITH_GROUPS = {
     "lith_meta": ("mt",),
     "lith_ice": ("ig",),
 }
-PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=15, min_data_in_leaf=5, feature_fraction=0.8,
-              bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0, verbose=-1, num_threads=12)
+# K5 (kaggle/k5_models): Optuna-tuned on the hidden known sites, then frozen
+LGBM = dict(objective="binary", learning_rate=0.06617, num_leaves=43, min_data_in_leaf=2, feature_fraction=0.8473,
+            bagging_fraction=0.8, bagging_freq=1, lambda_l2=19.816, verbose=-1, num_threads=12)
+LGBM_ROUNDS = 427
+XGB = dict(max_depth=2, learning_rate=0.08476, n_estimators=152, subsample=0.5285, colsample_bytree=0.8931, reg_lambda=18.517,
+           min_child_weight=4.419, tree_method="hist", n_jobs=12, verbosity=0)
 BAGS = 4
 FINAL_BAGS = 8
+SPREAD_MEDIUM, SPREAD_LOW = 0.2, 0.3  # about the top quarter and top 2% of disagreement for the Moon model
 
 
 def pct_rank(x: np.ndarray) -> np.ndarray:
@@ -160,10 +175,20 @@ def features() -> SimpleNamespace:
     lith_code = codes[np.clip(lith, 0, len(codes) - 1)]
     groups = {name: np.isin(lith_code, members).astype(np.float32) for name, members in LITH_GROUPS.items()}
 
+    # EMIT mineral shares (0 to 1); NaN where EMIT has no view (plants, water, cities, beyond ±52°)
+    minerals = {}
+    if EMIT.exists():
+        em = np.load(EMIT)
+        minerals = {m: em[m][I, J].astype(np.float32) for m in MINERAL_GROUPS}
+
     # Physical features only: human land use (cities, farms) says nothing about the Moon or Mars.
     model_feats = [k for k in raw if k not in ("volc_km", "urban", "crop")]
     feat_names = model_feats + ["volcanic", "lat_abs"] + list(groups)
-    X = np.column_stack([raw[k] for k in model_feats] + [ind["volcanic"], np.abs(LAT[I])] + list(groups.values())).astype(np.float32)
+    cols = [raw[k] for k in model_feats] + [ind["volcanic"], np.abs(LAT[I])] + list(groups.values())
+    if minerals and MINERALS_IN_MODEL:
+        feat_names += [f"min_{m}" for m in MINERAL_GROUPS]
+        cols += [minerals[m] for m in MINERAL_GROUPS]
+    X = np.column_stack(cols).astype(np.float32)
 
     cell_of = {}
     for sid, _name, la, lo, _worlds in KNOWN_ANALOGS:
@@ -171,8 +196,14 @@ def features() -> SimpleNamespace:
         if k >= 0:
             cell_of[sid] = k
 
+    # logistic regression needs complete, scaled inputs: missing minerals become 0 plus a "seen by EMIT" flag
+    Xl = np.nan_to_num(X)
+    if minerals and MINERALS_IN_MODEL:
+        Xl = np.column_stack([Xl, np.isfinite(minerals["clay"]).astype(np.float32)])
+    Xl = (Xl - Xl.mean(0)) / (Xl.std(0) + 1e-6)
+
     return SimpleNamespace(land=land, I=I, J=J, n=n, raw=raw, ind=ind, hist=hist, lith=lith, coverage=coverage,
-                           X=X, feat_names=feat_names, cell_of=cell_of, take=take)
+                           minerals=minerals, X=X, Xl=Xl.astype(np.float32), feat_names=feat_names, cell_of=cell_of, take=take)
 
 
 def snap(I, J, la, lo, max_d2=4):
@@ -184,22 +215,34 @@ def snap(I, J, la, lo, max_d2=4):
 
 
 def train_predict(F: SimpleNamespace, pos_idx, bags: int = BAGS, rng=RNG):
-    """Positive-unlabelled bagging: each bag draws a fresh random background sample.
+    """Positive-unlabelled bagging of the K5 ensemble: each bag draws a fresh random background
+    sample, fits tuned XGBoost, tuned LightGBM and logistic regression on it, and averages their
+    percentile ranks.
 
-    Returns the mean probability, the mean gain per feature and the spread of the bags'
-    percentile ranks (how much the bags disagree about each place)."""
+    Returns the ensemble rank (0 to 1), LightGBM's mean gain per feature and the spread of all the
+    single runs' ranks (how much the models and bags disagree about each place)."""
+    import xgboost as xgb
+    from sklearn.linear_model import LogisticRegression
+
     n = F.n
-    prob, gain, ranks = np.zeros(n), np.zeros(len(F.feat_names)), []
+    pos_idx = np.asarray(pos_idx)
+    member = {"xgb": np.zeros(n), "lgbm": np.zeros(n), "logreg": np.zeros(n)}
+    gain, ranks = np.zeros(len(F.feat_names)), []
     for b in range(bags):
         neg = np.setdiff1d(rng.choice(n, size=min(6000, n), replace=False), pos_idx)
         idx = np.concatenate([pos_idx, neg])
         y = np.concatenate([np.ones(len(pos_idx)), np.zeros(len(neg))])
         w = np.concatenate([np.full(len(pos_idx), len(neg) / max(1, len(pos_idx)) / 4), np.ones(len(neg))])
-        m = lgb.train({**PARAMS, "seed": 7 + b}, lgb.Dataset(F.X[idx], y, weight=w, feature_name=F.feat_names), num_boost_round=220)
-        p = m.predict(F.X)
-        prob += p / bags
-        gain += m.feature_importance("gain") / bags
-        ranks.append(pct_rank(p))
+        mx = xgb.XGBClassifier(**XGB, random_state=7 + b).fit(F.X[idx], y, sample_weight=w)
+        ml = lgb.train({**LGBM, "seed": 7 + b}, lgb.Dataset(F.X[idx], y, weight=w, feature_name=F.feat_names), num_boost_round=LGBM_ROUNDS)
+        mr = LogisticRegression(C=0.5, max_iter=3000).fit(F.Xl[idx], y, sample_weight=w)
+        preds = {"xgb": mx.predict_proba(F.X)[:, 1], "lgbm": ml.predict(F.X), "logreg": mr.predict_proba(F.Xl)[:, 1]}
+        for k, p in preds.items():
+            member[k] += p / bags
+        gain += ml.feature_importance("gain") / bags
+        ranks += [pct_rank(p) for p in preds.values()]
+    prob = np.mean([pct_rank(p) for p in member.values()], 0)
+    # spread: how much every single run (3 models × bags) disagrees about the place
     spread = np.std(np.stack(ranks), axis=0).astype(np.float32)
     return prob, gain, spread
 
@@ -225,6 +268,8 @@ def main() -> None:
 
     targets = json.loads((CACHE / "targets.json").read_text(encoding="utf-8"))
     tnpz = np.load(CACHE / "targets.npz")
+    tres_path = CACHE / "target_resources.json"  # step 20: Diviner (Moon south pole) and Odyssey GRS (Mars)
+    tres = json.loads(tres_path.read_text(encoding="utf-8")) if tres_path.exists() else {}
 
     worlds_of = {a[0]: a[4] for a in KNOWN_ANALOGS}
     model_out, spread_out, evaluation = {}, {}, {}
@@ -309,6 +354,8 @@ def main() -> None:
     put("u_mars", spread_out["mars"], np.uint8, 254, "quality")
     put("q_cover", F.coverage, np.uint8, 254, "quality")
     put("f_lith", F.lith, np.uint8, 1, "name")
+    for m, v in F.minerals.items():
+        put(f"f_min_{m}", v, np.uint16, 10000, "feature")
     for k, (dt, sc) in {
         "elev": (np.int16, 1), "relief": (np.uint16, 1), "slope": (np.uint8, 8), "t_mean": (np.int8, 1),
         "t_min": (np.int8, 1), "t_max": (np.int8, 1), "precip": (np.uint16, 1), "rh": (np.uint8, 2),
@@ -354,7 +401,9 @@ def main() -> None:
         "targets": [
             {"id": t["id"], "body": t["body"], "name": t["name"], "lat": t["lat"], "lon": t["lon"], "terrain": t["terrain"],
              "light": np.round(tnpz["light"][k] * 100).astype(int).tolist(), "light_month": tnpz["best"][k].astype(int).tolist(),
-             "rock": rock(t["id"])}
+             "rock": rock(t["id"]),
+             **({"minerals": {"families": list(TARGET_MINERALS[t["id"]][0]), "source": TARGET_MINERALS[t["id"]][1]}} if t["id"] in TARGET_MINERALS else {}),
+             **({"resources": tres[t["id"]]} if t["id"] in tres else {})}
             for k, t in enumerate(targets)
         ],
         "lithology": [{"code": c, "label": lab} for c, lab in LITHOLOGY],
@@ -369,7 +418,13 @@ def main() -> None:
             "surface": "NASA GIBS MODIS 2024 monthly NDVI, land surface temperature (day and night), snow cover; MODIS IGBP land cover 2023",
             "context": "Smithsonian GVP Holocene volcanoes; Earth Impact Database selection; Natural Earth names",
             "rocks": "GLiM Global Lithological Map, 0.5° dominant class (Hartmann & Moosdorf 2012)",
+            "minerals": "NASA EMIT L3 Aggregated Mineral Spectral Abundance 0.5° v002 (LP DAAC), dry bare land within ±52°",
+            "model": "Positive-unlabelled ensemble: tuned XGBoost + tuned LightGBM + logistic regression (Kaggle K5)"
+            + (", with EMIT minerals" if F.minerals and MINERALS_IN_MODEL else ""),
         },
+        "model_features": F.feat_names,
+        # confidence badge: spread of the single runs' ranks above these means "medium" / "not enough evidence"
+        "confidence": {"spread_medium": SPREAD_MEDIUM, "spread_low": SPREAD_LOW, "cover_medium": 0.85, "cover_low": 0.6},
     }
     (OUT / "grid.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"grid.bin {len(blob) / 1e6:.2f} MB · grid.json {(OUT / 'grid.json').stat().st_size / 1e6:.2f} MB")

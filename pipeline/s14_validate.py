@@ -30,6 +30,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "public" / "data"
 RNG = np.random.default_rng(2026)
 
+# Section 6 tests a Mars mineral match inside Rocks & craters. On the known Mars sites it ranked them a little worse
+# (5 better, 18 worse), so the site does not score minerals; it shows them as facts.
+USE_MINERALS = False
 TASKS = ["base", "landing", "traverse", "isru", "ice", "caves", "astrobio", "impact", "polar"]
 DIMS = ["topography", "geology", "temperature", "lighting", "regolith"]
 TASK_WEIGHTS = {  # src/lib/scoring.ts
@@ -71,6 +74,27 @@ class Grid:
         self.relief = np.where(self.a["f_relief"] == self.f["f_relief"]["nodata"], 1.0, np.maximum(rel, 1))
         self.model = {w: self.a[f"model_{w}"].astype(np.float32) / self.f[f"model_{w}"]["scale"] for w in ("moon", "mars")}
         self.lith = self.a["f_lith"].astype(np.int64) if "f_lith" in self.a else None
+        # EMIT minerals: percentile among the places EMIT saw (0 to 1), NaN where it saw nothing
+        self.mpct = {}
+        for fam in ("clay", "sulfate", "carbonate", "iron"):
+            key = f"f_min_{fam}"
+            if key in self.a:
+                v = self.a[key]
+                ok = v != self.f[key]["nodata"]
+                pct = np.full(self.n, np.nan, np.float32)
+                # equal shares (many places have exactly no gypsum) share their average rank
+                from scipy.stats import rankdata
+
+                pct[ok] = (rankdata(v[ok], method="average") - 1) / max(1, ok.sum() - 1)
+                self.mpct[fam] = pct
+        self.emit_seen = np.isfinite(self.mpct["clay"]) if self.mpct else np.zeros(self.n, bool)
+        # terrain AI (K3) ground-shape similarity rank per target, 0 to 1 (public/data/shape.bin)
+        self.shape = {}
+        sj = DATA / "shape.json"
+        if sj.exists():
+            smeta = json.loads(sj.read_text(encoding="utf-8"))
+            raw = np.frombuffer((DATA / "shape.bin").read_bytes(), np.uint8).reshape(len(smeta["targets"]), smeta["count"])
+            self.shape = {t: raw[i].astype(np.float32) / 254 for i, t in enumerate(smeta["targets"])}
 
     def cell_at(self, lat, lon, max_ring=4):
         rows, cols, res = self.meta["rows"], self.meta["cols"], self.meta["res"]
@@ -91,6 +115,19 @@ class Grid:
             if best >= 0:
                 return best
         return -1
+
+
+MIN_UNSEEN = 0.5  # mineral match where EMIT saw nothing: unknown, so neutral
+MIN_WEIGHT = {"astrobio": 0.4, "isru": 0.35}  # share of Rocks & craters given to minerals; other jobs 0.2
+
+
+def mineral_match(g: Grid, t):
+    """How strongly a place shows the target's water-made minerals (src/lib/grid.ts mineralMatch)."""
+    fams = t.get("minerals", {}).get("families")
+    if not fams or not g.mpct:
+        return None
+    m = np.mean([g.mpct[f] for f in fams], 0)
+    return np.where(np.isfinite(m), m, MIN_UNSEEN).astype(np.float32)
 
 
 def geology(g: Grid, world, task, rock, use_rock=False):
@@ -133,15 +170,23 @@ def temperature(g: Grid, world, task):
     return 0.45 * I["cold"] + 0.3 * I["swing"] + 0.25 * I["airdry"]
 
 
-def dims(g: Grid, t, task, use_rock=False):
+def dims(g: Grid, t, task, use_rock=False, use_min=USE_MINERALS, shape="formula"):
     th = np.array(t["terrain"]["hist"], np.float32)
     ov = np.minimum(g.H, th[None, :]).sum(1)
     rel = np.clip(1 - np.abs(np.log10(g.relief / max(t["terrain"]["relief"], 1))), 0, 1)
+    topo = 0.65 * ov + 0.35 * rel
+    if shape != "formula" and t["id"] in g.shape:
+        topo = g.shape[t["id"]] if shape == "learned" else 0.5 * topo + 0.5 * g.shape[t["id"]]
     aff = np.array(t.get("rock", {}).get("aff", [0.5] * 17), np.float32)
     rock = aff[np.clip(g.lith, 0, len(aff) - 1)] if g.lith is not None else np.full(g.n, 0.5, np.float32)
+    geo = geology(g, t["body"], task, rock, use_rock)
+    mm = mineral_match(g, t) if use_min else None
+    if mm is not None:
+        mw = MIN_WEIGHT.get(task, 0.2)
+        geo = (1 - mw) * geo + mw * mm
     return {
-        "topography": 0.65 * ov + 0.35 * rel,
-        "geology": geology(g, t["body"], task, rock, use_rock),
+        "topography": topo,
+        "geology": geo,
         "temperature": temperature(g, t["body"], task),
         "lighting": np.array(t["light"], np.float32)[g.row] / 100,
         "regolith": 0.6 * g.I["bare"] + 0.4 * g.I["dry"],
@@ -151,9 +196,9 @@ def dims(g: Grid, t, task, use_rock=False):
 MIX = 0.6  # shipped default share of the learned model (chosen on the known sites, see 2b)
 
 
-def score(g: Grid, t, task, mix=MIX, weights=None, use_rock=False, model=None, D=None):
+def score(g: Grid, t, task, mix=MIX, weights=None, use_rock=False, model=None, D=None, use_min=None, shape="formula"):
     w = weights or TASK_WEIGHTS[task]
-    D = D or dims(g, t, task, use_rock)
+    D = D or dims(g, t, task, use_rock, USE_MINERALS if use_min is None else use_min, shape)
     ws = sum(w.values()) or 1
     mission = sum(D[d] * w[d] for d in DIMS) / ws
     mdl = g.model[t["body"]] if model is None else model
@@ -226,7 +271,14 @@ def main():
     assert F.n == g.n, "rebuild the grid first (s06_build.py)"
     full_idx = {w: [F.cell_of[a[0]] for a in KNOWN_ANALOGS if w in a[4] and a[0] in F.cell_of] for w in ("moon", "mars")}
 
+    mw_cache = {}
+
     def model_without(world, lat, lon):
+        if (world, lat, lon) not in mw_cache:
+            mw_cache[(world, lat, lon)] = _model_without(world, lat, lon)
+        return mw_cache[(world, lat, lon)]
+
+    def _model_without(world, lat, lon):
         keep = [F.cell_of[a[0]] for a, (la, lo), ww in zip(KNOWN_ANALOGS, known_ll, known_world)
                 if world in ww and a[0] in F.cell_of and hav(lat, lon, la, lo) >= 300]
         if len(keep) == len(full_idx[world]):
@@ -306,6 +358,8 @@ def main():
     # Chosen on the known sites with leave-one-region-out models, then only reported on the independent sites.
     mixes = [round(x, 1) for x in np.arange(0, 1.01, 0.1)]
     loo = {m: [] for m in mixes}
+    SHAPES = ("formula", "learned", "both") if g.shape else ("formula",)
+    shape_known = {sv: [] for sv in SHAPES}
     for world in ("moon", "mars"):
         pos = [(a[0], F.cell_of[a[0]], a[2], a[3]) for a in KNOWN_ANALOGS if world in a[4] and a[0] in F.cell_of]
         for sid, k, la, lo in pos:
@@ -318,6 +372,9 @@ def main():
             for m in mixes:
                 b = (1 - m) * formula_w + m * mdl
                 loo[m].append(float(100 * (b[others] > b[k]).mean()))
+            for sv in SHAPES:
+                b = (1 - MIX) * ws(world, KNOWN_JOBS[sid].split(","), mix=0.0, shape=sv) + MIX * mdl
+                shape_known[sv].append(float(100 * (b[others] > b[k]).mean()))
     mix_curve = [{"mix": m, "known_median": round(float(np.median(loo[m])), 1), "known_top10": round(100 * float(np.mean(np.array(loo[m]) <= 10)), 1)} for m in mixes]
     best_mix = min(mix_curve, key=lambda r: (r["known_median"], -r["known_top10"]))["mix"]
     for r in mix_curve:
@@ -404,6 +461,56 @@ def main():
         abl[d] = {"independent_median": round(float(np.median(ind_v)), 1), "known_median": round(float(np.median(kn_v)), 1)}
         print(f"  {'with' if d == 'rocks' else 'without'} {d:12s}: independent median top {abl[d]['independent_median']}% / known {abl[d]['known_median']}%")
 
+    # ---------------------------------------------------------- 5b. ground shape from the terrain AI (K3), in the full score
+    # Chosen on the known sites (leave-one-region-out models, as in 2b), then reported on the independent sites.
+    shape_ind = {sv: [] for sv in SHAPES}
+    for s in sites:
+        mdl, _ = model_without(s["world"], s["lat"], s["lon"])
+        model = g.model[s["world"]] if mdl is None else mdl
+        for sv in SHAPES:
+            b = (1 - MIX) * ws(s["world"], s["jobs"], mix=0.0, shape=sv) + MIX * model
+            shape_ind[sv].append(top_pct(b, s["cell"]))
+    shape_test = {sv: {"known_median": round(float(np.median(shape_known[sv])), 2), "known_top10": round(100 * float(np.mean(np.array(shape_known[sv]) <= 10)), 1),
+                       "independent_median": round(float(np.median(shape_ind[sv])), 2), "independent_top10": round(100 * float(np.mean(np.array(shape_ind[sv]) <= 10)), 1)}
+                  for sv in SHAPES}
+    shape_test["best_on_known"] = min(SHAPES, key=lambda sv: (shape_test[sv]["known_median"], -shape_test[sv]["known_top10"]))
+    print("ground shape in the full score:", shape_test)
+
+    # ---------------------------------------------------------- 6. EMIT minerals in Rocks & craters (Mars targets with known minerals)
+    # Chosen on the known Mars sites (own jobs), then reported on the independent Mars sites.
+    mrows = []
+    for r in known_rows + [dict(s, known=False) for s in sites]:
+        if r["world"] != "mars":
+            continue
+        k = r["cell"]
+        jobs_ = r["jobs"]
+        mrows.append({"id": r["id"], "known": r.get("known", True), "emit": bool(g.emit_seen[k]),
+                      "without": round(top_pct(ws("mars", jobs_, mix=0.0, use_min=False), k), 1),
+                      "with": round(top_pct(ws("mars", jobs_, mix=0.0, use_min=True), k), 1)})
+
+    def msum(rows):
+        if not rows:
+            return {"n": 0}
+        d = np.array([r["without"] - r["with"] for r in rows])
+        return {"n": len(rows), "without": round(float(np.median([r["without"] for r in rows])), 1), "with": round(float(np.median([r["with"] for r in rows])), 1),
+                "better": int((d > 0).sum()), "worse": int((d < 0).sum())}
+
+    minerals = {"rows": mrows, "known": msum([r for r in mrows if r["known"]]), "independent": msum([r for r in mrows if not r["known"]]),
+                "known_emit": msum([r for r in mrows if r["known"] and r["emit"]]), "independent_emit": msum([r for r in mrows if not r["known"] and r["emit"]]),
+                "weights": {"default": 0.2, **MIN_WEIGHT}, "unseen": MIN_UNSEEN, "shipped": USE_MINERALS,
+                "targets": {t["id"]: t["minerals"] for t in g.meta["targets"] if "minerals" in t},
+                "emit_places": int(g.emit_seen.sum())}
+    mt = Path(__file__).resolve().parent / ".cache" / "minerals_test.json"
+    if mt.exists():
+        mdl = json.loads(mt.read_text(encoding="utf-8"))
+        minerals["model"] = {k: mdl[k] for k in ("hidden", "independent", "decision", "minutes")}
+    print("minerals (formula, Mars):", {k: minerals[k] for k in ("known", "independent", "known_emit", "independent_emit")})
+    k3p = Path(__file__).resolve().parent / ".cache" / "k3_test.json"
+    k3 = None
+    if k3p.exists():
+        k3 = json.loads(k3p.read_text(encoding="utf-8"))
+        k3.pop("rows", None)
+
     out = {
         "generated": time.strftime("%Y-%m-%d"),
         "cells": g.n,
@@ -413,10 +520,13 @@ def main():
         "mixing": mixing,
         "robustness": rob,
         "ablation": {"full": {"independent_median": indep["all"]["formula"]["median"], "known_median": known["all"]["formula"]["median"]}, **abl},
+        "minerals": minerals,
+        "terrain_ai": {**(k3 or {}), "full_score": shape_test} if k3 or len(SHAPES) > 1 else None,
+        "model": g.meta["sources"].get("model"),
         "notes": [
             "Percentages are 'top X% of all land': 1% means only 1 in 100 land areas scores higher.",
             "Independent sites were never used to build or tune the model; the model is retrained without known sites within 300 km of each one.",
-            "Formula = the mission factors only; blend = what the site shows by default (70% factors, 30% learned model).",
+            f"Formula = the mission factors only; blend = what the site shows by default ({round(100 * (1 - MIX))}% factors, {round(100 * MIX)}% learned model).",
             "Rocks factor partly uses volcano and crater catalogues, so volcanic and impact sites get some help by design.",
         ],
     }

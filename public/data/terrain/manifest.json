@@ -11,5 +11,14 @@
  "source": {
   "moon": "LRO LOLA LDEM 118 m (USGS Astrogeology), measured on Kaggle (K1)",
   "mars": "MGS MOLA DEM 463 m (USGS Astrogeology), measured on Kaggle (K1)"
+ },
+ "ai_twins": {
+  "res": 1.0,
+  "rows_per_band": 10,
+  "cols": 360,
+  "bands": 18,
+  "per_cell": 5,
+  "dtype": "uint32 grid cell index",
+  "source": "DINO self-supervised ViT-S/8 on Earth, Moon and Mars elevation patches, domain-adversarial (Kaggle K3, 2 \u00d7 T4)"
  }
 }

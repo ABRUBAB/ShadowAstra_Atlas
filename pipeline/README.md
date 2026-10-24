@@ -1,8 +1,8 @@
 # ShadowAstra Atlas data pipeline
 
-This folder rebuilds `public/data/grid.bin` and `public/data/grid.json`: every land area on Earth (0.5° cells, about 55 km), measured with open NASA data and compared with 18 Moon and Mars targets at the same physical scale. The website loads these two files and does all scoring in the browser.
+This folder rebuilds `public/data/`: every land area on Earth (0.5° cells, about 55 km), measured with open NASA data and compared with 18 Moon and Mars targets at the same physical scale, plus the test results the How it works page shows. The website loads these files and does all scoring in the browser.
 
-No logins or API keys are needed. Every download is cached in `pipeline/.cache/` (about 700 MB, ignored by git), so a rerun only fetches what is missing.
+Steps 1 to 6 need no logins. Step 17 needs a free NASA Earthdata token, the Kaggle steps need the team's token files (see `docs/HANDOFF.md`). Every download is cached in `pipeline/.cache/` (about 1 GB, ignored by git), so a rerun only fetches what is missing.
 
 ```bash
 pip install -r pipeline/requirements.txt
@@ -12,8 +12,15 @@ python s02_power.py     # NASA POWER climatology: air temperature, rain, humidit
 python s03_terrain.py   # slopes, height range, roughness for every land cell (AWS Terrain Tiles)  ~20 min
 python s04_context.py   # volcanoes (Smithsonian GVP), impact craters, Natural Earth names          ~2 min
 python s05_targets.py   # Moon/Mars targets from full-precision LOLA and MOLA + sunlight table     ~3 min
-python s06_build.py     # indicators, learned model + hold-out test, export to public/data         ~1 min
+python s17_emit.py      # NASA EMIT L3 minerals on our grid (needs the EMIT file, see the script)   ~10 s
+python s20_target_resources.py  # LRO Diviner (Moon south pole) + Mars Odyssey GRS for the targets ~5 min
+python s06_build.py     # indicators, learned ensemble + hold-out test, export to public/data      ~12 min
+python s19_k3_export.py # Kaggle K3 terrain AI: shape.bin, AI twin bands, its tests                ~10 s
+python s14_validate.py  # every test on the website's own files → validation.json                ~40 min
+python s16_model_zoo.py # adds the Kaggle K5 nine-model comparison to validation.json               ~1 s
 ```
+
+Optional: `s18_minerals_test.py` (run with `SA_MINERALS=1`, ~16 min) decides whether EMIT minerals join the learned model. They did not help, so `s06_build.py` leaves them out by default.
 
 ## What each step does
 
@@ -24,7 +31,11 @@ python s06_build.py     # indicators, learned model + hold-out test, export to p
 | `s03_terrain.py` | AWS Terrain Tiles (SRTM based) | slope histogram (8 bins), mean and 90th percentile slope, relief (2nd to 98th percentile), roughness |
 | `s04_context.py` | Smithsonian GVP, Earth Impact Database selection (`catalogue.py`), Natural Earth | distance to volcano, impact score, country, region, nearest town |
 | `s05_targets.py` | USGS Astrogeology 16-bit LRO LOLA (118 m) and MGS MOLA (463 m) GeoTIFFs, read with HTTP range requests | target terrain statistics, best-month sunlight match per Earth latitude |
-| `s06_build.py` | everything above + `catalogue.py` known sites | `grid.bin` (typed arrays) and `grid.json` (layout, names, targets, model test) |
+| `s17_emit.py` | NASA EMIT L3 Aggregated Mineral Spectral Abundance 0.5° v002 (LP DAAC) | `.cache/emit.npz`: 11 minerals and 4 families (clays, sulfates, carbonates, iron oxides); EMIT cells sit a quarter cell off ours, so each of our cells averages the four it overlaps |
+| `s20_target_resources.py` | LRO Diviner polar resource product (PDS, read by HTTP range within 10 km of each south-pole target); Mars Odyssey GRS H₂O 5° map | `.cache/target_resources.json`: ground temperatures and stable-ice shares (Moon), water in the topsoil (Mars) |
+| `s06_build.py` | everything above + `catalogue.py` known sites | `grid.bin` (typed arrays) and `grid.json` (layout, names, targets with minerals and resources, model test, confidence limits) |
+| `s19_k3_export.py` | Kaggle K3 outputs (`kaggle/_out/k3_ssl`) | `shape.bin` (terrain AI similarity per target), `terrain/{moon,mars}/tNN.bin` (5 AI twins per 1° cell), its tests |
+| `s14_validate.py` | the website's own data files | `validation.json`: independent sites, known sites, model share, jobs, robustness, ablations, terrain AI in the full score, EMIT mineral term |
 
 ## Same scale everywhere
 
@@ -33,10 +44,15 @@ Every footprint, on Earth, the Moon or Mars, is a 50 km square resampled to 42 �
 ## The learned model and its test
 
 - Positives: 38 known analog field sites in `catalogue.py` (NASA, ESA, CSA and university campaigns). Everything else is unlabelled background.
-- Model: LightGBM, positive-unlabelled bagging (4 bags of 6,000 background cells). Physical features only: no cities or farmland.
-- Test: for each known site, hide it and every other known site within 300 km, retrain, and record its rank among all 80,206 land cells. The same test is run for a simple hand-weighted rule.
+- Model: the Kaggle K5 winner, a rank-average of tuned XGBoost, tuned LightGBM and logistic regression, with positive-unlabelled bagging (4 bags of 6,000 background cells while testing, 8 for the shipped model). Physical features only: no cities or farmland.
+- Confidence: the share of real (not gap-filled) measurements, and how much the single runs (3 models × 8 bags) disagree about a place.
+- Test: for each known site, hide it and every other known site within 300 km, retrain, and record its rank among all 80,206 land cells. The same test is run for a simple hand-weighted rule. `s14_validate.py` adds 28 published sites never used for training.
 
-Results are written into `grid.json` (`evaluation`) and shown on the website (How it works, Find new sites).
+Results are written into `grid.json` (`evaluation`) and `validation.json`, and shown on the website (How it works, Find new sites).
+
+## Rule for new data
+
+New data only changes the score if it ranks the known sites better (the independent sites are reported, never used to choose). Otherwise it is shown as a fact. EMIT minerals as a model input and the terrain AI in the full score both went through this rule; see `validation.json` → `minerals` and `terrain_ai`.
 
 ## Swapping in the official 2026 datasets
 

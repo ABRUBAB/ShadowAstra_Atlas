@@ -2,4 +2,7 @@ numpy>=2.0
 scipy>=1.13
 pillow>=10
 lightgbm>=4.3
+xgboost>=2.0
+scikit-learn>=1.4
+h5py>=3.10
 matplotlib>=3.8

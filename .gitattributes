@@ -1,0 +1,8 @@
+# data files must never get line-ending conversion
+*.bin binary
+*.npy binary
+*.npz binary
+*.jpg binary
+*.png binary
+*.webp binary
+*.glb binary

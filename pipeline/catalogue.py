@@ -154,6 +154,16 @@ TARGET_ROCK = {
     "arcadia": "icy-plains", "deuteronilus": "icy-plains", "utopia": "icy-plains", "arsia": "volcanic",
 }
 
+# Water-made mineral families found at Mars targets from orbit or by rovers, in the four
+# families EMIT measures on Earth. Moon targets and the icy or volcanic Mars targets have none
+# of these, so they get no mineral match (shown as "Earth can't copy" / not scored).
+TARGET_MINERALS = {
+    "jezero": (("carbonate", "clay"), "CRISM: Mg-carbonates and Fe/Mg smectite clays in the delta and floor (Ehlmann et al. 2008; Horgan et al. 2020)"),
+    "gale": (("clay", "sulfate", "iron"), "CRISM and Curiosity CheMin: smectite clays, calcium sulfates, hematite (Milliken et al. 2010; Rampe et al. 2020)"),
+    "meridiani": (("iron", "sulfate"), "TES grey hematite and Opportunity's sulfate-rich sandstones (Christensen et al. 2000; Squyres et al. 2004)"),
+    "mawrth": (("clay",), "OMEGA and CRISM: Fe/Mg smectite and kaolinite layers (Poulet et al. 2005; Bishop et al. 2008)"),
+}
+
 
 # What each known site has mostly been used for, from the published campaign descriptions
 # (our short summary). Used only to test the scores job by job.
