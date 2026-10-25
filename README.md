@@ -216,7 +216,7 @@ Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atl
 
 React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP · Lenis · Motion · Python (NumPy, SciPy, LightGBM, XGBoost, scikit-learn) for the data pipeline · PyTorch (DINO ViT) on Kaggle
 
-**Performance:** the global dataset is 5.0 MB of typed arrays (2.3 MB with Brotli); scoring all 80,206 places takes 16 ms (p50) and 19 ms (p95) on an AMD Ryzen 5 5600H laptop, and a whole search with ranking and hints 26 ms; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch; slow or software graphics get a lighter mode automatically.
+**Performance:** the global dataset is 5.0 MB of typed arrays (2.3 MB with Brotli); scoring all 80,206 places takes 16 ms (p50) and 19 ms (p95) on an AMD Ryzen 5 5600H laptop, and a whole search with ranking and hints 27 ms; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch; slow or software graphics get a lighter mode automatically.
 
 ```
 pipeline/      Python: download, measure, model and test all of Earth (s01 to s24)

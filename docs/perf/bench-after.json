@@ -1,25 +1,25 @@
 {
  "label": "after",
- "date": "2026-10-25T00:59:46.335Z",
+ "date": "2026-10-25T02:11:30.567Z",
  "base": "http://localhost:4174",
  "chrome": "155.0.8059.85",
  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
  "loads": {
   "desktop:home": {
    "ttfb": {
-    "median": 5.9,
+    "median": 5.4,
     "min": 5.3,
-    "max": 6.3
+    "max": 6.1
    },
    "fcp": {
-    "median": 536,
-    "min": 436,
-    "max": 756
+    "median": 512,
+    "min": 448,
+    "max": 716
    },
    "lcp": {
-    "median": 1556,
-    "min": 1532,
-    "max": 3160
+    "median": 1692,
+    "min": 1520,
+    "max": 3020
    },
    "cls": {
     "median": 0,
@@ -27,9 +27,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 1331,
-    "min": 1190,
-    "max": 2971
+    "median": 1315,
+    "min": 1196,
+    "max": 2903
    },
    "js_kb": {
     "median": 492,
@@ -60,19 +60,19 @@
   },
   "desktop:find-results": {
    "ttfb": {
-    "median": 5.7,
-    "min": 5.5,
-    "max": 6.5
+    "median": 5.9,
+    "min": 5.6,
+    "max": 6.7
    },
    "fcp": {
-    "median": 476,
-    "min": 440,
-    "max": 524
+    "median": 488,
+    "min": 432,
+    "max": 532
    },
    "lcp": {
-    "median": 5440,
-    "min": 5368,
-    "max": 5624
+    "median": 5464,
+    "min": 5408,
+    "max": 6232
    },
    "cls": {
     "median": 0,
@@ -80,9 +80,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 1669,
-    "min": 1663,
-    "max": 2968
+    "median": 1572,
+    "min": 1508,
+    "max": 3079
    },
    "js_kb": {
     "median": 591,
@@ -105,37 +105,37 @@
     "max": 338
    },
    "grid_ready": {
-    "median": 1051.1,
-    "min": 991.4,
-    "max": 1084
+    "median": 1065.8,
+    "min": 1045,
+    "max": 1128.7
    },
    "samples": 5
   },
   "desktop:methods": {
    "ttfb": {
-    "median": 5.9,
-    "min": 5.3,
-    "max": 6.2
+    "median": 5.3,
+    "min": 4.8,
+    "max": 13.4
    },
    "fcp": {
-    "median": 500,
-    "min": 416,
-    "max": 504
+    "median": 516,
+    "min": 496,
+    "max": 532
    },
    "lcp": {
-    "median": 2396,
-    "min": 2340,
-    "max": 2572
+    "median": 2744,
+    "min": 2516,
+    "max": 2824
    },
    "cls": {
     "median": 0,
     "min": 0,
-    "max": 0.1
+    "max": 0
    },
    "tbt": {
-    "median": 1749,
-    "min": 1619,
-    "max": 2043
+    "median": 1327,
+    "min": 1144,
+    "max": 1720
    },
    "js_kb": {
     "median": 611,
@@ -158,27 +158,27 @@
     "max": 62
    },
    "grid_ready": {
-    "median": 2254.4,
-    "min": 2108.9,
-    "max": 2474.6
+    "median": 2286.5,
+    "min": 2144.9,
+    "max": 2791
    },
    "samples": 5
   },
   "desktop:maps": {
    "ttfb": {
     "median": 5.5,
-    "min": 5.2,
-    "max": 7.5
+    "min": 5.1,
+    "max": 7.4
    },
    "fcp": {
-    "median": 496,
-    "min": 408,
-    "max": 560
+    "median": 536,
+    "min": 464,
+    "max": 580
    },
    "lcp": {
-    "median": 1404,
-    "min": 1348,
-    "max": 2640
+    "median": 1488,
+    "min": 1416,
+    "max": 3204
    },
    "cls": {
     "median": 0,
@@ -186,9 +186,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 2066,
-    "min": 1674,
-    "max": 3111
+    "median": 2088,
+    "min": 1868,
+    "max": 2732
    },
    "js_kb": {
     "median": 600,
@@ -206,9 +206,9 @@
     "max": 0
    },
    "img_kb": {
-    "median": 1432,
+    "median": 1143,
     "min": 1143,
-    "max": 1432
+    "max": 1143
    },
    "grid_ready": {
     "median": null,
@@ -219,19 +219,19 @@
   },
   "desktop:compare": {
    "ttfb": {
-    "median": 5.5,
-    "min": 5.2,
-    "max": 5.9
+    "median": 6.6,
+    "min": 5.3,
+    "max": 7
    },
    "fcp": {
-    "median": 472,
-    "min": 436,
-    "max": 500
+    "median": 504,
+    "min": 412,
+    "max": 696
    },
    "lcp": {
-    "median": 3756,
-    "min": 3560,
-    "max": 4248
+    "median": 4004,
+    "min": 3916,
+    "max": 4228
    },
    "cls": {
     "median": 0,
@@ -239,9 +239,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 3408,
-    "min": 3392,
-    "max": 3630
+    "median": 3573,
+    "min": 3259,
+    "max": 3638
    },
    "js_kb": {
     "median": 558,
@@ -264,27 +264,27 @@
     "max": 62
    },
    "grid_ready": {
-    "median": 2354.1,
-    "min": 2289.3,
-    "max": 2381.7
+    "median": 2455.3,
+    "min": 2439.1,
+    "max": 2702
    },
    "samples": 5
   },
   "mobile:home": {
    "ttfb": {
-    "median": 5.3,
-    "min": 4.8,
-    "max": 5.9
+    "median": 5.9,
+    "min": 5.7,
+    "max": 17
    },
    "fcp": {
-    "median": 960,
-    "min": 952,
-    "max": 1020
+    "median": 996,
+    "min": 984,
+    "max": 1080
    },
    "lcp": {
-    "median": 5856,
-    "min": 5808,
-    "max": 6292
+    "median": 6872,
+    "min": 6668,
+    "max": 7012
    },
    "cls": {
     "median": 0,
@@ -292,9 +292,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 3225,
-    "min": 3109,
-    "max": 3588
+    "median": 4291,
+    "min": 4235,
+    "max": 4325
    },
    "js_kb": {
     "median": 492,
@@ -327,17 +327,17 @@
    "ttfb": {
     "median": 5.6,
     "min": 5.4,
-    "max": 6.8
+    "max": 6.1
    },
    "fcp": {
-    "median": 956,
-    "min": 952,
-    "max": 968
+    "median": 984,
+    "min": 980,
+    "max": 1000
    },
    "lcp": {
-    "median": 2996,
-    "min": 2960,
-    "max": 3012
+    "median": 3060,
+    "min": 3004,
+    "max": 3096
    },
    "cls": {
     "median": 0,
@@ -345,9 +345,9 @@
     "max": 0
    },
    "tbt": {
-    "median": 665,
-    "min": 571,
-    "max": 745
+    "median": 812,
+    "min": 722,
+    "max": 842
    },
    "js_kb": {
     "median": 344,
@@ -380,62 +380,62 @@
  "ops": {
   "score-all": {
    "n": 300,
-   "p50": 17.4,
-   "p95": 18.3,
-   "p99": 22.9,
-   "max": 36.1
+   "p50": 15.9,
+   "p95": 19,
+   "p99": 24.2,
+   "max": 44.2
   },
   "search": {
    "n": 150,
-   "p50": 25.6,
-   "p95": 28.7,
-   "p99": 30.6,
-   "max": 145.5
+   "p50": 26.8,
+   "p95": 30.2,
+   "p99": 32.6,
+   "max": 151
   },
   "rank": {
    "n": 300,
-   "p50": 3.8,
-   "p95": 4.3,
-   "p99": 5.4,
-   "max": 8.9
+   "p50": 4.7,
+   "p95": 5.3,
+   "p99": 6.5,
+   "max": 10.1
   },
   "twins-formula": {
    "n": 75,
-   "p50": 11.4,
-   "p95": 16.2,
-   "max": 19.5
+   "p50": 14,
+   "p95": 20.3,
+   "max": 23.5
   },
   "twins-ai": {
    "n": 75,
    "p50": 0.1,
    "p95": 0.2,
-   "max": 727.8
+   "max": 83.7
   },
   "mineral-pct-first": {
    "n": 1,
-   "p50": 24.7,
-   "p95": 24.7,
-   "max": 24.7
+   "p50": 24.8,
+   "p95": 24.8,
+   "max": 24.8
   },
   "grid-parse": {
    "n": 1,
-   "p50": 4.2,
-   "p95": 4.2,
-   "max": 4.2
+   "p50": 5.7,
+   "p95": 5.7,
+   "max": 5.7
   }
  },
  "interactions": {
   "needs-step": {
    "n": 84,
-   "inp_estimate": 464,
-   "p50": 368,
-   "max": 464
+   "inp_estimate": 512,
+   "p50": 328,
+   "max": 512
   },
   "twin-mode": {
    "n": 36,
-   "inp_estimate": 680,
-   "p50": 296,
-   "max": 680
+   "inp_estimate": 672,
+   "p50": 312,
+   "max": 672
   }
  },
  "memory": {
@@ -443,7 +443,7 @@
   "series": [
    14,
    64,
-   89,
+   92,
    90,
    90,
    91,

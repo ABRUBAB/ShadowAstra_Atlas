@@ -95,23 +95,23 @@ Method: page loads use a fresh browser context per sample (cold cache), 5 sample
 
 | Interaction | Software before | Software after | GPU before | GPU after |
 |---|---|---|---|---|
-| Find, step 3: change a need or a filter (INP estimate, ms) | 432 | 464 (+7%) | 72 | 56 (-22%) |
-| Maps: switch twin mode (INP estimate, ms) | 472 | 680 (+44%) | 96 | 64 (-33%) |
+| Find, step 3: change a need or a filter (INP estimate, ms) | 432 | 512 (+19%) | 72 | 56 (-22%) |
+| Maps: switch twin mode (INP estimate, ms) | 472 | 672 (+42%) | 96 | 64 (-33%) |
 
-Good INP is under 200 ms. With a GPU every click is now well inside it. On software graphics the median click improved on the twin modes (424 → 296 ms) and stayed level on the needs step (360 → 368 ms), but the slowest click got worse. That is not JavaScript: a breakdown of each click shows 3 to 27 ms of script and no long tasks, the rest is the software renderer producing the next frame, and the slowest ones fall in the first seconds, while the resolution guard is still stepping the canvas down (each step reallocates it). Rendering the globes only when something moves is the next step for that case (§9).
+Good INP is under 200 ms. With a GPU every click is now well inside it. On software graphics the median click improved on the twin modes (424 → 312 ms) and stayed level on the needs step (360 → 328 ms), but the slowest click got worse. That is not JavaScript: a breakdown of each click shows 3 to 27 ms of script and no long tasks, the rest is the software renderer producing the next frame, and the slowest ones fall in the first seconds, while the resolution guard is still stepping the canvas down (each step reallocates it). Rendering the globes only when something moves is the next step for that case (§9).
 
 ### Operations in the page (ms)
 
 | Operation | Before p50 / p95 / p99 | After p50 / p95 / p99 | p50 change |
 |---|---|---|---|
-| Score all 80,206 places | 16.4 / 19.2 / 25.1 | 17.4 / 18.3 / 22.9 | +6% |
-| Whole search (screen, score, rank, hints) | 64.3 / 68.6 / 82.3 | 25.6 / 28.7 / 30.6 | -60% |
-| Rank the top 30 places | 21.9 / 24.4 / 28.3 | 3.8 / 4.3 / 5.4 | -83% |
-| Earth twins of a Mars spot (formula) | 64.0 / 84.8 / n/a | 11.4 / 16.2 / n/a | -82% |
+| Score all 80,206 places | 16.4 / 19.2 / 25.1 | 15.9 / 19.0 / 24.2 | -3% |
+| Whole search (screen, score, rank, hints) | 64.3 / 68.6 / 82.3 | 26.8 / 30.2 / 32.6 | -58% |
+| Rank the top 30 places | 21.9 / 24.4 / 28.3 | 4.7 / 5.3 / 6.5 | -79% |
+| Earth twins of a Mars spot (formula) | 64.0 / 84.8 / n/a | 14.0 / 20.3 / n/a | -78% |
 | AI twins (after the band download) | 0.1 / 0.2 / n/a | 0.1 / 0.2 / n/a | +0% |
-| Mineral percentiles, first use | 24.0 / 24.0 / n/a | 24.7 / 24.7 / n/a | +3% |
+| Mineral percentiles, first use | 24.0 / 24.0 / n/a | 24.8 / 24.8 / n/a | +3% |
 
-The old claim "scored in under 20 ms" holds for the typical case (p50 17.4 ms, p95 18.3 ms) but not the slowest 1% (p99 22.9 ms); the README now gives the measured numbers. Ranking and search got faster with no change to any result (tests: identical distances, Python parity unchanged).
+The old claim "scored in under 20 ms" holds for the typical case (p50 15.9 ms, p95 19.0 ms) but not the slowest 1% (p99 24.2 ms); the README now gives the measured numbers. Ranking and search got faster with no change to any result (tests: identical distances, Python parity unchanged).
 
 ### Page loads (median of 5)
 
@@ -119,13 +119,13 @@ The old claim "scored in under 20 ms" holds for the typical case (p50 17.4 ms, p
 
 | Page | LCP before → after (ms) | TBT before → after (ms) | CLS before → after | JS kB before → after |
 |---|---|---|---|---|
-| desktop · home | 1,524 → 1,556 (+2%) | 2,253 → 1,331 (-41%) | 0 → 0 | 484 → 492 |
-| desktop · find-results | 6,348 → 5,440 (-14%) | 3,153 → 1,669 (-47%) | 0 → 0 | 585 → 591 |
-| desktop · methods | 3,168 → 2,396 (-24%) | 2,217 → 1,749 (-21%) | 0.1 → 0 | 604 → 611 |
-| desktop · maps | 2,644 → 1,404 (-47%) | 1,943 → 2,066 (+6%) | 0 → 0 | 595 → 600 |
-| desktop · compare | 3,984 → 3,756 (-6%) | 4,600 → 3,408 (-26%) | 0 → 0 | 555 → 558 |
-| phone · home | 7,100 → 5,856 (-18%) | 5,300 → 3,225 (-39%) | 0 → 0 | 484 → 492 |
-| phone · find-results | 3,168 → 2,996 (-5%) | 901 → 665 (-26%) | 0 → 0 | 339 → 344 |
+| desktop · home | 1,524 → 1,692 (+11%) | 2,253 → 1,315 (-42%) | 0 → 0 | 484 → 492 |
+| desktop · find-results | 6,348 → 5,464 (-14%) | 3,153 → 1,572 (-50%) | 0 → 0 | 585 → 591 |
+| desktop · methods | 3,168 → 2,744 (-13%) | 2,217 → 1,327 (-40%) | 0.1 → 0 | 604 → 611 |
+| desktop · maps | 2,644 → 1,488 (-44%) | 1,943 → 2,088 (+7%) | 0 → 0 | 595 → 600 |
+| desktop · compare | 3,984 → 4,004 (+1%) | 4,600 → 3,573 (-22%) | 0 → 0 | 555 → 558 |
+| phone · home | 7,100 → 6,872 (-3%) | 5,300 → 4,291 (-19%) | 0 → 0 | 484 → 492 |
+| phone · find-results | 3,168 → 3,060 (-3%) | 901 → 812 (-10%) | 0 → 0 | 339 → 344 |
 
 **GPU**
 
@@ -146,7 +146,7 @@ Good LCP is under 2.5 s and CLS under 0.1. The Find results LCP is a satellite t
 | Build | Used JS heap after GC at Home, MB: start, then after each loop of 5 pages | Growth over the last 4 loops |
 |---|---|---|
 | before | 14 · 68 · 95 · 97 · 99 · 104 · 108 | 13 MB |
-| after | 14 · 64 · 89 · 90 · 90 · 91 · 91 | 2 MB |
+| after | 14 · 64 · 92 · 90 · 90 · 91 · 91 | -1 MB |
 | before-gpu | 14 · 67 · 93 · 98 · 103 · 108 · 112 | 19 MB |
 | after-gpu | 14 · 65 · 95 · 91 · 91 · 91 · 92 | -3 MB |
 
@@ -222,7 +222,7 @@ During this pass the tests and benchmark scripts also caught real problems befor
 
 ## 9. Remaining risks and next steps
 
-- Slow and software GPUs: clicks on the busiest 3D pages still take 200 to 450 ms with software WebGL (about 50 to 100 ms on this PC's integrated Radeon). Next: render 3D only when something changes (`frameloop="demand"` with damping driven manually) and pause globes that are off screen.
+- Slow and software GPUs: with software WebGL a typical click on the busiest 3D pages takes about 300 ms and the slowest about 500 to 700 ms (on this PC's integrated Radeon: 56 to 64 ms at worst). The cost is frame production, not script. Next: render 3D only when something changes (`frameloop="demand"` with damping driven manually) and pause globes that are off screen.
 - Thumbnail rendering still runs on the main thread (about half its former cost after the numeric tile keys). Next: move it to a Web Worker with OffscreenCanvas.
 - First load on slow mobile networks: the 2.3 MB grid. Next: split `grid.bin` so Find downloads only the fields it scores first.
 - No manual screen reader pass yet; axe finds about a third of real accessibility problems.
