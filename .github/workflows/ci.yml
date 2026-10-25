@@ -96,6 +96,6 @@ jobs:
       - name: Known vulnerabilities in tooling (report only)
         run: npm audit || true
       - name: Secret scan of the full history
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
