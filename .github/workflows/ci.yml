@@ -70,7 +70,7 @@ jobs:
           cache: npm
       - name: Rebuild the parity fixture from the Python pipeline
         run: |
-          pip install "numpy>=2.0"
+          pip install "numpy>=2.0" "scipy>=1.13"
           cd pipeline && python s22_parity_fixture.py
       - name: Fixture unchanged? (informational, float rounding may differ by platform)
         run: git diff --stat -- tests/fixtures/parity.json || true

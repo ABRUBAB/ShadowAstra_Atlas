@@ -74,7 +74,7 @@ Status key: **Done** (implemented and verified) · **Improve** (implemented, nee
 | 39 | A11y | Manual screen reader and keyboard-only pass | Missing | Not done in this session | Unknown issues | P2 | Next step | Needs a person with NVDA or VoiceOver |
 | 40 | Testing | Unit, contract, parity, regression | Done | 67 tests | Silent regressions | P0 | `tests/unit/` | `npm test` |
 | 41 | Testing | End-to-end and accessibility | Done | 43 tests on the production build | Same | P0 | `tests/e2e/` | `npx playwright test` |
-| 42 | Testing | CI gates | Done | None before | Broken deploys | P0 | `.github/workflows/ci.yml`: types, unit, build, e2e, Python parity, npm audit, gitleaks | Workflow YAML parses; first run happens on push |
+| 42 | Testing | CI gates | Done | None before | Broken deploys | P0 | `.github/workflows/ci.yml`: types, unit, build, e2e, Python parity, npm audit, gitleaks | First run on GitHub (commit 1e8e4b8): types, unit, build, all browser tests, audit and gitleaks passed; the Python job failed because CI did not install SciPy, fixed in the next commit (the fixture rebuilt from Python is byte-identical) |
 | 43 | Observability | Deploy smoke test and uptime | Done | None before | Silent outages | P1 | `scripts/smoke.mjs` + `smoke.yml` (after each production deploy, every 6 hours; failures email the owner) | 23 of 23 checks pass on the live site |
 | 44 | Observability | Field performance data (real users) | N/A | No analytics by choice (privacy, no cookie banner) | Lab numbers only | P3 | `window.__atlasPerf` marks are there if needed | |
 | 45 | Observability | SLOs | N/A | A static hackathon site on a CDN; Vercel's own SLA applies | | | Uptime check instead of formal SLOs | |
@@ -215,7 +215,7 @@ Monitoring: `smoke.yml` runs `scripts/smoke.mjs` after each production deploy an
 | Smoke test of the live site before this push (`scripts/smoke.mjs`) | 23 passed, 0 failed, 0 provider warnings |
 | Workflow files (`ci.yml`, `smoke.yml`, `dependabot.yml`) parse | pass (PyYAML) |
 | Pinpoint test on 66 field sites (`s23_pinpoint.py`) | ran: median rank 0.419, sign test p = 0.134, not better than chance |
-| GitHub Actions CI | not run yet: starts with this push |
+| GitHub Actions CI on 1e8e4b8 and 216182e | web job (types, 67 unit, build, 43 browser tests on Linux) and security job passed; Python parity job failed: SciPy missing from the CI install. Fixed; locally the rebuilt fixture is byte-identical and 33 of 33 parity tests pass |
 | Manual screen reader / keyboard-only pass | not run |
 
 During this pass the tests and benchmark scripts also caught real problems before they shipped: a link marked only by colour (WCAG 1.4.1), a media-query race that ignored the system reduce-motion setting, and clicks swallowed after scrolling. Each now has a test.
@@ -226,5 +226,5 @@ During this pass the tests and benchmark scripts also caught real problems befor
 - Thumbnail rendering still runs on the main thread (about half its former cost after the numeric tile keys). Next: move it to a Web Worker with OffscreenCanvas.
 - First load on slow mobile networks: the 2.3 MB grid. Next: split `grid.bin` so Find downloads only the fields it scores first.
 - No manual screen reader pass yet; axe finds about a third of real accessibility problems.
-- CI has not run yet on GitHub (it starts with this push); the e2e job is the slowest and may need a longer timeout on shared runners.
+- CI: the first GitHub runs showed the browser suite also passes on Linux runners; the one failure (SciPy not installed for the Python job) is fixed. Dependabot's update pull requests failed on the same step and pass once rebased onto main.
 - Science: the expert review, SWIM ice, finer rock types and the official challenge datasets (28 Oct) are open; each is a `pipeline/` step under the rule for new data.
