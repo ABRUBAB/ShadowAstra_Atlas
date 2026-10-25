@@ -5,6 +5,7 @@
 import { TARGET_BY_ID, type TaskId, type World } from "../data/sites";
 import { TASK_WEIGHTS, type Weights } from "./scoring";
 import { sunRegime, sunSimilarity } from "./sun";
+import { timed } from "./perf";
 import { MODEL_MIX, haversineKm, rankPlaces, scoreAll, shapeOptions, type Candidate, type Grid, type GridTarget, type ShapeSource } from "./grid";
 
 /** Default ground-shape judge, chosen on the known sites in the full score (pipeline/s14_validate.py, section 5b). */
@@ -162,11 +163,29 @@ let knownCache: { grid: Grid; km: Float32Array } | null = null;
 export function knownKm(grid: Grid): Float32Array {
   if (knownCache?.grid === grid) return knownCache.km;
   const km = new Float32Array(grid.n).fill(Infinity);
-  for (const s of grid.meta.known)
-    for (let k = 0; k < grid.n; k++) {
-      const d = haversineKm(grid.lat(k), grid.lon(k), s.lat, s.lon);
-      if (d < km[k]) km[k] = d;
+  // Exact shortcut: a great-circle distance is never shorter than the north-south gap alone
+  // (6371 km x latitude difference in radians). With the sites sorted by latitude, each place
+  // checks them outward from its own latitude and stops once the gap alone beats the nearest site
+  // found (1 m margin for rounding). Same numbers as measuring every pair (tested), far fewer calls.
+  const R = (6371 * Math.PI) / 180;
+  const sites = [...grid.meta.known].sort((a, b) => a.lat - b.lat);
+  for (let k = 0; k < grid.n; k++) {
+    const lat = grid.lat(k);
+    const lon = grid.lon(k);
+    let hi = 0;
+    while (hi < sites.length && sites[hi].lat < lat) hi++;
+    let lo = hi - 1;
+    let best = Infinity;
+    while (lo >= 0 || hi < sites.length) {
+      const gapLo = lo >= 0 ? lat - sites[lo].lat : Infinity;
+      const gapHi = hi < sites.length ? sites[hi].lat - lat : Infinity;
+      const s = gapLo <= gapHi ? sites[lo--] : sites[hi++];
+      if (Math.min(gapLo, gapHi) * R - 0.001 >= best) break;
+      const d = haversineKm(lat, lon, s.lat, s.lon);
+      if (d < best) best = Math.fround(d); // stored as 32-bit, as the array holds it
     }
+    km[k] = best;
+  }
   knownCache = { grid, km };
   return km;
 }
@@ -228,6 +247,10 @@ function masked(scores: Float32Array, pass: Uint8Array) {
 }
 
 export function runSearch(grid: Grid, m: Mission, distKm: Float32Array): SearchResult {
+  return timed("search", () => searchPlanet(grid, m, distKm));
+}
+
+function searchPlanet(grid: Grid, m: Mission, distKm: Float32Array): SearchResult {
   const base = grid.targets[m.target];
   const target = targetForMonth(grid, base, m.month);
   const scores = scoreAll(grid, { target, task: m.task, weights: m.weights, modelMix: m.modelMix, ...shapeOptions(m.shape, m.target) });

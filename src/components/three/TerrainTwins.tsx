@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Body } from "../../data/sites";
 import type { TerrainGrid } from "../../lib/terrain";
-import { Orbit } from "./Controls";
+import { AdaptiveDpr, Orbit, ReleaseGPU } from "./Controls";
 
 export type Overlay = "imagery" | "light" | "relief";
 
@@ -228,6 +228,8 @@ export default function TerrainTwins(props: Props) {
         <meshStandardMaterial color="#0b0c0f" roughness={1} />
       </mesh>
       <Orbit min={7} max={36} maxPolar={1.45} />
+      <ReleaseGPU />
+      <AdaptiveDpr />
     </Canvas>
     </Scene>
   );

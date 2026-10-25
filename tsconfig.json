@@ -17,7 +17,9 @@
     "allowImportingTsExtensions": false,
     "types": [
       "vite/client"
-    ]
+    ],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": [
     "src"

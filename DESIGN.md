@@ -9,7 +9,7 @@ colors:
   line: "#212226"        # hairlines
   platinum: "#EDEAE4"    # bone-white text
   chrome: "#A8A59E"      # secondary text
-  dim: "#6C6A65"         # tertiary text
+  dim: "#807E78"         # tertiary text, 4.9:1 on void and 4.65:1 on panel (WCAG AA)
   flare: "#F2C879"       # the ONE accent: low-angle sunlight — light/shadow + key moments
   worlds:
     earth: "#8FB4EA"

@@ -6,7 +6,8 @@ import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Copy, FileText, LocateF
 import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, climateReaction, reactionFor, type Reaction } from "../components/ui/Astronaut";
 import { Chip, ConfidenceChip, Counter, EASE, GlyphTile, KindBadge, Meter, Ring, Seg, Tip, toast } from "../components/ui/kit";
-import { Pick, StepRail, StepTitle, TargetImage, TASK_ICON, TASK_LINE, type StepId } from "../components/find/pieces";
+import { Pick, StepRail, StepTitle, TargetImage, TASK_ICON, TASK_LINE } from "../components/find/pieces";
+import { MIX_LEVELS, readMission, writeMission, type StepId } from "../lib/missionUrl";
 import type { GlobePin } from "../components/three/ScoreGlobe";
 import type { GlobeMarker } from "../components/three/Planet";
 import { TARGETS, TARGET_BY_ID, TASKS, type TaskId, type World } from "../data/sites";
@@ -14,10 +15,9 @@ import { TASK_WEIGHTS } from "../lib/scoring";
 import { formatCoord } from "../lib/geo";
 import { sunRegime } from "../lib/sun";
 import { greatCircleKm, tripCo2Tonnes } from "../lib/scoring";
-import { MODEL_MIX, MONTHS, RAMP_CSS, displayRange, paintScores, scoreCell, searchGrid, shapeOptions, useGrid, useShape, type Candidate, type Grid, type SearchHit, type ShapeSource } from "../lib/grid";
+import { MONTHS, RAMP_CSS, displayRange, paintScores, scoreCell, searchGrid, shapeOptions, useGrid, useShape, type Candidate, type Grid, type SearchHit, type ShapeSource } from "../lib/grid";
 import {
   ALTITUDES,
-  DHAKA,
   DISTANCES,
   FACTORS,
   FIELD_TESTS,
@@ -26,8 +26,6 @@ import {
   PRESETS,
   RULE_TEXT,
   TOWN_LIMITS,
-  DEFAULT_SHAPE,
-  defaultMission,
   factorLevel,
   homeKm,
   knownKm,
@@ -41,57 +39,13 @@ import { useEarthThumb } from "../lib/thumbs";
 import { placeId, useSaved } from "../lib/saved";
 import { logBadge } from "../lib/fieldlog";
 import { MineralCard } from "../components/find/MineralCard";
+import { PinpointCard } from "../components/find/PinpointCard";
+import { usePinpoint } from "../lib/pinpoint";
+import { useMotionReduced } from "../lib/motionPref";
 
 const ScoreGlobe = lazy(() => import("../components/three/ScoreGlobe"));
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
 const BodyMap = lazy(() => import("../components/map/BodyMap").then((m) => ({ default: m.BodyMap })));
-
-/* =============================================================== URL state */
-
-/** How much the learned model counts: a few clear levels instead of a slider. */
-const MIX_LEVELS = [
-  { v: 0.3, label: "A little" },
-  { v: MODEL_MIX, label: "Balanced" },
-  { v: 0.9, label: "A lot" },
-];
-
-function readMission(p: URLSearchParams): { m: Mission; step: StepId; at: [number, number] | null } {
-  const target = TARGET_BY_ID[p.get("target") ?? ""] ? p.get("target")! : "jezero";
-  const task = (TASKS.some((t) => t.id === p.get("task")) ? p.get("task") : TARGET_BY_ID[target].tasks[0]) as TaskId;
-  const m = defaultMission(target, task);
-  const num = (k: string) => (p.get(k) !== null && p.get(k) !== "" && Number.isFinite(+p.get(k)!) ? +p.get(k)! : null);
-  m.maxKm = num("km");
-  m.townKm = num("town");
-  m.maxElev = num("alt");
-  m.month = num("month");
-  m.skipAntarctica = p.get("ant") === "0";
-  m.onlyNew = p.get("new") !== "0";
-  const mix = num("mix");
-  if (mix !== null && MIX_LEVELS.some((x) => x.v === mix)) m.modelMix = mix;
-  const sh = p.get("shape");
-  if (sh === "formula" || sh === "ai" || sh === "both") m.shape = sh;
-  const hl = num("hlat");
-  const ho = num("hlon");
-  if (hl !== null && ho !== null) m.home = { name: p.get("home") ?? "Home", lat: hl, lon: ho };
-  const at = p.get("at")?.split(",").map(Number);
-  const step = (["start", "destination", "job", "needs", "results"].includes(p.get("step") ?? "") ? p.get("step") : p.get("target") ? "results" : "start") as StepId;
-  return { m, step, at: at && at.length === 2 && at.every(Number.isFinite) ? [at[0], at[1]] : null };
-}
-
-function writeMission(m: Mission, step: StepId, at: [number, number] | null) {
-  const p: Record<string, string> = { step, target: m.target, task: m.task };
-  if (m.maxKm !== null) p.km = String(m.maxKm);
-  if (m.townKm !== null) p.town = String(m.townKm);
-  if (m.maxElev !== null) p.alt = String(m.maxElev);
-  if (m.month !== null) p.month = String(m.month);
-  if (m.skipAntarctica) p.ant = "0";
-  if (!m.onlyNew) p.new = "0";
-  if (m.shape !== DEFAULT_SHAPE) p.shape = m.shape;
-  if (m.modelMix !== MODEL_MIX) p.mix = String(m.modelMix);
-  if (m.home.name !== DHAKA.name) Object.assign(p, { home: m.home.name, hlat: m.home.lat.toFixed(2), hlon: m.home.lon.toFixed(2) });
-  if (at) p.at = `${at[0].toFixed(2)},${at[1].toFixed(2)}`;
-  return p;
-}
 
 /* ===================================================================== page */
 
@@ -113,14 +67,19 @@ export default function Find() {
   const target = TARGET_BY_ID[m.target];
   const update = (patch: Partial<Mission>) => setM((x) => ({ ...x, ...patch }));
 
-  // URL stays shareable
+  // URL stays shareable. Written a moment after the last change, so a click paints first and
+  // fast clicking does not re-render the whole router once per click.
   useEffect(() => {
     const at = grid && sel !== null ? ([grid.lat(sel), grid.lon(sel)] as [number, number]) : null;
-    setParams(writeMission(m, step, at), { replace: true, preventScrollReset: true });
+    const t = setTimeout(() => setParams(writeMission(m, step, at), { replace: true, preventScrollReset: true }), 250);
+    return () => clearTimeout(t);
   }, [m, step, sel, grid, setParams]);
 
   const dist = useMemo(() => (grid ? homeKm(grid, m.home) : null), [grid, m.home]);
-  const screening = useMemo(() => (grid && dist ? screen(grid, m, dist) : null), [grid, dist, m]);
+  const pin = usePinpoint(grid && sel !== null && step === "results" ? grid.lat(sel) : null, grid && sel !== null ? grid.lon(sel) : null, grid ? grid.targets[m.target].terrain.hist : null);
+  // only the hard filters change which places are possible; weights do not
+  const screenKey = `${m.maxKm}|${m.townKm}|${m.maxElev}|${m.skipAntarctica}|${m.onlyNew}`;
+  const screening = useMemo(() => (grid && dist ? screen(grid, m, dist) : null), [grid, dist, screenKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const shapeData = useShape(m.shape !== "formula");
   const shapeKey = m.shape !== "formula" && shapeData ? "ai" : "formula";
   const result = useMemo<SearchResult | null>(() => (grid && dist && step === "results" ? runSearch(grid, m, dist) : null), [grid, dist, m, step, shapeKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -155,13 +114,11 @@ export default function Find() {
       const { rows, cols } = grid.meta;
       heat.width = cols;
       heat.height = rows;
-      const ctx = heat.getContext("2d")!;
+      const ctx = heat.getContext("2d", { willReadFrequently: true })!; // same options as paintScores
       const img = ctx.createImageData(cols, rows);
-      for (let k = 0; k < grid.n; k++) {
-        const p = (grid.row[k] * cols + grid.col[k]) * 4;
-        const ok = screening.pass[k];
-        img.data.set(ok ? [143, 180, 234, 150] : [0, 0, 0, 0], p);
-      }
+      const px = new Uint32Array(img.data.buffer);
+      const blue = new Uint32Array(new Uint8Array([143, 180, 234, 150]).buffer)[0]; // byte order safe
+      for (let k = 0; k < grid.n; k++) if (screening.pass[k]) px[grid.row[k] * cols + grid.col[k]] = blue;
       ctx.putImageData(img, 0, 0);
     }
     setHeatVersion((v) => v + 1);
@@ -270,6 +227,7 @@ export default function Find() {
                 body="earth"
                 layerId={Math.abs(grid.lat(sel)) > 60 ? "earth-bluemarble" : "earth-s2"}
                 markers={[{ id: "pick", lat: grid.lat(sel), lon: grid.lon(sel), color: "#f2c879", label: grid.name(sel).title }]}
+                boxes={pin && pin !== "failed" ? [{ lat: pin.best.lat, lon: pin.best.lon, km: 9.5, color: "#f2c879", label: `Best 10 km spot · slopes ${Math.round(pin.best.score * 100)}% alike` }] : []}
                 activeId="pick"
                 zoomPosition="topright"
                 initial={{ lat: grid.lat(sel), lon: grid.lon(sel), zoom: 10.4 }}
@@ -402,6 +360,7 @@ export default function Find() {
 /* ================================================================ start */
 
 function StartScreen({ onPreset, onBuild }: { onPreset: (p: (typeof PRESETS)[number]) => void; onBuild: () => void }) {
+  const still = useMotionReduced(); // Motion's own reduced mode leaves background loops running
   return (
     <section data-theme="dark" className="relative overflow-hidden bg-void">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(143,180,234,0.10),transparent_70%),radial-gradient(40%_40%_at_100%_100%,rgba(224,138,95,0.10),transparent_70%)]" />
@@ -409,14 +368,14 @@ function StartScreen({ onPreset, onBuild }: { onPreset: (p: (typeof PRESETS)[num
         aria-hidden
         className="pointer-events-none absolute -top-24 -left-24 size-[340px] rounded-full opacity-70"
         style={{ backgroundImage: "url(/textures/moon_lroc_1k.webp)", backgroundSize: "200% 100%", boxShadow: "inset -90px -20px 110px rgba(7,8,10,0.95)" }}
-        animate={{ backgroundPositionX: ["0%", "-200%"] }}
+        animate={{ backgroundPositionX: still ? "0%" : ["0%", "-200%"] }}
         transition={{ duration: 160, repeat: Infinity, ease: "linear" }}
       />
       <motion.div
         aria-hidden
         className="pointer-events-none absolute -right-28 bottom-10 size-[300px] rounded-full opacity-70 max-md:hidden"
         style={{ backgroundImage: "url(/textures/mars_viking_1k.webp)", backgroundSize: "200% 100%", boxShadow: "inset 80px -20px 100px rgba(7,8,10,0.95)" }}
-        animate={{ backgroundPositionX: ["0%", "200%"] }}
+        animate={{ backgroundPositionX: still ? "0%" : ["0%", "200%"] }}
         transition={{ duration: 140, repeat: Infinity, ease: "linear" }}
       />
       <div className="relative mx-auto max-w-[1180px] px-4 pt-20 pb-24 sm:px-6 md:pt-28">
@@ -914,7 +873,7 @@ function ResultCard({ grid, c, rank, m, onOpen, picked, onPick, full }: { grid: 
         disabled={full && !picked}
         aria-pressed={picked}
         title={picked ? "Remove from the comparison" : full ? "Up to 4 places" : "Add to the comparison"}
-        className={clsx("absolute right-2.5 bottom-2.5 z-10 rounded-full border px-2 py-0.5 text-[10.5px] transition-colors disabled:opacity-30", picked ? "border-flare bg-flare text-void" : "border-line-2 bg-void/60 text-chrome hover:border-flare/60 hover:text-platinum")}
+        className={clsx("absolute right-2.5 bottom-2.5 z-10 min-h-6 rounded-full border px-2.5 py-1 text-[10.5px] transition-colors disabled:opacity-30", picked ? "border-flare bg-flare text-void" : "border-line-2 bg-void/60 text-chrome hover:border-flare/60 hover:text-platinum")}
       >
         {picked ? "Comparing" : "+ Compare"}
       </button>
@@ -1239,6 +1198,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         ["Type", T.kind],
         ["Main rocks", t.rock?.label ?? "n/a"],
         ["Rock match", rockWord],
+        ...(res?.feo_wt_pct !== undefined ? ([["Iron, titanium oxide", `${res.feo_wt_pct.toFixed(0)}%, ${res.tio2_wt_pct!.toFixed(res.tio2_wt_pct! < 1 ? 1 : 0)}% by weight`]] as [string, string][]) : []),
       ],
     },
     {
@@ -1253,6 +1213,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
           ? ([
               ["Average ground", `${Math.round(res.temp_avg_c)} °C`],
               ["Warmest (typical)", `${Math.round(res.temp_max_c!)} °C`],
+              ...(res.temp_min_c !== undefined ? ([["Coldest night", `${Math.round(res.temp_min_c)} °C`]] as [string, string][]) : []),
             ] as [string, string][])
           : []),
         ["Highest Sun", `${Math.round(sunT.maxElev)}°`],
@@ -1336,6 +1297,8 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
           <Copy size={13} /> Link
         </button>
       </div>
+
+      <PinpointCard lat={lat} lon={lon} targetHist={t.terrain.hist} targetId={m.target} targetName={T.name} task={m.task} />
 
       <h3 className="mt-7 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">The four challenge factors, side by side</h3>
       <div className="mt-3 space-y-3">

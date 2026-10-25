@@ -3,6 +3,7 @@ import L from "leaflet";
 import { zoomHint, zoomKey } from "../../lib/wheel";
 import type { Body } from "../../data/sites";
 import { LAYERS, type MapLayer } from "../../data/layers";
+import { localToLatLon } from "../../lib/terrain";
 import {
   equirectMetresPerPixel,
   mercatorMetresPerPixel,
@@ -25,6 +26,15 @@ export interface MapMarker {
   dashed?: boolean;
 }
 
+/** A square on the ground (for example the best 10 km spot of a place), km on a side. */
+export interface MapBox {
+  lat: number;
+  lon: number;
+  km: number;
+  color: string;
+  label: string;
+}
+
 export interface MapView {
   lat: number;
   lon: number;
@@ -42,6 +52,7 @@ interface Props {
   layerId: string;
   overlayIds?: string[];
   markers: MapMarker[];
+  boxes?: MapBox[];
   activeId?: string | null;
   onSelect?: (id: string) => void;
   onViewChange?: (v: MapView) => void;
@@ -54,6 +65,7 @@ interface Props {
 }
 
 const LAYER_BY_ID = Object.fromEntries(LAYERS.map((l) => [l.id, l])) as Record<string, MapLayer>;
+const NO_BOXES: MapBox[] = [];
 
 function toLatLng(projection: MapLayer["projection"], lat: number, lon: number): L.LatLng | null {
   if (projection === "polar-south") {
@@ -82,7 +94,7 @@ function pinIcon(m: MapMarker, active: boolean) {
 }
 
 export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
-  { body, layerId, overlayIds = [], markers, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl", zoomPosition = "bottomright" },
+  { body, layerId, overlayIds = [], markers, boxes = NO_BOXES, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl", zoomPosition = "bottomright" },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -91,6 +103,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
   const detailRef = useRef<L.Layer | null>(null);
   const overlayRef = useRef<L.Layer[]>([]);
   const markerLayer = useRef<L.LayerGroup | null>(null);
+  const boxLayer = useRef<L.LayerGroup | null>(null);
   const silent = useRef(false);
   const cb = useRef({ onSelect, onViewChange });
   cb.current = { onSelect, onViewChange };
@@ -124,6 +137,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
     });
     L.control.zoom({ position: zoomPosition }).addTo(map);
     map.attributionControl.setPrefix(false);
+    boxLayer.current = L.layerGroup().addTo(map);
     markerLayer.current = L.layerGroup().addTo(map);
 
     if (projection === "polar-south") {
@@ -246,6 +260,23 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
         .addTo(group);
     }
   }, [markers, activeId, projection]);
+
+  // Squares on the ground (corners from the same local projection as the terrain grids)
+  useEffect(() => {
+    const group = boxLayer.current;
+    if (!group) return;
+    group.clearLayers();
+    for (const b of boxes) {
+      const h = b.km / 2;
+      const corners = ([[-h, -h], [h, -h], [h, h], [-h, h]] as const).map(([x, y]) => localToLatLon(body, b.lat, b.lon, x, y)).map(([la, lo]) => toLatLng(projection, la, lo));
+      if (corners.some((c) => !c)) continue;
+      // a dark halo under a bright dashed line, so the square reads on snow, sand and forest alike
+      L.polygon(corners as L.LatLng[], { color: "#07080a", opacity: 0.6, weight: 6, fill: false, interactive: false }).addTo(group);
+      L.polygon(corners as L.LatLng[], { color: b.color, weight: 2.5, dashArray: "7 5", fillColor: b.color, fillOpacity: 0.12, interactive: true })
+        .bindTooltip(b.label, { className: "sa-tip", sticky: true })
+        .addTo(group);
+    }
+  }, [boxes, body, projection]);
 
   useImperativeHandle(
     ref,

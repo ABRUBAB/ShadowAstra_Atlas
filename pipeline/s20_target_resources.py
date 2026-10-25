@@ -9,19 +9,36 @@ targets, from NASA orbiters, so a report can put real numbers on both sides:
                                  The 605 MB table is sorted on a regular grid of Moon-centred
                                  x, y, so we binary-search it with HTTP range requests and read
                                  only the triangles within RADIUS_KM of each target.
+  Moon, elsewhere (3 targets)    LRO Diviner global cumulative product (Williams et al. 2017, PDS
+                                 LRO-L-DLRE-5-GCP v1): bolometric temperature in 0.5° cells and
+                                 96 local-time bins, 2009 to 2015. The 3 x 3 cells around a target
+                                 (about 45 km) give its day-and-night curve: average, hottest
+                                 (noon) and coldest (pre-dawn) ground. Fixed-length records, so
+                                 only those rows are read, with HTTP range requests.
+  Moon (all 10 targets)          Lunar Prospector gamma-ray spectrometer oxides and thorium
+                                 (Prettyman et al. 2006, PDS LP-L-GRS-5-ELEM-ABUNDANCE v1), 2°
+                                 equal-area map; the instrument sees about 5° (150 km) of ground.
+                                 Hydrogen from Lunar Prospector is not in a derived PDS map; at the
+                                 pole Diviner's ice stability answers the same question better.
   Mars (8 targets)               Mars Odyssey GRS water-equivalent hydrogen (H2O weight %, upper
                                  tens of cm), 5° smoothed map (Boynton et al. 2007, PDS
                                  ODY-M-GRS-5-ELEMENTS v1). Defined between about 60°S and 60°N.
+                                 SWIM ice consistency (Morgan et al. 2021) was planned too, but
+                                 swim.psi.edu was down on 25 Oct 2026 and serves its maps only
+                                 through a download form; add it when the site is back.
 
 These are shown as facts ("Earth can't copy" where Earth has no equivalent), never scored.
 
     python pipeline/s20_target_resources.py      → pipeline/.cache/target_resources.json
+    python pipeline/s20_target_resources.py --patch-grid   also writes them into public/data/grid.json
+        (the key s06_build copies; facts only, so no score, model or grid.bin changes)
 """
 
 from __future__ import annotations
 
 import json
 import math
+import sys
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -36,6 +53,9 @@ PRP = "https://pds-geosciences.wustl.edu/lro/urn-nasa-pds-lro_diviner_derived1/d
 REC = 210
 NGRID = 1200
 GRS = "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/smoothed/h2o_sr_5x5.tab"
+GCP = "https://pds-geosciences.wustl.edu/lro/urn-nasa-pds-lro_diviner_derived1/data_derived_gcp/global_cumul_avg_cyl_{band}_002.tab"
+GCP_REC, GCP_LT = 113, 96  # bytes per record; local-time bins per 0.5° cell (0.25 h)
+LPGRS = "https://pds-geosciences.wustl.edu/lunar/lp-l-grs-5-elem-abundance-v1/lp_9001/data/lpgrs_high1_elem_abundance_2deg.tab"
 
 
 def get_range(url: str, a: int, b: int, tries: int = 5) -> bytes:
@@ -119,6 +139,60 @@ def diviner(lat: float, lon: float) -> dict:
     }
 
 
+def gcp_curve(lat: float, lon: float) -> np.ndarray:
+    """Mean Diviner bolometric temperature (K) by local time over the 3 x 3 cells around a point."""
+    lo = math.floor(lat / 10) * 10
+    north = lo >= 0
+
+    def tag(v: int) -> str:
+        return f"{abs(v):02d}{'n' if v > 0 or (v == 0 and north) else 's'}"
+
+    url = GCP.format(band=f"{tag(lo)}{tag(lo + 10)}")
+    j0 = int((lat - lo) // 0.5)
+    i0 = int((lon + 180) // 0.5) % 720
+    cache = CACHE / f"diviner_gcp_{lat:.2f}_{lon:.2f}.npy"
+    if cache.exists():
+        a = np.load(cache)
+    else:
+        blocks = []
+        for i in ((i0 - 1) % 720, i0, (i0 + 1) % 720):
+            ja, jb = max(0, j0 - 1), min(19, j0 + 1)  # rows are ordered lon, lat, local time
+            r0, r1 = (i * 20 + ja) * GCP_LT, (i * 20 + jb) * GCP_LT + GCP_LT - 1
+            raw = get_range(url, GCP_REC * (r0 + 1), GCP_REC * (r1 + 2) - 1).decode("ascii")
+            blocks.append(np.array([[float(x) for x in line.split(",")] for line in raw.splitlines() if line.strip()]))
+        a = np.vstack(blocks)
+        np.save(cache, a)
+    assert a.shape[1] == 11 and np.all(np.abs(a[:, 1] - lat) <= 1.0), "unexpected Diviner rows"
+    tbol = np.where(a[:, 10] > 0, a[:, 10], np.nan).reshape(-1, GCP_LT)
+    return np.nanmean(tbol, axis=0)
+
+
+def diviner_global(lat: float, lon: float) -> dict:
+    c = gcp_curve(lat, lon)
+    ok = np.isfinite(c)
+    # fill local-time gaps by circular linear interpolation, so the average covers the whole day
+    x = np.arange(GCP_LT)
+    filled = np.interp(x, np.r_[x[ok] - GCP_LT, x[ok], x[ok] + GCP_LT], np.r_[c[ok], c[ok], c[ok]])
+
+    def k2c(v: float) -> float:
+        return round(float(v) - 273.15, 1)
+
+    return {"temp_avg_c": k2c(filled.mean()), "temp_max_c": k2c(np.nanmax(c)), "temp_min_c": k2c(np.nanmin(c)),
+            "local_time_bins": int(ok.sum()), "radius_km": 22.0}
+
+
+def lp_oxides() -> list[list[float]]:
+    from common import fetch
+
+    return [[float(x) for x in line.split()] for line in fetch(LPGRS).decode("ascii").splitlines() if line.strip()]
+
+
+def lp_at(table: list[list[float]], lat: float, lon: float) -> dict:
+    """Columns: index, lat min/max, lon min/max (-180..180), atomic mass, neutron density, MgO, Al2O3, SiO2, CaO, TiO2, FeO, K, Th, U."""
+    row = next(r for r in table if r[1] <= lat < r[2] and r[3] <= lon < r[4])
+    return {"feo_wt_pct": round(row[12] * 100, 1), "tio2_wt_pct": round(row[11] * 100, 1), "th_ppm": round(row[14], 1)}
+
+
 def grs_map() -> dict:
     txt = urllib.request.urlopen(urllib.request.Request(GRS, headers=UA), timeout=60).read().decode("ascii")
     out = {}
@@ -133,6 +207,7 @@ def main() -> None:
     targets = json.loads((OUT / "grid.json").read_text(encoding="utf-8"))["targets"]
     res: dict[str, dict] = {}
     grs = grs_map()
+    lp = lp_oxides()
     for t in targets:
         if t["body"] == "mars":
             la = math.floor(t["lat"] / 5) * 5 + 2.5
@@ -145,10 +220,25 @@ def main() -> None:
             d = diviner(t["lat"], t["lon"])
             res[t["id"]] = {**d, "source": "LRO Diviner polar resource product (Paige et al.)"}
             print(f"  {t['id']:14s} {d} ({time.time() - t0:.0f} s)", flush=True)
+        elif t["body"] == "moon":
+            d = diviner_global(t["lat"], t["lon"])
+            res[t["id"]] = {**d, "source": "LRO Diviner global temperatures, day and night (Williams et al. 2017)"}
+            print(f"  {t['id']:14s} {d}", flush=True)
+        if t["body"] == "moon":
+            res[t["id"]].update(lp_at(lp, t["lat"], t["lon"]))
+            res[t["id"]]["oxides_source"] = "Lunar Prospector gamma-ray spectrometer, about 150 km footprint (Prettyman et al. 2006)"
     for k, v in res.items():
         if "h2o_wt_pct" in v:
             print(f"  {k:14s} H2O {v['h2o_wt_pct']} wt%")
     (CACHE / "target_resources.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
+    if "--patch-grid" in sys.argv:
+        gp = OUT / "grid.json"
+        g = json.loads(gp.read_text(encoding="utf-8"))
+        for t in g["targets"]:
+            if t["id"] in res:
+                t["resources"] = res[t["id"]]
+        gp.write_text(json.dumps(g, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"resources written into {gp.name} for {sum(t['id'] in res for t in g['targets'])} targets")
 
 
 if __name__ == "__main__":

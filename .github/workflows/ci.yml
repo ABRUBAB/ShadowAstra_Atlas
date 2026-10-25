@@ -1,0 +1,101 @@
+# Quality gate for every push and pull request to main. Vercel deploys main on its own; this
+# workflow tells us whether what was deployed passes. See docs/ENGINEERING.md for what each job checks.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Types, unit tests, build, end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install (exact lockfile)
+        run: npm ci
+      - name: Type check (app, tests and configs)
+        run: npm run typecheck
+      - name: Unit, data contract and Python parity tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Bundle size report
+        run: |
+          echo "### Bundle (gzip)" >> "$GITHUB_STEP_SUMMARY"
+          for f in dist/assets/*.js dist/assets/*.css; do printf '%s %s\n' "$(gzip -c "$f" | wc -c)" "$(basename "$f")"; done | sort -rn | head -12 | awk '{printf "- %s: %.1f kB\n", $2, $1/1024}' >> "$GITHUB_STEP_SUMMARY"
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end and accessibility tests (desktop, phone, no WebGL)
+        run: npx playwright test
+      - name: Keep the Playwright report when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  science:
+    name: Python and browser give the same scores
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rebuild the parity fixture from the Python pipeline
+        run: |
+          pip install "numpy>=2.0"
+          cd pipeline && python s22_parity_fixture.py
+      - name: Fixture unchanged? (informational, float rounding may differ by platform)
+        run: git diff --stat -- tests/fixtures/parity.json || true
+      - run: npm ci
+      - name: The browser scoring matches the fresh Python numbers
+        run: npx vitest run tests/unit/parity.test.ts
+
+  security:
+    name: Dependencies and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Known vulnerabilities in shipped dependencies (high or worse fails)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Known vulnerabilities in tooling (report only)
+        run: npm audit || true
+      - name: Secret scan of the full history
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

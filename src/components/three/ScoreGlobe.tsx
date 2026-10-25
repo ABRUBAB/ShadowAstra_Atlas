@@ -2,7 +2,9 @@ import { Scene, StaticGlobe } from "../ui/Safe";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { motionReduced, useMotionReduced } from "../../lib/motionPref";
+import { AdaptiveDpr, ReleaseGPU, createOrbit } from "./Controls";
+import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { latLonToVec3 } from "../../lib/geo";
 import { ctrlWheelZoom } from "../../lib/wheel";
 import { Starfield } from "./Starfield";
@@ -288,7 +290,7 @@ function Rig({ focus }: { focus: Props["focus"] }) {
   const ctl = useRef<OrbitControls | null>(null);
   const fly = useRef<{ from: THREE.Vector3; to: THREE.Vector3; t: number; d0: number; d1: number } | null>(null);
   useEffect(() => {
-    const c = new OrbitControls(camera, gl.domElement);
+    const c = createOrbit(camera, gl.domElement);
     c.enableDamping = true;
     c.dampingFactor = 0.08;
     c.rotateSpeed = 0.45;
@@ -296,7 +298,7 @@ function Rig({ focus }: { focus: Props["focus"] }) {
     c.enablePan = false;
     c.minDistance = 1.35;
     c.maxDistance = 5;
-    c.autoRotate = true;
+    c.autoRotate = !motionReduced();
     c.autoRotateSpeed = 0.35;
     const offWheel = ctrlWheelZoom(gl.domElement, (on) => (c.enableZoom = on));
     const stop = () => (c.autoRotate = false);
@@ -308,6 +310,10 @@ function Rig({ focus }: { focus: Props["focus"] }) {
       c.dispose();
     };
   }, [camera, gl]);
+  const reduced = useMotionReduced();
+  useEffect(() => {
+    if (reduced && ctl.current) ctl.current.autoRotate = false;
+  }, [reduced]);
   useEffect(() => {
     if (!focus) return;
     const c = ctl.current;
@@ -338,9 +344,11 @@ function Rig({ focus }: { focus: Props["focus"] }) {
 }
 
 export default function ScoreGlobe(p: Props) {
+  // the rank labels are shared between visits: release their GPU copies with the scene (see textures.ts)
+  useEffect(() => () => labelCache.forEach((t) => t.dispose()), []);
   return (
     <Scene fallback={<StaticGlobe />}>
-    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0.9, 2.9], fov: 40 }} aria-label="Earth globe coloured by match score">
+    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0.9, 2.9], fov: 40 }} role="img" aria-label="Earth globe coloured by match score">
       <color attach="background" args={["#07080a"]} />
       <Starfield count={1400} />
       <ambientLight intensity={0.5} />
@@ -353,6 +361,8 @@ export default function ScoreGlobe(p: Props) {
         ))}
       </Suspense>
       <Rig focus={p.focus} />
+      <ReleaseGPU />
+      <AdaptiveDpr />
     </Canvas>
     </Scene>
   );

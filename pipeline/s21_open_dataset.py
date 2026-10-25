@@ -140,9 +140,11 @@ def main() -> None:
              "roughness_m": t["terrain"]["rough"], "rocks": t.get("rock", {}).get("label"),
              "water_made_minerals": ",".join(t.get("minerals", {}).get("families", [])) or None, "minerals_source": t.get("minerals", {}).get("source")}
         res = t.get("resources", {})
-        for k in ("temp_avg_c", "temp_avg_coldest_c", "temp_max_c", "temp_max_hottest_c", "ice_surface_share", "ice_1m_share", "radius_km", "h2o_wt_pct"):
+        for k in ("temp_avg_c", "temp_avg_coldest_c", "temp_max_c", "temp_max_hottest_c", "temp_min_c", "ice_surface_share", "ice_1m_share", "radius_km", "h2o_wt_pct",
+                  "feo_wt_pct", "tio2_wt_pct", "th_ppm"):
             r[k] = res.get(k)
         r["resources_source"] = res.get("source")
+        r["oxides_source"] = res.get("oxides_source")
         rows.append(r)
     with open(OUTD / "targets.csv", "w", newline="", encoding="utf-8") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0]))
@@ -190,7 +192,7 @@ def main() -> None:
         api = HfApi(token=os.environ["HF_TOKEN"])
         api.create_repo(REPO, repo_type="dataset", exist_ok=True)
         api.upload_folder(folder_path=str(OUTD), repo_id=REPO, repo_type="dataset",
-                          commit_message="ShadowAstra Atlas open dataset (site v0.6)")
+                          commit_message="ShadowAstra Atlas open dataset (site v0.7: Diviner day and night for every Moon target, Lunar Prospector oxides, pinpoint test)")
         print(f"pushed: https://huggingface.co/datasets/{REPO}")
 
 

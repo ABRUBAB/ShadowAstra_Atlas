@@ -16,3 +16,8 @@ pipeline/.cache/
 kaggle/_build/
 kaggle/_out/
 kaggle.json
+
+# local scratch scripts
+.tmp/
+test-results/
+playwright-report/

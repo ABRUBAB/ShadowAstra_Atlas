@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { AnimatePresence, animate, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, animate, motion } from "motion/react";
+import { useMotionReduced } from "../lib/motionPref";
 import clsx from "clsx";
 import { ArrowDown, ArrowRight, Columns2, Cpu, Hand, Info, Leaf, Link2, Link2Off, Pause, Play, Plane, RotateCcw, ShieldCheck, SplitSquareHorizontal, Sparkles, Sun, X } from "lucide-react";
 import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
@@ -423,7 +424,9 @@ function StageCoach() {
         <div className="mt-2 flex items-center justify-between">
           <div className="flex gap-1">
             {STAGE_TIPS.map((_, k) => (
-              <button key={k} onClick={() => setI(k)} aria-label={`Tip ${k + 1}`} className={clsx("h-1 rounded-full transition-all", k === i ? "w-4 bg-flare" : "w-1.5 bg-line-2")} />
+              <button key={k} onClick={() => setI(k)} aria-label={`Tip ${k + 1}`} aria-current={k === i} className="grid h-6 min-w-6 place-items-center">
+                <span className={clsx("h-1 rounded-full transition-all", k === i ? "w-4 bg-flare" : "w-1.5 bg-line-2")} />
+              </button>
             ))}
           </div>
           <button onClick={close} className="flex items-center gap-1 text-[11px] text-dim hover:text-platinum">
@@ -560,7 +563,7 @@ function PairSelect({ world, value, onChange, options, step, hint }: { world: Wo
 function CountUp({ value, digits = 2 }: { value: number; digits?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const prev = useRef(0);
-  const reduce = useReducedMotion();
+  const reduce = useMotionReduced();
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -807,13 +810,17 @@ function CompareStage({
 
 /** The glowing seam between the two worlds, with the live match score in the middle. */
 function Seam({ score, world }: { score: number | null; world: World }) {
+  const still = useMotionReduced();
   const R = 30;
   const CIRC = 2 * Math.PI * R;
   return (
     <div className="pointer-events-none absolute inset-y-0 left-1/2 z-[650] hidden w-0 md:block">
       <div className="absolute inset-y-0 -left-px w-[2px] bg-[linear-gradient(180deg,transparent,rgba(242,200,121,0.55)_30%,rgba(242,200,121,0.55)_70%,transparent)]" />
-      <motion.div className="absolute -left-[3px] h-24 w-[8px] rounded-full bg-[radial-gradient(closest-side,rgba(255,236,200,0.9),transparent)] blur-[2px]" animate={{ top: ["-10%", "105%"] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }} />
-      <a href="#evidence" className="pointer-events-auto absolute top-1/2 left-0 grid size-[84px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line-2 bg-void/80 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-transform hover:scale-105" aria-label="Match score, see the evidence">
+      {/* moved with a transform (runs on the compositor), not `top`, which re-laid out the page every frame */}
+      <motion.div className="absolute inset-y-0 -left-[3px] w-[8px] will-change-transform" initial={{ transform: "translateY(45%)" }} animate={{ transform: still ? "translateY(45%)" : ["translateY(-10%)", "translateY(105%)"] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }}>
+        <div className="h-24 w-full rounded-full bg-[radial-gradient(closest-side,rgba(255,236,200,0.9),transparent)] blur-[2px]" />
+      </motion.div>
+      <a href="#evidence" className="pointer-events-auto absolute top-1/2 left-0 grid size-[84px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line-2 bg-void/80 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-transform hover:scale-105">
         <svg viewBox="0 0 72 72" className="absolute inset-0 m-auto size-[72px] -rotate-90">
           <circle cx="36" cy="36" r={R} fill="none" style={{ stroke: "var(--color-line-2)" }} strokeWidth="3" />
           <motion.circle cx="36" cy="36" r={R} fill="none" style={{ stroke: `var(--color-${world})` }} strokeWidth="3" strokeLinecap="round" strokeDasharray={CIRC} initial={{ strokeDashoffset: CIRC }} animate={{ strokeDashoffset: score === null ? CIRC : CIRC * (1 - score) }} transition={{ duration: 1.2, ease: EASE }} />
@@ -821,6 +828,7 @@ function Seam({ score, world }: { score: number | null; world: World }) {
         <span className="relative text-center leading-none">
           <span className="block font-mono text-[17px] text-platinum">{score === null ? "…" : <CountUp value={score} />}</span>
           <span className="mt-1 block text-[9px] tracking-[0.18em] text-dim uppercase">match</span>
+          <span className="sr-only">, see the evidence</span>
         </span>
       </a>
     </div>
@@ -1398,7 +1406,7 @@ function litImage(grid: TerrainGrid | null, ill: Illumination | null) {
   const n = grid.n;
   const c = document.createElement("canvas");
   c.width = c.height = n;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   const img = ctx.createImageData(n, n);
   const lo = [10, 18, 48];
   const mid = [16, 26, 58];

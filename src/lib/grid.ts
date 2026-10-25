@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import type { TaskId, World } from "../data/sites";
 import { TASK_WEIGHTS, type Weights } from "./scoring";
+import { timed, timedAsync } from "./perf";
 
 /* ------------------------------------------------------------------ types */
 
@@ -50,6 +51,14 @@ export interface TargetResources {
   ice_surface_share?: number;
   ice_1m_share?: number;
   radius_km?: number;
+  /** Moon away from the pole: coldest point of the day-and-night curve (Diviner global product). */
+  temp_min_c?: number;
+  local_time_bins?: number;
+  /** Moon: Lunar Prospector gamma-ray oxides (weight %) and thorium (ppm), about 150 km footprint. */
+  feo_wt_pct?: number;
+  tio2_wt_pct?: number;
+  th_ppm?: number;
+  oxides_source?: string;
   /** Mars: water-equivalent hydrogen in the top tens of cm, weight %. */
   h2o_wt_pct?: number | null;
 }
@@ -376,11 +385,16 @@ export function loadGrid(): Promise<Grid> {
       listeners.forEach((l) => l(p));
     };
     cache = (async () => {
-      const meta: GridMeta = await (await fetch("/data/grid.json")).json();
-      emit(0.08);
-      const buf = await fetchWithProgress("/data/grid.bin", meta.bin_bytes, (got, total) => total && emit(0.08 + 0.9 * Math.min(1, got / total)));
-      checkGrid(meta, buf);
-      const g = new Grid(meta, buf);
+      const [meta, buf] = await timedAsync("grid-download", async () => {
+        const meta: GridMeta = await (await fetch("/data/grid.json")).json();
+        emit(0.08);
+        const buf = await fetchWithProgress("/data/grid.bin", meta.bin_bytes, (got, total) => total && emit(0.08 + 0.9 * Math.min(1, got / total)));
+        return [meta, buf] as const;
+      });
+      const g = timed("grid-parse", () => {
+        checkGrid(meta, buf);
+        return new Grid(meta, buf);
+      });
       emit(1);
       return g;
     })();
@@ -537,6 +551,10 @@ export function scoreCell(g: Grid, k: number, o: ScoreOptions): CellScore {
 
 /** Scores for every land cell (fast typed-array loop). */
 export function scoreAll(g: Grid, o: ScoreOptions): Float32Array {
+  return timed("score-all", () => scoreAllCells(g, o));
+}
+
+function scoreAllCells(g: Grid, o: ScoreOptions): Float32Array {
   const w = o.weights ?? TASK_WEIGHTS[o.task];
   const world = o.target.body;
   const ws = DIMS.reduce((a, d) => a + w[d], 0) || 1;
@@ -619,9 +637,11 @@ export function rankPlaces(g: Grid, scores: Float32Array, o: RankOptions = {}): 
   const count = o.count ?? 12;
   const spacing = o.spacingKm ?? 400;
   const idx: number[] = [];
-  // a cheap pre-filter: only the top ~4% can make the list
-  const sample = Array.from(scores).filter((_, i) => i % 7 === 0).sort((a, b) => b - a);
-  const cut = sample[Math.floor(sample.length * 0.04)] ?? 0;
+  // a cheap pre-filter: only the top ~4% can make the list (every 7th score, native typed sort)
+  const sample = new Float32Array(Math.ceil(scores.length / 7));
+  for (let i = 0, j = 0; i < scores.length; i += 7) sample[j++] = scores[i];
+  sample.sort(); // ascending, so the value 4% from the top sits 4% from the end
+  const cut = sample.length ? sample[sample.length - 1 - Math.floor(sample.length * 0.04)] : 0;
   const within = o.within ? g.arr(o.within.field) : null;
   for (let k = 0; k < g.n; k++) {
     if (!within && scores[k] < cut) continue;
@@ -740,7 +760,7 @@ export function paintScores(g: Grid, scores: Float32Array, canvas: HTMLCanvasEle
   const { rows, cols } = g.meta;
   canvas.width = cols;
   canvas.height = rows;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!; // CPU canvas: no slow GPU read-back when WebGL or toDataURL reads it
   const img = ctx.createImageData(cols, rows);
   const span = Math.max(1e-6, range.hi - range.lo);
   for (let k = 0; k < g.n; k++) {

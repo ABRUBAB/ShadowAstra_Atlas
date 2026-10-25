@@ -1,0 +1,209 @@
+{
+ "status": "pending",
+ "reviewer": "Md. Tanvir Hasan",
+ "generated": "2026-10-25",
+ "candidates": [
+  {
+   "id": "R01",
+   "target": "shackleton",
+   "job": "base",
+   "lat": -76.25,
+   "lon": -112.25,
+   "place": "Marie Byrd Land",
+   "score": 0.911
+  },
+  {
+   "id": "R02",
+   "target": "malapert",
+   "job": "base",
+   "lat": -72.75,
+   "lon": 165.75,
+   "place": "Victoria Land",
+   "score": 0.887
+  },
+  {
+   "id": "R03",
+   "target": "haworth",
+   "job": "ice",
+   "lat": -75.75,
+   "lon": -132.25,
+   "place": "Flood Range",
+   "score": 0.932
+  },
+  {
+   "id": "R04",
+   "target": "mons-mouton",
+   "job": "base",
+   "lat": -80.75,
+   "lon": 155.75,
+   "place": "East Antarctica",
+   "score": 0.902
+  },
+  {
+   "id": "R05",
+   "target": "nobile",
+   "job": "traverse",
+   "lat": 61.25,
+   "lon": -141.75,
+   "place": "Alaska",
+   "score": 0.905
+  },
+  {
+   "id": "R06",
+   "target": "de-gerlache",
+   "job": "base",
+   "lat": -79.75,
+   "lon": 45.75,
+   "place": "Enderby Land",
+   "score": 0.89
+  },
+  {
+   "id": "R07",
+   "target": "cabeus",
+   "job": "ice",
+   "lat": -64.25,
+   "lon": -57.75,
+   "place": "James Ross Island",
+   "score": 0.912
+  },
+  {
+   "id": "R08",
+   "target": "marius-pit",
+   "job": "caves",
+   "lat": 25.25,
+   "lon": 37.75,
+   "place": "Hejaz Mts.",
+   "score": 0.927
+  },
+  {
+   "id": "R09",
+   "target": "tranquillitatis-pit",
+   "job": "caves",
+   "lat": 32.25,
+   "lon": 37.75,
+   "place": "Syrian Desert",
+   "score": 0.92
+  },
+  {
+   "id": "R10",
+   "target": "hadley",
+   "job": "traverse",
+   "lat": -24.25,
+   "lon": -68.25,
+   "place": "Altiplano",
+   "score": 0.917
+  },
+  {
+   "id": "R11",
+   "target": "jezero",
+   "job": "astrobio",
+   "lat": 35.75,
+   "lon": 81.75,
+   "place": "Kunlun Mountains",
+   "score": 0.941
+  },
+  {
+   "id": "R12",
+   "target": "gale",
+   "job": "astrobio",
+   "lat": 19.75,
+   "lon": 18.75,
+   "place": "Tibesti Mts.",
+   "score": 0.929
+  },
+  {
+   "id": "R13",
+   "target": "arcadia",
+   "job": "ice",
+   "lat": -74.25,
+   "lon": -99.25,
+   "place": "Canisteo Peninsula",
+   "score": 0.9
+  },
+  {
+   "id": "R14",
+   "target": "deuteronilus",
+   "job": "ice",
+   "lat": -76.25,
+   "lon": 159.25,
+   "place": "Victoria Land",
+   "score": 0.889
+  },
+  {
+   "id": "R15",
+   "target": "arsia",
+   "job": "caves",
+   "lat": 23.75,
+   "lon": 5.75,
+   "place": "Ahaggar Mts.",
+   "score": 0.921
+  },
+  {
+   "id": "R16",
+   "target": "meridiani",
+   "job": "astrobio",
+   "lat": 18.25,
+   "lon": 32.75,
+   "place": "Libyan Desert",
+   "score": 0.927
+  },
+  {
+   "id": "R17",
+   "target": "utopia",
+   "job": "ice",
+   "lat": -78.75,
+   "lon": 91.25,
+   "place": "East Antarctica",
+   "score": 0.85
+  },
+  {
+   "id": "R18",
+   "target": "mawrth",
+   "job": "astrobio",
+   "lat": -27.75,
+   "lon": 16.25,
+   "place": "Near Oranjemund",
+   "score": 0.919
+  },
+  {
+   "id": "R19",
+   "target": "meridiani",
+   "job": "astrobio",
+   "lat": 22.75,
+   "lon": 41.25,
+   "place": "Arabian Peninsula",
+   "score": 0.925
+  },
+  {
+   "id": "R20",
+   "target": "mawrth",
+   "job": "astrobio",
+   "lat": 38.75,
+   "lon": 92.25,
+   "place": "Altun Mts.",
+   "score": 0.918
+  }
+ ],
+ "rubric": [
+  {
+   "id": "ground",
+   "label": "Ground shape"
+  },
+  {
+   "id": "geology",
+   "label": "Rocks and geology"
+  },
+  {
+   "id": "environment",
+   "label": "Cold, dryness and light"
+  },
+  {
+   "id": "access",
+   "label": "Access and permits"
+  },
+  {
+   "id": "overall",
+   "label": "Would you recommend it"
+  }
+ ]
+}

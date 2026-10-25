@@ -1,0 +1,38 @@
+# Checks the live site after every production deploy and every six hours (uptime).
+# A failed run emails the repository owner, which is the alert. See scripts/smoke.mjs.
+name: Smoke test
+
+on:
+  deployment_status:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Site to check
+        default: https://shadowastra-atlas.vercel.app
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    # Vercel reports each deploy to GitHub; preview URLs are behind Vercel sign-in, so only
+    # finished production deploys are checked (on the public domain).
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Give the domain a moment to point at the new deploy
+        if: github.event_name == 'deployment_status'
+        run: sleep 30
+      - name: Smoke test
+        run: node scripts/smoke.mjs "${{ github.event.inputs.url || 'https://shadowastra-atlas.vercel.app' }}" --json smoke.json
+      - name: Summary
+        if: always()
+        run: |
+          node -e "const r=require('./smoke.json');const s=r.results.map(x=>'| '+(x.ok?'pass':x.fatal?'FAIL':'warn')+' | '+x.name+' | '+x.ms+' ms | '+x.note.replace(/\|/g,'/')+' |');console.log('| | check | time | note |\n|---|---|---|---|\n'+s.join('\n'))" >> "$GITHUB_STEP_SUMMARY" || true

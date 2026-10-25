@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useMotionReduced } from "../../lib/motionPref";
 import clsx from "clsx";
 
 /**
@@ -14,7 +15,7 @@ export type Action = "idle" | "wave" | "scan" | "drill" | "flag" | "sample" | "c
 
 /** Types the line out quickly, so Astra feels like he is talking. */
 function useTyped(text: string | null | undefined) {
-  const reduce = useReducedMotion();
+  const reduce = useMotionReduced();
   const [n, setN] = useState(0);
   useEffect(() => {
     if (!text || reduce) return;

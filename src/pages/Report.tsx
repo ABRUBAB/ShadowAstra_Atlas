@@ -10,6 +10,9 @@ import { MODEL_MIX, MONTHS, scoreCell, useGrid } from "../lib/grid";
 import { DHAKA, FACTORS, FIELD_TESTS } from "../lib/mission";
 import { useEarthThumb } from "../lib/thumbs";
 import { sharePct } from "../components/find/MineralCard";
+import { pinpointVerdict } from "../components/find/PinpointCard";
+import { usePinpoint } from "../lib/pinpoint";
+import { useValidation } from "../lib/validation";
 
 /** A clean, printable site report: the characterization dossier for a field team. */
 export default function Report() {
@@ -24,6 +27,8 @@ export default function Report() {
   const T = TARGET_BY_ID[targetId];
   const t = grid?.targets[targetId];
   const thumb = useEarthThumb(k >= 0 && grid ? grid.lat(k) : null, k >= 0 && grid ? grid.lon(k) : null, 640);
+  const pin = usePinpoint(k >= 0 && grid ? grid.lat(k) : null, k >= 0 && grid ? grid.lon(k) : null, t ? t.terrain.hist : null);
+  const { v: validation } = useValidation();
   const sunT = useMemo(() => sunRegime(T.body, T.lat), [T.body, T.lat]);
   useEffect(() => {
     document.title = "Site report · ShadowAstra Atlas";
@@ -64,7 +69,7 @@ export default function Report() {
       <article className="mx-auto max-w-[820px] bg-white px-10 py-10 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.35)] print:shadow-none" data-theme="light">
         <header className="flex items-start justify-between border-b border-[#dcd5c7] pb-5">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.24em] text-[#888275] uppercase">Analog site report</div>
+            <div className="font-mono text-[10px] tracking-[0.24em] text-[#6a665e] uppercase">Analog site report</div>
             <h1 className="mt-1 text-[30px] leading-tight font-medium tracking-[-0.02em]">{nm.title}</h1>
             <div className="mt-1 text-[13px] text-[#55514a]">
               {nm.subtitle ? `${nm.subtitle} · ` : ""}
@@ -73,21 +78,21 @@ export default function Report() {
           </div>
           <div className="text-right">
             <Logo size={28} />
-            <div className="mt-2 font-mono text-[10px] text-[#888275]">{today}</div>
+            <div className="mt-2 font-mono text-[10px] text-[#6a665e]">{today}</div>
           </div>
         </header>
 
         <section className="mt-6 grid grid-cols-[1.1fr_1fr] gap-6">
           <figure>
             {thumb ? <img src={thumb} alt="Satellite view, 50 km across" className="aspect-square w-full rounded-md object-cover" /> : <div className="aspect-square w-full rounded-md bg-[#f2ede3]" />}
-            <figcaption className="mt-1 font-mono text-[9.5px] text-[#888275]">50 × 50 km, north up · ESA Sentinel-2 cloudless 2020</figcaption>
+            <figcaption className="mt-1 font-mono text-[9.5px] text-[#6a665e]">50 × 50 km, north up · ESA Sentinel-2 cloudless 2020</figcaption>
           </figure>
           <div>
-            <div className="text-[12px] text-[#888275]">Mission</div>
+            <div className="text-[12px] text-[#6a665e]">Mission</div>
             <div className="text-[16px] font-medium">
               {taskLabel} · {T.name} ({T.body === "moon" ? "Moon" : "Mars"})
             </div>
-            <div className="mt-4 text-[12px] text-[#888275]">Match score</div>
+            <div className="mt-4 text-[12px] text-[#6a665e]">Match score</div>
             <div className="font-mono text-[44px] leading-none font-light">{cs.total.toFixed(2)}</div>
             <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with {Math.round(MODEL_MIX * 100)}% from three models trained together on 38 known test sites.</div>
             <div className="mt-2 text-[12px] text-[#55514a]">
@@ -114,7 +119,7 @@ export default function Report() {
           <h2 className="text-[15px] font-medium">Characterization: this place compared with {T.name}</h2>
           <table className="mt-3 w-full text-[12.5px]">
             <thead>
-              <tr className="text-left text-[10.5px] tracking-wide text-[#888275] uppercase">
+              <tr className="text-left text-[10.5px] tracking-wide text-[#6a665e] uppercase">
                 <th className="py-1 font-normal">Factor</th>
                 <th className="py-1 font-normal">This place (Earth)</th>
                 <th className="py-1 font-normal">{T.name}</th>
@@ -131,6 +136,17 @@ export default function Report() {
                 </td>
               </tr>
               <tr className="border-t border-[#eee8dc]">
+                <td className="py-2">Best 10 km spot</td>
+                <td className="py-2" colSpan={2}>
+                  {pin === null
+                    ? "working it out…"
+                    : pin === "failed"
+                      ? "terrain tiles could not be loaded"
+                      : `${formatCoord(pin.best.lat, pin.best.lon)}: slopes ${Math.round(pin.best.score * 100)}% alike (an average 10 km piece of this place: ${Math.round(pin.mean * 100)}%), average slope ${pin.best.meanSlope.toFixed(1)}°, height range ${Math.round(pin.best.relief)} m. `}
+                  <span className="text-[#6a665e]">{pinpointVerdict(validation?.pinpoint) ?? ""}</span>
+                </td>
+              </tr>
+              <tr className="border-t border-[#eee8dc]">
                 <td className="py-2">Rocks & craters</td>
                 <td className="py-2">
                   {volc && volc.km < 300 ? `volcano ${volc.name} ${Math.round(volc.km)} km` : "no volcano near"}; {crater && crater.score > 0.2 ? `crater ${crater.name}` : "no crater near"}; bare ground {fmt(v("f_barren") === null ? null : v("f_barren")! * 100, "%")}; main rock {grid.rock(k)?.label.toLowerCase() ?? "unknown"} (GLiM)
@@ -138,6 +154,7 @@ export default function Report() {
                 <td className="py-2">
                   {T.kind}
                   {t.rock ? `; main rocks: ${t.rock.label.toLowerCase()}` : ""}
+                  {res?.feo_wt_pct !== undefined ? `; ${res.feo_wt_pct.toFixed(0)}% iron oxide and ${res.tio2_wt_pct!.toFixed(1)}% titanium oxide by weight (Lunar Prospector, about 150 km)` : ""}
                 </td>
               </tr>
               <tr className="border-t border-[#eee8dc]">
@@ -155,7 +172,9 @@ export default function Report() {
                   coldest night {fmt(v("f_lst_night_min"), " °C")}, hottest ground {fmt(v("f_lst_day_max"), " °C")}, best light in {MONTHS[t.light_month[grid.row[k]] ?? 0]}
                 </td>
                 <td className="py-2">
-                  {res?.temp_avg_c !== undefined ? `ground ${Math.round(res.temp_avg_c)} °C on average, typically ${Math.round(res.temp_max_c!)} °C at warmest (LRO Diviner, 10 km); ` : ""}
+                  {res?.temp_avg_c !== undefined
+                    ? `ground ${Math.round(res.temp_avg_c)} °C on average, typically ${Math.round(res.temp_max_c!)} °C at warmest${res.temp_min_c !== undefined ? ` and ${Math.round(res.temp_min_c)} °C before dawn` : ""} (LRO Diviner, ${Math.round(res.radius_km ?? 10)} km); `
+                    : ""}
                   Sun at most {Math.round(sunT.maxElev)}°, typically {Math.round(sunT.medianElev)}°
                 </td>
               </tr>
@@ -206,7 +225,7 @@ export default function Report() {
           </p>
         </section>
 
-        <footer className="mt-8 border-t border-[#dcd5c7] pt-4 text-[10.5px] leading-relaxed text-[#888275]">
+        <footer className="mt-8 border-t border-[#dcd5c7] pt-4 text-[10.5px] leading-relaxed text-[#6a665e]">
           Data: SRTM terrain (AWS Terrain Tiles), NASA POWER climatology, NASA GIBS MODIS ground temperature, plants, snow and land cover, NASA EMIT L3 minerals (LP DAAC), Smithsonian GVP volcanoes, Earth Impact
           Database, Natural Earth;{T.body === "moon" ? " LRO LOLA 118 m" : " MGS MOLA 463 m"} heights (USGS Astrogeology){res ? ` and ${res.source}` : ""} for {T.name}. Method and model tests: shadowastra-atlas.vercel.app/methods. Team ShadowAstra, Dhaka · NASA Space Apps
           Challenge 2026. NASA does not endorse this report.

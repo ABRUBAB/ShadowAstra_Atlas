@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { motion, useReducedMotion, useScroll, useSpring } from "motion/react";
+import { MotionConfig, motion, useScroll, useSpring } from "motion/react";
+import { useMotionReduced } from "./lib/motionPref";
 import Home from "./pages/Home";
 import { MiniLoader, Splash } from "./components/ui/Splash";
 import { AskAstra } from "./components/ui/AskAstra";
@@ -35,7 +36,7 @@ function ScrollToTop() {
 /** A beam of light sweeps across the top on every page change. */
 function RouteBeam() {
   const { pathname } = useLocation();
-  const reduced = useReducedMotion();
+  const reduced = useMotionReduced();
   if (reduced) return null;
   return (
     <motion.div
@@ -97,17 +98,18 @@ export default function App() {
   const { pathname } = useLocation();
   useSpotlight();
   useScrollingFlag();
+  const reduced = useMotionReduced();
   useEffect(() => {
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void) => number;
-    };
-    const id = w.requestIdleCallback
-      ? w.requestIdleCallback(prefetch)
-      : window.setTimeout(prefetch, 2500);
+    if (window.requestIdleCallback) {
+      const id = window.requestIdleCallback(prefetch);
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prefetch, 2500);
     return () => clearTimeout(id);
   }, []);
   return (
-    <>
+    // Motion's transform and layout animations follow the site-wide "less motion" switch
+    <MotionConfig reducedMotion={reduced ? "always" : "never"}>
       <Splash />
       <ScrollToTop />
       <RouteBeam />
@@ -144,6 +146,6 @@ export default function App() {
       <BackToTop />
       <Toaster />
       <BadgeToast />
-    </>
+    </MotionConfig>
   );
 }

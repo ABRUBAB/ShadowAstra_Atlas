@@ -70,7 +70,7 @@ function worldPx(src: DemSource, z: number, lat: number, lon: number): [number, 
 }
 
 /** Inverse azimuthal-equidistant projection around (lat0, lon0); x east, y north, in km. */
-function localToLatLon(body: Body, lat0: number, lon0: number, xKm: number, yKm: number): [number, number] {
+export function localToLatLon(body: Body, lat0: number, lon0: number, xKm: number, yKm: number): [number, number] {
   const R = RADIUS[body] / 1000;
   const rho = Math.hypot(xKm, yKm);
   if (rho < 1e-9) return [lat0, lon0];
@@ -85,7 +85,42 @@ function localToLatLon(body: Body, lat0: number, lon0: number, xKm: number, yKm:
 
 const tileCache = new Map<string, Promise<ImageData | null>>();
 
-function loadTile(url: string): Promise<ImageData | null> {
+/** NASA MODIS land/water mask (MOD44W, 250 m) on GIBS: oceans, lakes and big rivers; water pixels are opaque. */
+const WATER_URL = (z: number, x: number, y: number) => `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Water_Mask/default/GoogleMapsCompatible_Level9/${z}/${y}/${x}.png`;
+
+/**
+ * 1 where an n x n grid around (lat, lon) (same layout as sampleTerrain) falls on water, else 0.
+ * Null when the mask could not be loaded (callers then go without it).
+ */
+export async function sampleWater(lat: number, lon: number, footprintKm: number, n: number): Promise<Uint8Array | null> {
+  const z = 9;
+  const W = 256 * 2 ** z;
+  const step = footprintKm / n;
+  const px: [number, number][] = [];
+  const need = new Set<string>();
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const [la, lo] = localToLatLon("earth", lat, lon, (i + 0.5 - n / 2) * step, (n / 2 - j - 0.5) * step);
+      const l = Math.max(-85, Math.min(85, la)) * (Math.PI / 180);
+      const X = (((lo + 180) / 360) * W) % W;
+      const Y = ((1 - Math.log(Math.tan(l) + 1 / Math.cos(l)) / Math.PI) / 2) * W;
+      px.push([X, Y]);
+      need.add(`${Math.floor(X / 256)},${Math.floor(Y / 256)}`);
+    }
+  const tiles = new Map<string, ImageData | null>();
+  await Promise.all([...need].map(async (k) => tiles.set(k, await loadTile(WATER_URL(z, +k.split(",")[0], +k.split(",")[1])))));
+  if ([...tiles.values()].every((t) => !t)) return null;
+  const out = new Uint8Array(n * n);
+  px.forEach(([X, Y], k) => {
+    const t = tiles.get(`${Math.floor(X / 256)},${Math.floor(Y / 256)}`);
+    if (!t) return;
+    const o = (Math.min(255, Math.floor(Y % 256)) * t.width + Math.min(255, Math.floor(X % 256))) * 4;
+    out[k] = t.data[o + 3] > 127 ? 1 : 0;
+  });
+  return out;
+}
+
+export function loadTile(url: string): Promise<ImageData | null> {
   let p = tileCache.get(url);
   if (!p) {
     p = new Promise((resolve) => {
@@ -486,10 +521,14 @@ export async function sampleImagery(src: ImgSource, lat: number, lon: number, fo
   let z = src.maxZoom;
   while (z > 0 && srcKm(src, z - 1, lat) <= step) z--;
 
+  // tiles are keyed by number, not by a "x,y" string: this runs for every pixel (100,000 for a
+  // 320 px thumbnail), and building strings there cost about a third of a second per thumbnail
+  const TK = 16384;
+  const tileKey = (tx: number, ty: number) => tx * TK + ty + 1;
   const plan = (zz: number) => {
     const worldW = (src.grid === "mercator" ? 256 : 512) * 2 ** zz;
     const pts = new Float64Array(size * size * 2);
-    const need = new Set<string>();
+    const need = new Set<number>();
     const fake: DemSource = { ...DEM[src.body], grid: src.grid };
     for (let j = 0; j < size; j++)
       for (let i = 0; i < size; i++) {
@@ -498,7 +537,7 @@ export async function sampleImagery(src: ImgSource, lat: number, lon: number, fo
         pts[(j * size + i) * 2] = X;
         pts[(j * size + i) * 2 + 1] = Y;
         const cols = worldW / 256;
-        need.add(`${((Math.floor(X / 256) % cols) + cols) % cols},${Math.floor(Y / 256)}`);
+        need.add(tileKey(((Math.floor(X / 256) % cols) + cols) % cols, Math.floor(Y / 256)));
       }
     return { pts, need, worldW };
   };
@@ -506,23 +545,24 @@ export async function sampleImagery(src: ImgSource, lat: number, lon: number, fo
   // Near the poles the footprint spans many longitudes, trade resolution for tile count.
   while (p.need.size > 80 && z > 0) p = plan(--z);
 
-  const tiles = new Map<string, ImageData | null>();
+  const tiles = new Map<number, ImageData | null>();
   await Promise.all(
     [...p.need].map(async (key) => {
-      const [tx, ty] = key.split(",").map(Number);
+      const tx = Math.floor(key / TK);
+      const ty = (key % TK) - 1;
       tiles.set(key, ty < 0 || ty >= 2 ** z ? null : await loadTile(src.url(z, tx, ty)));
     }),
   );
 
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!; // CPU canvas: toDataURL without a GPU read-back
   const out = ctx.createImageData(size, size);
   const cols = p.worldW / 256;
   const px = (X: number, Y: number, o: number[]) => {
     const tx = ((Math.floor(X / 256) % cols) + cols) % cols;
     const ty = Math.floor(Y / 256);
-    const t = tiles.get(`${tx},${ty}`);
+    const t = tiles.get(tileKey(tx, ty));
     if (!t) return false;
     const ix = Math.min(t.width - 1, Math.max(0, Math.floor(X - Math.floor(X / 256) * 256)));
     const iy = Math.min(t.height - 1, Math.max(0, Math.floor(Y - ty * 256)));

@@ -2,9 +2,11 @@ import { Scene, StaticGlobe, hasWebGL } from "../ui/Safe";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { AdaptiveDpr, ReleaseGPU } from "./Controls";
 import { Planet, SUN_DIR, type GlobeMarker } from "./Planet";
 import { Starfield } from "./Starfield";
 import { EARTH_SITES } from "../../data/sites";
+import { useMotionReduced } from "../../lib/motionPref";
 
 /**
  * Landing hero: Earth carrying every catalogued analog site (real coordinates), the Moon
@@ -63,7 +65,7 @@ export default function HeroScene({ compact = false, onReady }: { compact?: bool
   const wrap = useRef<HTMLDivElement>(null);
   const pointer = useRef({ x: 0, y: 0 });
   const [visible, setVisible] = useState(true);
-  const reduced = useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  const reduced = useMotionReduced();
 
   useEffect(() => {
     const el = wrap.current;
@@ -116,6 +118,8 @@ export default function HeroScene({ compact = false, onReady }: { compact?: bool
           {onReady && <Ready onReady={onReady} />}
         </Suspense>
         {!reduced && <Rig pointer={pointer} />}
+        <ReleaseGPU />
+        <AdaptiveDpr />
       </Canvas>
       </Scene>
     </div>

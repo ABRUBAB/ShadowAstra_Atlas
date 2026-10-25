@@ -91,7 +91,7 @@ export function RankStrip({ points, rows, medians }: { points: StripPoint[]; row
   const H = top + rows.length * rowH + 34;
   const x = (v: number) => logX(v, padL, Math.max(padL + 10, w - padR));
   // deterministic jitter so dots with equal values stay readable
-  const jit = useMemo(() => points.map((p, i) => (((i * 7919) % 13) / 12 - 0.5) * 22), [points]);
+  const jit = useMemo(() => points.map((_, i) => (((i * 7919) % 13) / 12 - 0.5) * 22), [points]);
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

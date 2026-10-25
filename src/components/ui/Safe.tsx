@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, RotateCcw } from "lucide-react";
 
@@ -29,6 +29,19 @@ export class ErrorBoundary extends Component<BoundaryProps, { error: Error | nul
 /* ------------------------------------------------------------------ WebGL */
 
 let webgl: boolean | null = null;
+
+/** Renderer names browsers report when WebGL runs on the CPU instead of a graphics chip. */
+export const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+
+/**
+ * Light mode for slow graphics: frosted-glass blur over a moving 3D scene has to be redrawn every
+ * frame, which halved the frame rate with software WebGL. With `html.gpu-lite` the panels keep
+ * their tint but drop the blur (styles.css). Set by <AdaptiveDpr /> for software
+ * renderers (read from the live renderer, which costs nothing once it is drawing) and when frames are slow.
+ */
+export function enableLiteGraphics() {
+  document.documentElement.classList.add("gpu-lite");
+}
 
 /** Whether this browser can create a WebGL context (checked once). */
 export function hasWebGL(): boolean {
@@ -70,12 +83,62 @@ export function StaticGlobe({ body = "earth", note = true, className = "" }: { b
 }
 
 /**
- * Wrap every 3D canvas: without WebGL, or if the scene throws (for example a lost GPU
- * context), show `fallback` instead and keep the rest of the page working.
+ * Wrap every 3D canvas: without WebGL, if the scene throws, or if the browser drops the GPU
+ * context (a driver reset, too many tabs with 3D), show `fallback` instead and keep the rest of
+ * the page working. After a lost context a button starts the scene again on a fresh context.
  */
 export function Scene({ fallback, children }: { fallback: ReactNode; children: ReactNode }) {
+  const [lost, setLost] = useState(false);
+  const [round, setRound] = useState(0);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || lost) return;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      console.warn("3D view paused: the graphics context was lost");
+      setLost(true);
+    };
+    // the event does not bubble, so each canvas gets the listener, including ones added later
+    const seen = new Set<HTMLCanvasElement>();
+    const hook = () =>
+      el.querySelectorAll("canvas").forEach((c) => {
+        if (seen.has(c)) return;
+        seen.add(c);
+        c.addEventListener("webglcontextlost", onLost);
+      });
+    hook();
+    const mo = new MutationObserver(hook);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      seen.forEach((c) => c.removeEventListener("webglcontextlost", onLost));
+    };
+  }, [lost, round]);
+
   if (!hasWebGL()) return <>{fallback}</>;
-  return <ErrorBoundary fallback={() => fallback} onError={(e) => console.warn("3D view stopped:", e.message)}>{children}</ErrorBoundary>;
+  if (lost)
+    return (
+      <div className="relative h-full w-full">
+        {fallback}
+        <button
+          onClick={() => {
+            setLost(false);
+            setRound((r) => r + 1);
+          }}
+          className="absolute bottom-4 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-line-2 bg-void/80 px-3.5 py-2 text-[12px] whitespace-nowrap text-chrome hover:text-platinum"
+        >
+          <RotateCcw size={13} /> 3D paused after a graphics reset. Try again
+        </button>
+      </div>
+    );
+  return (
+    <div ref={box} className="contents">
+      <ErrorBoundary key={round} fallback={() => fallback} onError={(e) => console.warn("3D view stopped:", e.message)}>
+        {children}
+      </ErrorBoundary>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ pages */

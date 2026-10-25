@@ -56,6 +56,7 @@ export interface Validation {
   model_zoo?: { rows: { id: string; name: string; hidden: number; hidden_top10: number; independent: number | null; members?: string[] | null }[]; chosen: string; minutes: number };
   minerals?: MineralTest;
   terrain_ai?: TerrainAiTest | null;
+  pinpoint?: PinpointTest;
   model?: string;
   notes: string[];
 }
@@ -87,6 +88,28 @@ export interface MineralTest {
 }
 
 type ShapeSummary = { n: number; formula: number; learned: number; both: number; formula_top20: number; learned_top20: number; both_top20: number };
+/** pipeline/s23: does the best 10 km window of a place hold the real field site? (rank 0 = best window, chance 0.5) */
+export interface PinpointSummary {
+  n: number;
+  median_rank: number;
+  mean_rank: number;
+  top_quarter: number;
+  better_half: number;
+  sign_test_p: number;
+  wilcoxon_p: number;
+  best_km_median: number;
+  random_km_median: number;
+}
+
+export interface PinpointTest {
+  all: PinpointSummary;
+  known: PinpointSummary;
+  independent: PinpointSummary;
+  works: boolean;
+  rows: { id: string; name: string; group: "known" | "independent"; target: string; rank: number; windows: number; best_km_from_site: number; median_km_from_site: number }[];
+  method: { spacing_km: number; window_km: number; stride_km: number; area_km: number };
+}
+
 export interface TerrainAiTest {
   model?: string;
   minutes?: number;
@@ -111,6 +134,34 @@ export function loadValidation(): Promise<Validation> {
     cache.catch(() => (cache = null));
   }
   return cache;
+}
+
+/** public/data/review.json (pipeline/s24_review.py): the expert review of the top candidates. */
+export interface Review {
+  status: "pending" | "done";
+  reviewer: string;
+  generated: string;
+  candidates: { id: string; target: string; job: string; lat: number; lon: number; place: string; score: number }[];
+  rubric: { id: string; label: string }[];
+  reviewed?: number;
+  mean?: Record<string, number>;
+  overall?: { yes: number; maybe: number; no: number };
+}
+
+let reviewPromise: Promise<Review | null> | null = null;
+
+/** The expert review, or null while loading or when there is none. */
+export function useReview() {
+  const [r, setR] = useState<Review | null>(null);
+  useEffect(() => {
+    let alive = true;
+    reviewPromise ??= fetch("/data/review.json").then((x) => (x.ok ? (x.json() as Promise<Review>) : null)).catch(() => null);
+    reviewPromise.then((x) => alive && setR(x));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return r;
 }
 
 export function useValidation() {

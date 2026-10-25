@@ -1,0 +1,454 @@
+{
+ "label": "after-gpu",
+ "date": "2026-10-25T01:55:36.626Z",
+ "base": "http://localhost:4174",
+ "chrome": "155.0.8059.85",
+ "renderer": "ANGLE (AMD, AMD Radeon(TM) Graphics (0x00001638) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "loads": {
+  "desktop:home": {
+   "ttfb": {
+    "median": 5.9,
+    "min": 5.2,
+    "max": 7.2
+   },
+   "fcp": {
+    "median": 484,
+    "min": 416,
+    "max": 596
+   },
+   "lcp": {
+    "median": 1440,
+    "min": 1352,
+    "max": 1648
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 767,
+    "min": 540,
+    "max": 816
+   },
+   "js_kb": {
+    "median": 492,
+    "min": 492,
+    "max": 492
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   },
+   "img_kb": {
+    "median": 713,
+    "min": 713,
+    "max": 713
+   },
+   "grid_ready": {
+    "median": null,
+    "min": null,
+    "max": null
+   },
+   "samples": 5
+  },
+  "desktop:find-results": {
+   "ttfb": {
+    "median": 6.6,
+    "min": 5.7,
+    "max": 7.2
+   },
+   "fcp": {
+    "median": 484,
+    "min": 400,
+    "max": 524
+   },
+   "lcp": {
+    "median": 5112,
+    "min": 4968,
+    "max": 5116
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 335,
+    "min": 327,
+    "max": 450
+   },
+   "js_kb": {
+    "median": 591,
+    "min": 591,
+    "max": 591
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 5222,
+    "min": 5222,
+    "max": 5222
+   },
+   "img_kb": {
+    "median": 338,
+    "min": 338,
+    "max": 338
+   },
+   "grid_ready": {
+    "median": 1103.7,
+    "min": 976.4,
+    "max": 1133.2
+   },
+   "samples": 5
+  },
+  "desktop:methods": {
+   "ttfb": {
+    "median": 5.5,
+    "min": 4.7,
+    "max": 6.3
+   },
+   "fcp": {
+    "median": 468,
+    "min": 436,
+    "max": 492
+   },
+   "lcp": {
+    "median": 2248,
+    "min": 2208,
+    "max": 2304
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 598,
+    "min": 530,
+    "max": 624
+   },
+   "js_kb": {
+    "median": 611,
+    "min": 611,
+    "max": 611
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 5239,
+    "min": 5239,
+    "max": 5239
+   },
+   "img_kb": {
+    "median": 62,
+    "min": 62,
+    "max": 62
+   },
+   "grid_ready": {
+    "median": 1792.1,
+    "min": 1711.8,
+    "max": 1814.7
+   },
+   "samples": 5
+  },
+  "desktop:maps": {
+   "ttfb": {
+    "median": 5.7,
+    "min": 5.5,
+    "max": 6.3
+   },
+   "fcp": {
+    "median": 556,
+    "min": 456,
+    "max": 784
+   },
+   "lcp": {
+    "median": 1348,
+    "min": 1188,
+    "max": 1620
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 211,
+    "min": 182,
+    "max": 375
+   },
+   "js_kb": {
+    "median": 600,
+    "min": 600,
+    "max": 600
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "img_kb": {
+    "median": 1143,
+    "min": 1143,
+    "max": 1143
+   },
+   "grid_ready": {
+    "median": null,
+    "min": null,
+    "max": null
+   },
+   "samples": 5
+  },
+  "desktop:compare": {
+   "ttfb": {
+    "median": 5.7,
+    "min": 5.5,
+    "max": 6.1
+   },
+   "fcp": {
+    "median": 480,
+    "min": 408,
+    "max": 704
+   },
+   "lcp": {
+    "median": 3692,
+    "min": 3612,
+    "max": 4532
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 1490,
+    "min": 1479,
+    "max": 1616
+   },
+   "js_kb": {
+    "median": 587,
+    "min": 558,
+    "max": 587
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 5222,
+    "min": 5222,
+    "max": 5222
+   },
+   "img_kb": {
+    "median": 62,
+    "min": 62,
+    "max": 62
+   },
+   "grid_ready": {
+    "median": 2310.8,
+    "min": 2216.8,
+    "max": 2497.5
+   },
+   "samples": 5
+  },
+  "mobile:home": {
+   "ttfb": {
+    "median": 5.2,
+    "min": 5.1,
+    "max": 11.7
+   },
+   "fcp": {
+    "median": 964,
+    "min": 952,
+    "max": 980
+   },
+   "lcp": {
+    "median": 5992,
+    "min": 5952,
+    "max": 6024
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 3297,
+    "min": 3272,
+    "max": 3329
+   },
+   "js_kb": {
+    "median": 492,
+    "min": 492,
+    "max": 492
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   },
+   "img_kb": {
+    "median": 713,
+    "min": 713,
+    "max": 713
+   },
+   "grid_ready": {
+    "median": null,
+    "min": null,
+    "max": null
+   },
+   "samples": 5
+  },
+  "mobile:find-results": {
+   "ttfb": {
+    "median": 5.4,
+    "min": 5.2,
+    "max": 5.8
+   },
+   "fcp": {
+    "median": 952,
+    "min": 936,
+    "max": 964
+   },
+   "lcp": {
+    "median": 2964,
+    "min": 2908,
+    "max": 3000
+   },
+   "cls": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "tbt": {
+    "median": 560,
+    "min": 551,
+    "max": 602
+   },
+   "js_kb": {
+    "median": 278,
+    "min": 278,
+    "max": 278
+   },
+   "css_kb": {
+    "median": 25,
+    "min": 25,
+    "max": 25
+   },
+   "data_kb": {
+    "median": 99,
+    "min": 99,
+    "max": 99
+   },
+   "img_kb": {
+    "median": 62,
+    "min": 62,
+    "max": 62
+   },
+   "grid_ready": {
+    "median": null,
+    "min": null,
+    "max": null
+   },
+   "samples": 5
+  }
+ },
+ "ops": {
+  "score-all": {
+   "n": 300,
+   "p50": 15.3,
+   "p95": 18,
+   "p99": 22.8,
+   "max": 36.4
+  },
+  "search": {
+   "n": 150,
+   "p50": 25.8,
+   "p95": 28.9,
+   "p99": 30.4,
+   "max": 144.2
+  },
+  "rank": {
+   "n": 300,
+   "p50": 3.9,
+   "p95": 4.3,
+   "p99": 5.3,
+   "max": 8.6
+  },
+  "twins-formula": {
+   "n": 75,
+   "p50": 11,
+   "p95": 12.4,
+   "max": 15
+  },
+  "twins-ai": {
+   "n": 75,
+   "p50": 0.1,
+   "p95": 0.2,
+   "max": 54
+  },
+  "mineral-pct-first": {
+   "n": 1,
+   "p50": 24.6,
+   "p95": 24.6,
+   "max": 24.6
+  },
+  "grid-parse": {
+   "n": 1,
+   "p50": 4.4,
+   "p95": 4.4,
+   "max": 4.4
+  }
+ },
+ "interactions": {
+  "needs-step": {
+   "n": 84,
+   "inp_estimate": 56,
+   "p50": 32,
+   "max": 56
+  },
+  "twin-mode": {
+   "n": 36,
+   "inp_estimate": 64,
+   "p50": 48,
+   "max": 64
+  }
+ },
+ "memory": {
+  "unit": "MB used JS heap after GC, at Home, after each loop of 5 routes",
+  "series": [
+   14,
+   65,
+   95,
+   91,
+   91,
+   91,
+   92
+  ],
+  "growth_after_first_loop": 27
+ }
+}

@@ -36,7 +36,15 @@ function prep(t: THREE.Texture) {
 
 const loader = new THREE.TextureLoader();
 
-/** Suspends on the tiny texture, then upgrades in the background. */
+/**
+ * Suspends on the tiny texture, then upgrades in the background.
+ *
+ * The 1K texture is cached by useLoader for the whole visit, and every renderer that draws it adds
+ * a "dispose" listener to it that points back at that renderer, its canvas and the page around it.
+ * So when the scene unmounts we release the GPU copy (three.js then drops those listeners); the
+ * image stays cached and uploads again next time. Without this, each visit to a page with a globe
+ * kept the previous page alive (measured with heap snapshots, docs/ENGINEERING.md).
+ */
 export function useProgressiveTexture(kind: Body | "night", target: Lod) {
   const low = useLoader(THREE.TextureLoader, textureUrl(kind, "1k"));
   const [tex, setTex] = useState<THREE.Texture>(() => prep(low));
@@ -46,11 +54,15 @@ export function useProgressiveTexture(kind: Body | "night", target: Lod) {
     let alive = true;
     loader.loadAsync(textureUrl(kind, target)).then((hi) => {
       if (alive) setTex(prep(hi));
+      else hi.dispose();
     });
     return () => {
       alive = false;
     };
   }, [kind, target]);
+
+  useEffect(() => () => low.dispose(), [low]);
+  useEffect(() => () => void (tex !== low && tex.dispose()), [tex, low]);
 
   return tex;
 }

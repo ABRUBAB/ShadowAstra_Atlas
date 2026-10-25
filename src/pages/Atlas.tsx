@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
@@ -29,6 +29,7 @@ import { hasWebGL } from "../components/ui/Safe";
 type TwinMode = "like" | "ground" | "ai";
 import { useEarthThumb } from "../lib/thumbs";
 import { EASE, Meter } from "../components/ui/kit";
+import { useMotionReduced } from "../lib/motionPref";
 
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
 
@@ -397,7 +398,27 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
     };
   }, [body, spot.lat, spot.lon]);
   const [mode, setMode] = useState<TwinMode>("like");
-  const formulaTwins = useMemo(() => (grid && terrain && mode !== "ai" ? findTwins(grid, terrain, 8, mode === "like") : null), [grid, terrain, mode]);
+  // the tab answers the click at once; the list follows in a second, interruptible render
+  const shown = useDeferredValue(mode);
+  const formulaCache = useMemo(() => new Map<TwinMode, Candidate[]>(), [grid, terrain]);
+  const formulaFor = (md: TwinMode) => {
+    if (!grid || !terrain || md === "ai") return null;
+    let list = formulaCache.get(md);
+    if (!list) formulaCache.set(md, (list = findTwins(grid, terrain, 8, md === "like")));
+    return list;
+  };
+  const formulaTwins = formulaFor(shown);
+  // work out the other formula list while the browser is idle, so switching to it is instant
+  useEffect(() => {
+    if (!grid || !terrain) return;
+    const idle = window.requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 300));
+    const stop = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = idle(() => {
+      formulaFor("ground");
+      formulaFor("like");
+    });
+    return () => stop(id);
+  }, [formulaCache]); // eslint-disable-line react-hooks/exhaustive-deps
   const [ai, setAi] = useState<{ key: string; list: Candidate[] } | null>(null);
   const aiKey = `${body}|${spot.lat}|${spot.lon}`;
   useEffect(() => {
@@ -410,7 +431,7 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
       alive = false;
     };
   }, [mode, grid, aiKey, ai?.key, body, spot.lat, spot.lon]);
-  const twins = mode === "ai" ? (ai?.key === aiKey ? ai.list : null) : formulaTwins;
+  const twins = shown === "ai" ? (ai?.key === aiKey ? ai.list : null) : formulaTwins;
   const name = body === "moon" ? "the Moon" : "Mars";
   const short = body === "moon" ? "Moon" : "Mars";
   const modes: { id: TwinMode; label: string }[] = [
@@ -465,9 +486,9 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
         </div>
       )}
       {twins && (
-        <ol className="space-y-2">
+        <ol className={clsx("space-y-2 transition-opacity duration-150", shown !== mode && "opacity-60")}>
           {twins.map((c, i) => (
-            <TwinRow key={`${mode}-${c.k}`} grid={grid!} c={c} rank={i + 1} ai={mode === "ai"} onShow={() => onEarth(c.lat, c.lon)} />
+            <TwinRow key={`${shown}-${c.k}`} grid={grid!} c={c} rank={i + 1} ai={shown === "ai"} onShow={() => onEarth(c.lat, c.lon)} />
           ))}
         </ol>
       )}
@@ -512,12 +533,13 @@ const TEX: Record<Body, string> = { earth: "/textures/earth_day_1k.webp", moon: 
 
 /** A tiny spinning planet made from the real NASA mosaic. */
 function PlanetThumb({ body, on, size = 24 }: { body: Body; on: boolean; size?: number }) {
+  const still = useMotionReduced();
   return (
     <motion.span
       aria-hidden
       className="relative block shrink-0 rounded-full"
       style={{ width: size, height: size, backgroundImage: `url(${TEX[body]})`, backgroundSize: "200% 100%", boxShadow: "inset -6px -2px 8px rgba(0,0,0,0.85), inset 2px 1px 3px rgba(255,255,255,0.12)" }}
-      animate={{ backgroundPositionX: on ? ["0%", "-200%"] : "0%", scale: on ? 1.08 : 1, opacity: on ? 1 : 0.65 }}
+      animate={{ backgroundPositionX: on && !still ? ["0%", "-200%"] : "0%", scale: on ? 1.08 : 1, opacity: on ? 1 : 0.65 }}
       transition={{ backgroundPositionX: { duration: 18, repeat: Infinity, ease: "linear" }, scale: { type: "spring", stiffness: 300, damping: 20 }, opacity: { duration: 0.3 } }}
     />
   );

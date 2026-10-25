@@ -66,7 +66,8 @@ export const STEPS = [
   { id: "needs", label: "Your needs" },
   { id: "results", label: "Results" },
 ] as const;
-export type StepId = "start" | (typeof STEPS)[number]["id"];
+export type { StepId } from "../../lib/missionUrl";
+import type { StepId } from "../../lib/missionUrl";
 
 export function StepRail({ step, onStep, done }: { step: StepId; onStep: (s: StepId) => void; done: Record<string, boolean> }) {
   const idx = STEPS.findIndex((s) => s.id === step);
@@ -88,7 +89,7 @@ export function StepRail({ step, onStep, done }: { step: StepId; onStep: (s: Ste
               <span className={clsx("relative grid size-5 place-items-center rounded-full font-mono text-[10px]", on ? "bg-void text-platinum" : ok ? "bg-flare text-void" : "border border-line-2")}>
                 {ok && !on ? <Check size={11} /> : i + 1}
               </span>
-              <span className="relative hidden sm:inline">{s.label}</span>
+              <span className="sr-only sm:not-sr-only sm:relative">{s.label}</span>
             </button>
             {i < STEPS.length - 1 && <span className="h-px w-2 bg-line-2 sm:w-3" />}
           </li>

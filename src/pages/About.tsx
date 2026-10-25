@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import { useSectionProgress } from "../lib/useSectionProgress";
+import { motion, useSpring, useTransform } from "motion/react";
 import { ArrowRight, ArrowUpRight, Eye, Leaf, Scale, Users } from "lucide-react";
 import { Footer, Github, Nav, REPO_URL } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
@@ -109,7 +110,7 @@ export default function About() {
 
 function Hero() {
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const scrollYProgress = useSectionProgress(ref, ["start start", "end start"]);
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   return (
@@ -300,7 +301,7 @@ function Values() {
 
 function Timeline() {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 70%", "end 60%"] });
+  const scrollYProgress = useSectionProgress(ref, ["start 70%", "end 60%"]);
   const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 30 });
   return (
     <section className="px-4 py-28 sm:px-6">

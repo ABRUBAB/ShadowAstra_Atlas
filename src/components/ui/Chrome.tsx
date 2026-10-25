@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Moon, Search, Sun, X } from "lucide-react";
+import { Menu, Moon, Pause, Play, Search, Sun, X } from "lucide-react";
+import { setMotionPaused, useMotionPaused, useMotionReduced } from "../../lib/motionPref";
 import clsx from "clsx";
 import type { Fit } from "../../data/sites";
 import { FIT_LABEL } from "../../data/sites";
@@ -147,7 +148,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
           <button
             onClick={() => window.dispatchEvent(new Event("sa-palette"))}
             className="ml-2 inline-flex items-center gap-2 rounded-full border border-line-2 py-1.5 pr-1.5 pl-3.5 text-[13px] text-chrome transition-colors hover:border-chrome hover:text-platinum"
-            aria-label="Search everything"
+            title="Search everything"
           >
             <Search size={14} /> Search
             <kbd className="rounded-full border border-line-2 px-2 py-0.5 font-mono text-[10px] text-dim">Ctrl K</kbd>
@@ -193,6 +194,19 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
         )}
       </AnimatePresence>
     </header>
+  );
+}
+
+/** Stops everything that moves on its own (WCAG 2.2.2). The system "reduce motion" setting does the same. */
+function MotionToggle() {
+  const paused = useMotionPaused();
+  const system = useMotionReduced() && !paused;
+  if (system) return <span>Motion reduced by your system setting</span>;
+  return (
+    <button onClick={() => setMotionPaused(!paused)} aria-pressed={paused} className={clsx("inline-flex min-h-6 items-center gap-1.5 rounded-full px-2 transition-colors hover:text-platinum", paused && "text-flare")}>
+      {paused ? <Play size={12} aria-hidden /> : <Pause size={12} aria-hidden />}
+      Pause motion
+    </button>
   );
 }
 
@@ -250,7 +264,8 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 py-5 font-mono text-[11px] text-dim sm:px-6">
           <span>© 2026 ShadowAstra · Dhaka</span>
-          <span>v0.6 · open source · open data</span>
+          <MotionToggle />
+          <span>v0.7 · open source · open data</span>
         </div>
       </div>
     </footer>

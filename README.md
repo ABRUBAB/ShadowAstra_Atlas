@@ -68,7 +68,8 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
 | 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth, by our formula or by **a terrain AI** (a vision transformer trained on Kaggle GPUs with heights from all three worlds). |
 | 💎 | **Minerals from orbit** | Every place report shows what NASA's EMIT spectrometer sees in the ground (clays, sulfates, carbonates, iron oxides) next to the minerals orbiters and rovers found at Jezero, Gale, Meridiani and Mawrth Vallis. |
-| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too: LRO Diviner ground temperatures and stable ice at the lunar south pole, Mars Odyssey water in the topsoil on Mars. |
+| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too, for all 18 targets: LRO Diviner ground temperatures (stable ice at the south pole, the full day and night elsewhere), Lunar Prospector iron and titanium, Mars Odyssey water in the topsoil. |
+| 🎯 | **Best 10 km spot** | Each 55 km place is cut into 10 km pieces; the one whose slopes are most like the target's is drawn on the close-up map. We tested it on 66 real field sites and say plainly that it is a hint, not a prediction. |
 | 🎓 | **Learn, in English, Spanish or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
 | 📄 | **Site report** | A printable one-page dossier for any place: the four factors and minerals on Earth and the target, field tests, planning, permission and what Earth can't copy. |
 | 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
@@ -77,6 +78,7 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | 🧑‍🚀 | **Astra** | Our field-test astronaut shivers in the cold, sweats in the heat, cheers good matches and answers questions from the real data. |
 | 🏷️ | **Honest labels** | Every value is **Computed**, **Learned** or **Earth can't copy**, and every place has a confidence badge (real measurements and model agreement); thin evidence says **Not enough evidence**. |
 | ⌨️ | **Search everything** | `Ctrl K` or `/` searches pages, Moon and Mars places, known sites and any town on Earth. |
+| ♿ | **For everyone** | Dark and light themes checked for WCAG 2.2 AA contrast, a "Pause motion" switch, the system reduce-motion setting respected, still images where 3D is not available. |
 
 ## 🔭 Tour
 
@@ -195,7 +197,12 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 npm install
 npm run dev          # http://localhost:3000
 npm run build        # production build in dist/
+npm run typecheck    # TypeScript, strict
+npm test             # 67 unit, data and Python-parity tests
+npm run test:e2e     # browser tests and accessibility scans on the production build
 ```
+
+Tests, benchmarks, security and reliability checks, with measured numbers: [`docs/ENGINEERING.md`](docs/ENGINEERING.md). CI runs on every push (`.github/workflows/ci.yml`); the live site is smoke-tested after each deploy and every six hours.
 
 Requires Node 20+. To rebuild the global data from scratch see [`pipeline/README.md`](pipeline/README.md) (Python 3; only the EMIT step needs a free NASA Earthdata token).
 
@@ -203,16 +210,16 @@ Requires Node 20+. To rebuild the global data from scratch see [`pipeline/README
 
 ## 🚀 Deploy
 
-Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atlas.vercel.app). Vite build, output `dist`, every push to `main` redeploys.
+Deployed on **Vercel** at [shadowastra-atlas.vercel.app](https://shadowastra-atlas.vercel.app). Vite build, output `dist`, every push to `main` redeploys. It is a static site: **no backend server and no database**. The measured planet ships as versioned files in `public/data/`, every score is computed in the visitor's browser, and map tiles come straight from NASA, ESA, Esri and AWS. Security headers and the content security policy are in `vercel.json`.
 
 ## 🧱 Tech
 
 React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fiber · Leaflet · GSAP · Lenis · Motion · Python (NumPy, SciPy, LightGBM, XGBoost, scikit-learn) for the data pipeline · PyTorch (DINO ViT) on Kaggle
 
-**Performance:** the global dataset is 5.2 MB of typed arrays (2.2 MB compressed), scored in under 20 ms per change; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch.
+**Performance:** the global dataset is 5.0 MB of typed arrays (2.3 MB with Brotli); scoring all 80,206 places takes 16 ms (p50) and 19 ms (p95) on an AMD Ryzen 5 5600H laptop, and a whole search with ranking and hints 26 ms; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch; slow or software graphics get a lighter mode automatically.
 
 ```
-pipeline/      Python: download, measure, model and test all of Earth (s01 to s20)
+pipeline/      Python: download, measure, model and test all of Earth (s01 to s24)
 kaggle/        GPU and CPU notebooks run on Kaggle (K1 to K5) and their runner
 public/data/   grid.bin + grid.json (the measured planet), validation.json (every test), shape.bin (terrain AI), terrain/ (Moon and Mars bands, AI twins)
 src/
@@ -235,8 +242,10 @@ src/
 - [x] Kaggle K3: a self-supervised terrain transformer for three worlds on 2 × T4, tested and shipped as AI twins and an option in Find
 - [x] Sharper imagery as you zoom (Esri on Earth, CTX on Mars, Kaguya on the Moon), close-up map of each result
 - [x] K5 ensemble as the site model; EMIT minerals, Diviner temperatures and ice, Odyssey water, each tested before it counts
+- [x] Engineering pass: memory leaks fixed, faster clicks, security headers, error fallbacks, WCAG 2.2 fixes, unit, parity and browser tests, CI and uptime checks
+- [x] Best 10 km spot inside each place (tested on 66 field sites); Diviner and Lunar Prospector facts for every Moon target; expert review kit
 - [ ] Official 2026 challenge datasets (released 28 Oct)
-- [ ] Pinpoint the best 10 km spot inside each place; expert review of the top 20
+- [ ] Expert review of the top 20 by Md. Tanvir Hasan; Mars SWIM ice when its site is back
 
 ## 👩‍🚀 Team ShadowAstra
 

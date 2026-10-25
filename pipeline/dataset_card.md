@@ -45,7 +45,7 @@ Where on Earth can a team rehearse a Moon base or a Mars mission? We measured al
 |---|---|---|
 | `places.parquet` | 80,206 | One row per land area: names, measurements in real units, NASA EMIT minerals, slope histogram, 0 to 1 indicators, the learned Moon and Mars scores and a confidence level |
 | `target_scores.parquet` | 1,443,708 | One row per land area and target: the match score as the website shows it for the target's main job, and each factor behind it |
-| `targets.csv`, `targets.json` | 18 | The Moon and Mars targets: terrain at 50 km, main rocks, published water-made minerals, LRO Diviner and Mars Odyssey measurements |
+| `targets.csv`, `targets.json` | 18 | The Moon and Mars targets: terrain at 50 km, main rocks, published water-made minerals, LRO Diviner, Lunar Prospector and Mars Odyssey measurements |
 | `ai_twins.parquet` | 648,000 | The 5 closest Earth places for every 1° cell of the Moon and Mars, from our terrain AI |
 | `known_sites.csv` | 38 | Analog sites used to train the learned model, with the jobs they were used for |
 | `validation_sites.csv` | 28 | Published analog sites never used for training, kept as an untouched test |
@@ -72,7 +72,7 @@ Join `target_scores` and `ai_twins` (`earth_cell`) to `places` on `cell`.
 - `factors_only`: the job-weighted mean of `ground_shape` (slope histograms and height range compared with the target at the same 50 km scale, LRO LOLA 118 m or MGS MOLA 463 m), `rocks_craters`, `cold_heat`, `sunlight_angle` (Sun-height match in the best month) and `bare_dry_ground`.
 - `ground_shape_ai`: the terrain AI's similarity rank for the target (an option on the website, not in `match_score`).
 
-**targets**: `temp_avg_c`, `temp_max_c`, `ice_surface_share`, `ice_1m_share` within 10 km of the seven south-pole Moon targets (LRO Diviner polar resource product, Paige et al.); `h2o_wt_pct`, water-equivalent hydrogen in the topsoil at each Mars target (Mars Odyssey GRS, 5° map, Boynton et al. 2007); `water_made_minerals` from published CRISM, OMEGA, TES and rover results.
+**targets**: `temp_avg_c`, `temp_max_c`, `ice_surface_share`, `ice_1m_share` within 10 km of the seven south-pole Moon targets (LRO Diviner polar resource product, Paige et al.); `temp_avg_c`, `temp_max_c` and `temp_min_c` (coldest, before dawn) over about 45 km for the three Moon targets away from the pole, from the day-and-night curve in Diviner's global temperatures (Williams et al. 2017, PDS LRO-L-DLRE-5-GCP); `feo_wt_pct`, `tio2_wt_pct` (oxides by weight) and `th_ppm` for every Moon target from the Lunar Prospector gamma-ray spectrometer (Prettyman et al. 2006, about 150 km footprint); `h2o_wt_pct`, water-equivalent hydrogen in the topsoil at each Mars target (Mars Odyssey GRS, 5° map, Boynton et al. 2007); `water_made_minerals` from published CRISM, OMEGA, TES and rover results.
 
 **ai_twins**: for each Moon or Mars cell (`body`, `lat`, `lon`), `rank` 1 to 5 and the Earth place (`earth_cell`, `earth_lat`, `earth_lon`). Made by a self-supervised vision transformer (DINO ViT-S/8) trained on Kaggle (2 × T4) with 50 km height maps from all three worlds and a domain-adversarial head.
 
@@ -115,7 +115,7 @@ With 🤗 Datasets: `load_dataset("ABRUBAB/shadowastra-atlas", "places")`.
 ## Sources and licence
 
 This dataset is released under **CC BY 4.0**: please credit "Team ShadowAstra, ShadowAstra Atlas (NASA Space Apps Challenge 2026)" and the original sources:
-NASA POWER (LaRC); NASA GIBS and Terra MODIS; NASA EMIT L3 ASA v002 (JPL, LP DAAC, doi:10.5067/EMIT/EMITL3ASA.002); SRTM via AWS Terrain Tiles; LRO LOLA and MGS MOLA (USGS Astrogeology); LRO Diviner and Mars Odyssey GRS (PDS Geosciences); Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); GLiM (Hartmann and Moosdorf 2012, CC BY); Natural Earth (public domain). NASA does not endorse this project.
+NASA POWER (LaRC); NASA GIBS and Terra MODIS; NASA EMIT L3 ASA v002 (JPL, LP DAAC, doi:10.5067/EMIT/EMITL3ASA.002); SRTM via AWS Terrain Tiles; LRO LOLA and MGS MOLA (USGS Astrogeology); LRO Diviner, Lunar Prospector GRS and Mars Odyssey GRS (PDS Geosciences); NASA MODIS water mask (MOD44W, via GIBS); Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); GLiM (Hartmann and Moosdorf 2012, CC BY); Natural Earth (public domain). NASA does not endorse this project.
 
 ## Team ShadowAstra, Dhaka
 

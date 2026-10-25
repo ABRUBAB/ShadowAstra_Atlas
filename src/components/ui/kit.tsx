@@ -4,7 +4,8 @@
  * Every effect respects prefers-reduced-motion.
  */
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, animate, motion, useInView, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { AnimatePresence, animate, motion, useInView, useMotionValue, useSpring } from "motion/react";
+import { useMotionReduced } from "../../lib/motionPref";
 import clsx from "clsx";
 import { ArrowUp, Check, Info, X } from "lucide-react";
 
@@ -42,21 +43,39 @@ export function useSpotlight() {
   }, []);
 }
 
-/** Marks the page as scrolling (html.is-scrolling) until 150 ms after the last scroll, so hover effects pause. */
+/**
+ * Marks the page as scrolling (html.is-scrolling) until 150 ms after the last scroll, so hover
+ * effects pause while the page moves under a still mouse. The moment the mouse really moves (the
+ * visitor is going to point at something) the flag clears, so a click right after scrolling, or
+ * during trackpad momentum, is never swallowed.
+ */
 export function useScrollingFlag() {
   useEffect(() => {
     const root = document.documentElement;
     let t = 0;
+    let x = -1;
+    let y = -1;
+    const stop = () => {
+      clearTimeout(t);
+      root.classList.remove("is-scrolling");
+    };
     const on = () => {
       if (!root.classList.contains("is-scrolling")) root.classList.add("is-scrolling");
       clearTimeout(t);
-      t = window.setTimeout(() => root.classList.remove("is-scrolling"), 150);
+      t = window.setTimeout(stop, 150);
+    };
+    // browsers may send a pointer event without movement after a scroll; only real movement counts
+    const move = (e: PointerEvent) => {
+      if (Math.abs(e.screenX - x) + Math.abs(e.screenY - y) > 2 && root.classList.contains("is-scrolling")) stop();
+      x = e.screenX;
+      y = e.screenY;
     };
     window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("pointermove", move, { passive: true });
     return () => {
       window.removeEventListener("scroll", on);
-      clearTimeout(t);
-      root.classList.remove("is-scrolling");
+      window.removeEventListener("pointermove", move);
+      stop();
     };
   }, []);
 }
@@ -68,7 +87,7 @@ export function Counter({ value, decimals = 0, prefix = "", suffix = "", duratio
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
   const prev = useRef(0);
-  const reduce = useReducedMotion();
+  const reduce = useMotionReduced();
   const fmt = (v: number) => `${prefix}${v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`;
   useEffect(() => {
     const el = ref.current;
@@ -281,7 +300,7 @@ export function Magnetic({ children, strength = 0.25, className }: { children: R
 /** Cycles through words with a vertical mask, used in headings. */
 export function WordCycler({ words, interval = 2600, className }: { words: string[]; interval?: number; className?: string }) {
   const [i, setI] = useState(0);
-  const reduce = useReducedMotion();
+  const reduce = useMotionReduced();
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setI((n) => (n + 1) % words.length), interval);
@@ -302,10 +321,11 @@ export function WordCycler({ words, interval = 2600, className }: { words: strin
 export function RevealWords({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
-  const reduce = useReducedMotion();
+  const reduce = useMotionReduced();
   const words = text.split(" ");
   return (
-    <span ref={ref} className={clsx("inline", className)} aria-label={text}>
+    <span ref={ref} className={clsx("inline", className)}>
+      <span className="sr-only">{text}</span>
       {words.map((w, i) => (
         <span key={i} className="inline-block overflow-hidden pb-[0.08em] align-bottom" aria-hidden>
           <motion.span className="inline-block" initial={reduce ? false : { y: "105%" }} animate={inView ? { y: 0 } : undefined} transition={{ duration: 0.9, ease: EASE, delay: delay + i * 0.035 }}>

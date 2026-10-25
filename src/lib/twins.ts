@@ -68,7 +68,12 @@ export function twinScores(g: Grid, s: SpotTerrain): Float32Array {
 /** Best Earth places: ground shape alone, or mixed half and half with how Moon- or Mars-like the place is (learned model). */
 export function findTwins(g: Grid, s: SpotTerrain, count = 8, alsoLike = true): Candidate[] {
   const shape = twinScores(g, s);
-  if (alsoLike) for (let k = 0; k < g.n; k++) shape[k] = 0.5 * shape[k] + 0.5 * g.model(s.body, k);
+  if (alsoLike) {
+    // same as g.model(s.body, k), with the column looked up once instead of 80,206 times
+    const model = g.arr(`model_${s.body}`);
+    const scale = g.scale(`model_${s.body}`);
+    for (let k = 0; k < g.n; k++) shape[k] = 0.5 * shape[k] + 0.5 * (model[k] / scale);
+  }
   return rankPlaces(g, shape, { count, spacingKm: 400 });
 }
 

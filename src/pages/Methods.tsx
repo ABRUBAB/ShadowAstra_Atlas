@@ -1,7 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion, useInView, useScroll, useSpring, useTransform } from "motion/react";
+import { AnimatePresence, motion, useInView, useSpring, useTransform } from "motion/react";
+import { useMotionReduced } from "../lib/motionPref";
 import clsx from "clsx";
+import { useSectionProgress } from "../lib/useSectionProgress";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDashed, Database, Flame, Mountain, Scale, ShieldCheck, Snowflake, Sun, Target } from "lucide-react";
 import { DATASET_URL, Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { hasWebGL } from "../components/ui/Safe";
@@ -15,21 +17,13 @@ import { useValidation, type Validation } from "../lib/validation";
 import { useEarthThumb } from "../lib/thumbs";
 import { useSmoothScroll } from "../lib/useSmoothScroll";
 import type { Weights } from "../lib/scoring";
+import { percentileRank } from "../lib/rank";
 
 const DotGlobe = lazy(() => import("../components/methods/DotGlobe"));
 
 /* ================================================================== data helpers */
 
-function rank(a: ArrayLike<number>): Float32Array {
-  const n = a.length;
-  const v = Float32Array.from(a);
-  const idx = new Uint32Array(n);
-  for (let i = 0; i < n; i++) idx[i] = i;
-  idx.sort((x, y) => v[x] - v[y]);
-  const out = new Float32Array(n);
-  for (let r = 0; r < n; r++) out[idx[r]] = r / (n - 1);
-  return out;
-}
+const rank = percentileRank;
 
 const ONLY = (d: keyof Weights): Weights => ({ topography: 0, geology: 0, temperature: 0, lighting: 0, regolith: 0, [d]: 1 });
 
@@ -108,7 +102,7 @@ export default function Methods() {
 
 function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float32Array | null; progress: number; v: Validation | null }) {
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const scrollYProgress = useSectionProgress(ref, ["start start", "end start"]);
   const y = useTransform(scrollYProgress, [0, 1], [0, 140]);
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const testSites = (v?.independent.sites.length ?? 28) + 38;
@@ -144,7 +138,7 @@ function Hero({ grid, values, progress, v }: { grid: Grid | null; values: Float3
             <RevealWords text="Honest answers out." delay={0.25} />
           </span>
         </h1>
-        <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: 0.6 }} className="mt-7 max-w-[520px] text-[17px] leading-relaxed text-chrome">
+        <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE, delay: 0.25 }} className="mt-7 max-w-[520px] text-[17px] leading-relaxed text-chrome">
           Every dot is one of the {grid ? grid.n.toLocaleString() : "80,206"} land areas we measured with NASA data. The brighter it glows, the more it is like the Moon or Mars.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE, delay: 0.8 }} className="pointer-events-auto mt-9 flex w-fit flex-wrap gap-3">
@@ -419,13 +413,14 @@ const STORY = [
 function StoryStep({ i, active, onActive }: { i: number; active: boolean; onActive: (i: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-48% 0px -48% 0px" });
+  const reduce = useMotionReduced();
   useEffect(() => {
     if (inView) onActive(i);
   }, [inView, i, onActive]);
   const s = STORY[i];
   return (
     <div ref={ref} className="flex min-h-[78vh] items-center py-10 lg:min-h-[86vh]">
-      <motion.div animate={{ opacity: active ? 1 : 0.32, x: active ? 0 : -6 }} transition={{ duration: 0.5, ease: EASE }} className="max-w-[420px] rounded-3xl border border-line bg-panel/70 p-6 backdrop-blur-md lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+      <motion.div animate={{ opacity: active || reduce ? 1 : 0.45, x: active || reduce ? 0 : -6 }} transition={{ duration: 0.5, ease: EASE }} className="max-w-[420px] rounded-3xl border border-line bg-panel/70 p-6 backdrop-blur-md lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
         <div className="font-mono text-[12px] text-flare">{String(i + 1).padStart(2, "0")}</div>
         <h3 className="mt-2 text-[clamp(26px,2.8vw,40px)] leading-[1.05] font-medium tracking-[-0.03em]">{s.t}</h3>
         <p className="mt-3 text-[15px] leading-relaxed text-chrome">{s.d}</p>
@@ -707,7 +702,7 @@ function ModelZoo({ zoo }: { zoo: NonNullable<Validation["model_zoo"]> }) {
         </p>
         <p className="mt-3 text-[14px] leading-relaxed text-chrome">The ensemble wins both tests, so it is now the learned model on the site. The neural network did not work with only 38 examples, and we show that too.</p>
       </div>
-      <div className="surface overflow-x-auto rounded-3xl p-5 sm:p-6">
+      <div className="surface overflow-x-auto rounded-3xl p-5 sm:p-6" tabIndex={0} role="region" aria-label="Nine models compared">
         <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-chrome">
           <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-full bg-[var(--color-chart-1)]" /> Hidden known sites</span>
           <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-full bg-[var(--color-chart-2)]" /> 28 new sites</span>
@@ -948,7 +943,7 @@ function Rules() {
 
 function Closing() {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
+  const scrollYProgress = useSectionProgress(ref, ["start end", "end end"]);
   const glow = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), { stiffness: 80, damping: 20 });
   return (
     <section ref={ref} className="relative overflow-hidden px-4 py-32 sm:px-6">

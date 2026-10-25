@@ -5,6 +5,7 @@ import type { Grid } from "../../lib/grid";
 import { latLonToVec3 } from "../../lib/geo";
 import { FitSphere } from "../three/Controls";
 import { Scene, StaticGlobe } from "../ui/Safe";
+import { useMotionReduced } from "../../lib/motionPref";
 
 /**
  * Earth drawn as its 80,206 measured land areas, one dot each. The dots take a data
@@ -255,7 +256,7 @@ export default function DotGlobe({ grid, values, tint, startLon = 40, tilt = 0.3
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduced = useMotionReduced();
   return (
     <div ref={wrap} className={className}>
       <Scene fallback={<StaticGlobe note={stillNote} />}>

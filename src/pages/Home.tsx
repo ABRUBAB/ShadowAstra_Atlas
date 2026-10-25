@@ -15,6 +15,7 @@ import { CheckTown } from "../components/CheckTown";
 import { EARTH_SITES, TARGETS, TARGET_BY_ID, TASKS } from "../data/sites";
 import { formatCoord, polarPixel, POLAR_IMAGE_SIZE } from "../lib/geo";
 import { useSmoothScroll } from "../lib/useSmoothScroll";
+import { useMotionReduced } from "../lib/motionPref";
 import { BADGES, useFieldLog } from "../lib/fieldlog";
 import { useValidation } from "../lib/validation";
 import { MODEL_MIX } from "../lib/grid";
@@ -27,9 +28,14 @@ const GSAP_EASE = "expo.out";
 export default function Home() {
   useSmoothScroll();
   const root = useRef<HTMLDivElement>(null);
+  const reduced = useMotionReduced();
 
   useGSAP(
     () => {
+      if (reduced) {
+        gsap.set("[data-reveal]", { opacity: 1 });
+        return;
+      }
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const split = SplitText.create(".hero-title", { type: "words", mask: "words" });
@@ -57,7 +63,7 @@ export default function Home() {
         gsap.set("[data-reveal]", { opacity: 1 });
       });
     },
-    { scope: root },
+    { scope: root, dependencies: [reduced], revertOnUpdate: true },
   );
 
   // Deep links such as /#play scroll once the page has laid out.
@@ -124,10 +130,28 @@ function Hero() {
   const [i, setI] = useState(0);
   const [ready, setReady] = useState(false);
   const compact = typeof window !== "undefined" && window.innerWidth < 900;
+  const reduced = useMotionReduced();
+  // Phones paint the headline first and fetch the 3D scene (and its 238 kB of code) once the
+  // browser is idle: on a slow phone it otherwise competes with the first paint for seconds.
+  const [mount3d, setMount3d] = useState(!compact);
   useEffect(() => {
+    if (mount3d) return;
+    let idle = 0;
+    // after the headline has faded in (about 1.5 s), at the next idle moment
+    const t = window.setTimeout(() => {
+      if (window.requestIdleCallback) idle = window.requestIdleCallback(() => setMount3d(true), { timeout: 2000 });
+      else setMount3d(true);
+    }, 1500);
+    return () => {
+      clearTimeout(t);
+      if (idle) window.cancelIdleCallback(idle);
+    };
+  }, [mount3d]);
+  useEffect(() => {
+    if (reduced) return; // the site card stops cycling when motion is paused
     const t = setInterval(() => setI((n) => (n + 1) % EARTH_SITES.length), 3600);
     return () => clearInterval(t);
-  }, []);
+  }, [reduced]);
   const s = EARTH_SITES[i];
   const pair = TARGET_BY_ID[s.pairs[0]];
 
@@ -152,9 +176,11 @@ function Hero() {
           />
         )}
         <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: ready ? 1 : 0 }}>
-          <Suspense fallback={null}>
-            <HeroScene compact={compact} onReady={() => setReady(true)} />
-          </Suspense>
+          {mount3d && (
+            <Suspense fallback={null}>
+              <HeroScene compact={compact} onReady={() => setReady(true)} />
+            </Suspense>
+          )}
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,8,10,0.94)_0%,rgba(7,8,10,0.6)_36%,transparent_62%)] max-[900px]:bg-[linear-gradient(180deg,transparent_0%,transparent_30%,rgba(7,8,10,0.9)_58%)]" />
@@ -232,12 +258,13 @@ function Hero() {
 function SourceMarquee() {
   const items = ["NASA POWER", "NASA GIBS · MODIS", "LRO LOLA", "MGS MOLA", "SRTM terrain", "LRO LROC", "Mars Odyssey THEMIS", "Viking MDIM", "ASTER GDEM", "Smithsonian GVP", "ESA Sentinel-2", "Natural Earth"];
   return (
-    <div className="relative overflow-hidden border-y border-line bg-ink py-4" aria-label="Data sources">
-      <div className="animate-marquee flex w-max gap-12 whitespace-nowrap">
+    <div className="relative overflow-hidden border-y border-line bg-ink py-4">
+      <p className="sr-only">Data sources: {items.join(", ")}.</p>
+      <div className="animate-marquee flex w-max gap-12 whitespace-nowrap" aria-hidden>
         {[...items, ...items].map((n, k) => (
           <span key={k} className="flex items-center gap-12 font-mono text-[11px] tracking-[0.22em] text-dim uppercase">
             {n}
-            <span className="text-line-2">/</span>
+            <span className="h-3 w-px rotate-[20deg] bg-line-2" />
           </span>
         ))}
       </div>
@@ -391,12 +418,13 @@ function MiniGame() {
 }
 
 function MiniTwins() {
+  const still = useMotionReduced();
   return (
     <div className="relative flex h-36 items-center justify-center gap-10 overflow-hidden rounded-xl border border-line bg-void">
-      <motion.span className="block size-16 rounded-full bg-[url(/textures/mars_viking_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: ["0%", "-200%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
+      <motion.span className="block size-16 rounded-full bg-[url(/textures/mars_viking_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: still ? "0%" : ["0%", "-200%"] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
       <span className="absolute top-1/2 left-1/2 h-px w-16 -translate-x-1/2 bg-gradient-to-r from-mars/60 via-flare to-earth/60" />
       <motion.span className="absolute top-1/2 left-1/2 size-1.5 -translate-y-1/2 rounded-full bg-flare shadow-[0_0_10px_#f2c879]" animate={{ x: [-34, 30] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }} />
-      <motion.span className="block size-16 rounded-full bg-[url(/textures/earth_day_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: ["0%", "-200%"] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} />
+      <motion.span className="block size-16 rounded-full bg-[url(/textures/earth_day_1k.webp)] bg-[length:200%_100%] shadow-[inset_-10px_-4px_14px_rgba(0,0,0,0.85)]" animate={{ backgroundPositionX: still ? "0%" : ["0%", "-200%"] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} />
     </div>
   );
 }
@@ -641,11 +669,12 @@ function FalseFriend() {
               <button
                 key={s.k}
                 onClick={() => setStep(k)}
-                className={`block w-full border-l pl-6 text-left transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] ${step === k ? "border-flare opacity-100" : "border-line opacity-35 hover:opacity-60"}`}
+                aria-pressed={step === k}
+                className={`group block w-full border-l pl-6 text-left transition-colors duration-700 ease-[cubic-bezier(.22,1,.36,1)] ${step === k ? "border-flare" : "border-line"}`}
               >
-                <div className="font-mono text-xs text-dim">{s.k}</div>
-                <div className="mt-1 text-[clamp(22px,2.4vw,34px)] leading-tight font-medium tracking-tight">{s.title}</div>
-                <p className="mt-2 max-w-md text-[15px] leading-relaxed text-chrome">{s.text}</p>
+                <div className={`font-mono text-xs ${step === k ? "text-flare" : "text-dim"}`}>{s.k}</div>
+                <div className={`mt-1 text-[clamp(22px,2.4vw,34px)] leading-tight font-medium tracking-tight transition-colors duration-700 ${step === k ? "text-platinum" : "text-chrome group-hover:text-platinum"}`}>{s.title}</div>
+                <p className={`mt-2 max-w-md text-[15px] leading-relaxed transition-colors duration-700 ${step === k ? "text-chrome" : "text-dim"}`}>{s.text}</p>
               </button>
             ))}
           </div>

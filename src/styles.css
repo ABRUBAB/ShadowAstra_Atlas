@@ -1,6 +1,44 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* Local stand-ins with the web fonts' width and height (measured in Chrome against the loaded
+   Google fonts), so the swap when Geist and Instrument Serif arrive keeps every line break and
+   nothing on the page moves (it caused a 0.09 layout shift on How it works). */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  size-adjust: 103.5%;
+  ascent-override: 97.6%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Instrument Serif Fallback";
+  font-style: normal;
+  src: local("Times New Roman"), local("Times"), local("Liberation Serif");
+  size-adjust: 83.3%;
+  ascent-override: 118.8%;
+  descent-override: 37.2%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Instrument Serif Fallback";
+  font-style: italic;
+  src: local("Times New Roman Italic"), local("Times-Italic"), local("Liberation Serif Italic");
+  size-adjust: 87.1%;
+  ascent-override: 113.7%;
+  descent-override: 35.6%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Courier New"), local("Courier"), local("Liberation Mono");
+  size-adjust: 100%;
+  ascent-override: 101%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 /* ShadowAstra Atlas design tokens — see DESIGN.md */
 @theme {
   /* "Observatory" neutrals — warm blacks and bone whites, never pure #000/#fff */
@@ -12,7 +50,7 @@
   --color-line-2: #2f3035;
   --color-platinum: #edeae4;
   --color-chrome: #a8a59e;
-  --color-dim: #6c6a65;
+  --color-dim: #807e78;
 
   /* one accent: low-angle sunlight on a polar ridge — used for light/shadow and key actions */
   --color-flare: #f2c879;
@@ -36,9 +74,9 @@
   --color-chart-3: #d47452;
   --color-chart-4: #9f7ed6;
 
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
-  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-serif: "Instrument Serif", "Instrument Serif Fallback", ui-serif, Georgia, serif;
   --font-wide: "Michroma", "Geist", sans-serif;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,16 +101,16 @@
   --color-line-2: #c9c0ae;
   --color-platinum: #1c1a16;
   --color-chrome: #55514a;
-  --color-dim: #888275;
-  --color-flare: #a5641a;
+  --color-dim: #6a665e;
+  --color-flare: #8f5414;
   --color-earth: #2d62ad;
   --color-cobalt: #2b4e9c;
   --color-moon: #6d685d;
-  --color-mars: #b0522b;
+  --color-mars: #9c4523;
   --color-amethyst: #6858a6;
-  --color-strong: #2b8156;
-  --color-partial: #9f6b10;
-  --color-weak: #b2412a;
+  --color-strong: #22694a;
+  --color-partial: #7d540c;
+  --color-weak: #9e3520;
   --color-chart-1: #996a06;
   --color-chart-2: #2a76c3;
   --color-chart-3: #b6522d;
@@ -88,7 +126,7 @@
   --color-line-2: #2f3035;
   --color-platinum: #edeae4;
   --color-chrome: #a8a59e;
-  --color-dim: #6c6a65;
+  --color-dim: #807e78;
   --color-flare: #f2c879;
   --color-earth: #8fb4ea;
   --color-cobalt: #4f74c8;
@@ -118,6 +156,8 @@ html[data-theme="light"] [data-theme="dark"] .logo-mark {
 }
 html {
   transition: background-color 0.4s ease;
+  /* things scrolled into view (keyboard focus, #links) stop below the 64 px sticky header (WCAG 2.4.11) */
+  scroll-padding-top: 80px;
 }
 
 html,
@@ -496,4 +536,26 @@ input[type="range"].range:active::-webkit-slider-thumb {
 /* Bangla text (Learn page): a Bengali face with the site's fallbacks */
 .font-bn {
   font-family: "Noto Sans Bengali", var(--font-sans);
+}
+
+/* Slow or software graphics (see enableLiteGraphics in components/ui/Safe.tsx): keep the tint, drop
+   the frosted blur that would be redrawn under every frame of a moving 3D scene. */
+html.gpu-lite .glass,
+html.gpu-lite .panel,
+html.gpu-lite [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.gpu-lite .glass {
+  background: color-mix(in oklab, var(--color-panel) 94%, transparent);
+}
+
+/* Less motion (lib/motionPref.ts): the system setting or the footer's "Pause motion" switch. */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
