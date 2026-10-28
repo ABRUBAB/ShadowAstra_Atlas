@@ -958,7 +958,7 @@ function Progress() {
     "An open dataset of every score on Hugging Face (CC BY 4.0), for anyone to check or reuse",
   ];
   const next = [
-    "Add the official 2026 challenge datasets as new pipeline steps (released 28 Oct)",
+    "Add the official 2026 challenge datasets as new pipeline steps (NASA publishes them on 13 Nov)",
     "Pinpoint the best 10 km spot inside each 55 km candidate",
     "Expert review of the top new sites by our scientific validation lead",
   ];

@@ -43,7 +43,7 @@ NASA POWER, NASA GIBS (MODIS, Blue Marble, Black Marble), SRTM elevation, NASA E
 Live website: https://shadowastra-atlas.vercel.app
 Source code: https://github.com/ABRUBAB/ShadowAstra_Atlas
 Open dataset: https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas
-Challenge: https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/
+Challenge: https://www.spaceappschallenge.org/2026/challenges/permanent-moon-base-locations-and-mars/
 
 👩‍🚀 TEAM SHADOWASTRA
 • Abdullah Rubab: Team Lead

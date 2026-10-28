@@ -1653,7 +1653,7 @@ function ModelRoadmap() {
     { k: "Done", t: "Learned model, tested", d: "Three models trained together on 38 known sites. Hidden sites come back in the top 1 to 2% of all land.", on: true },
     { k: "Done", t: "Terrain AI", d: "A vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars. Try “AI match” in Maps.", on: true },
     { k: "Done", t: "Minerals and the far side", d: "NASA EMIT minerals on Earth; LRO Diviner cold and ice at the Moon's south pole; Mars Odyssey water on Mars.", on: true },
-    { k: "Next", t: "Official 2026 datasets", d: "The challenge's own data, released 28 October, added as new pipeline steps." },
+    { k: "Next", t: "Official 2026 datasets", d: "The challenge's own data, published by NASA on 13 November, added as new pipeline steps." },
   ];
   return (
     <Reveal delay={0.08}>

@@ -243,7 +243,7 @@ export function Footer() {
             Open dataset (Hugging Face)
           </a>
           <a
-            href="https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/"
+            href="https://www.spaceappschallenge.org/2026/challenges/permanent-moon-base-locations-and-mars/"
             className="block text-chrome hover:text-platinum"
             target="_blank"
             rel="noreferrer"

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://shadowastra-atlas.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/LIVE%20DEMO-shadowastra--atlas.vercel.app-F2C879?style=for-the-badge&labelColor=07080A"></a>
-  <a href="https://www.spaceappschallenge.org/2026/challenges/identify-earth-locations-that-analog-the-permanent-moon-base-locations-and-mars/"><img alt="NASA Space Apps 2026" src="https://img.shields.io/badge/NASA%20SPACE%20APPS-2026%20%C2%B7%20DHAKA-8FB4EA?style=for-the-badge&labelColor=07080A"></a>
+  <a href="https://www.spaceappschallenge.org/2026/challenges/permanent-moon-base-locations-and-mars/"><img alt="NASA Space Apps 2026" src="https://img.shields.io/badge/NASA%20SPACE%20APPS-2026%20%C2%B7%20DHAKA-8FB4EA?style=for-the-badge&labelColor=07080A"></a>
   <a href="https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas"><img alt="Open dataset on Hugging Face" src="https://img.shields.io/badge/OPEN%20DATA-Hugging%20Face-E08A5F?style=for-the-badge&labelColor=07080A"></a>
 </p>
 <p align="center">
@@ -165,7 +165,7 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 
 **Open dataset.** Every place, every target score, the AI twins and every test are on Hugging Face under CC BY 4.0: [ABRUBAB/shadowastra-atlas](https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas) (`pipeline/s21_open_dataset.py` rebuilds it).
 
-**Next:** the official 2026 challenge datasets (released 28 Oct), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
+**Next:** the official 2026 challenge datasets (NASA publishes them on 13 Nov), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
@@ -244,7 +244,7 @@ src/
 - [x] K5 ensemble as the site model; EMIT minerals, Diviner temperatures and ice, Odyssey water, each tested before it counts
 - [x] Engineering pass: memory leaks fixed, faster clicks, security headers, error fallbacks, WCAG 2.2 fixes, unit, parity and browser tests, CI and uptime checks
 - [x] Best 10 km spot inside each place (tested on 66 field sites); Diviner and Lunar Prospector facts for every Moon target; expert review kit
-- [ ] Official 2026 challenge datasets (released 28 Oct)
+- [ ] Official 2026 challenge datasets (NASA publishes them on 13 Nov)
 - [ ] Expert review of the top 20 by Md. Tanvir Hasan; Mars SWIM ice when its site is back
 
 ## 👩‍🚀 Team ShadowAstra

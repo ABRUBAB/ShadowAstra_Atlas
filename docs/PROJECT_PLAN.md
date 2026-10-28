@@ -53,7 +53,7 @@ Done in v0.6 (25 Oct): K5 ensemble shipped; K3 terrain AI tested and shipped (AI
 
 Done in v0.7 (25 Oct): engineering pass (`docs/ENGINEERING.md`): three memory leaks fixed, faster clicks and loads (measured before and after), slow-GPU mode, error boundaries and fallbacks, CSP and security headers, URL validation, WCAG 2.2 fixes (contrast, pause motion, focus not hidden), 67 unit tests (Python parity included) and an end-to-end suite with accessibility scans, CI, deploy smoke test and uptime check. Science: best 10 km spot with its 66-site test (`s23`), Diviner day and night for the three non-polar Moon targets and Lunar Prospector oxides for all ten (`s20`), the expert review kit (`s24`, `docs/review/`), the open dataset refreshed.
 
-1. **Official challenge datasets** (released 28 Oct): read the Resources tab, add each as a `pipeline/sNN_*.py` step, and test each under the rule for new data.
+1. **Official challenge datasets** (NASA publishes the Resources tab on 13 Nov, the first day of the hackathon; the full statement came out 28 Oct): read the Resources tab, add each as a `pipeline/sNN_*.py` step, and test each under the rule for new data.
 2. **Expert review**: Md. Tanvir Hasan fills `docs/review/review_sheet.csv` (1 to 2 hours, rubric in `docs/review/EXPERT_REVIEW_KIT.md`); then `python pipeline/s24_review.py import review_sheet.csv` and push. How it works shows it automatically.
 3. **Mars SWIM ice** once swim.psi.edu is back (add to `s20`, facts only).
 4. **Finer rock types** if the GLiM vector map can be obtained from the authors (or Macrostrat), then re-test rock scoring.
