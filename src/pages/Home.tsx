@@ -80,13 +80,13 @@ export default function Home() {
       <Hero />
       <SourceMarquee />
       <Numbers />
+      <MoonBase />
+      <FalseFriend />
       <TryIt />
+      <HowItWorks />
       <TownSection />
       <PlaySection />
       <MeetAstra />
-      <FalseFriend />
-      <MoonBase />
-      <HowItWorks />
       <Sustainability />
       <Library />
       <Progress />
@@ -222,7 +222,7 @@ function Hero() {
         <div className="glass rounded-xl p-4">
           <div className="flex items-center justify-between font-mono text-[10px] tracking-widest text-dim uppercase">
             <span>
-              Known test site {String(i + 1).padStart(2, "0")}/{EARTH_SITES.length}
+              Known test site {String(i + 1).padStart(2, "0")} of the {EARTH_SITES.length} shown here
             </span>
             <span className="flex items-center gap-1.5">
               <span className="size-1.5 animate-pulse rounded-full bg-strong" /> live
@@ -287,8 +287,8 @@ function Numbers() {
       n: newSites ?? 0,
       d: 1,
       s: "%",
-      label: "where 28 sites it never saw rank",
-      note: newSites === null ? "published test sites kept out of training" : `published test sites kept out of training land in the top ${newSites.toFixed(1)}% of all land`,
+      label: "typical rank of 28 new test sites",
+      note: newSites === null ? "published test sites kept out of training" : `published sites kept out of training typically land in the top ${newSites.toFixed(1)}% of all land`,
       icon: Radar,
     },
   ];
@@ -451,7 +451,7 @@ function TryIt() {
     <Section ink>
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <Kicker n="02">Things to try</Kicker>
+          <Kicker n="04">Things to try</Kicker>
           <H2 className="mt-8 max-w-[860px]">
             Six ways in. <Em>Pick one and start exploring.</Em>
           </H2>
@@ -498,7 +498,7 @@ function TryIt() {
 function TownSection() {
   return (
     <Section id="town">
-      <Kicker n="03">Your town</Kicker>
+      <Kicker n="06">Your town</Kicker>
       <H2 className="mt-8 max-w-[900px]">
         How Mars-like is your town? <Em>Ask the same model that ranks the planet.</Em>
       </H2>
@@ -512,7 +512,7 @@ function TownSection() {
 function PlaySection() {
   return (
     <Section id="play" ink>
-      <Kicker n="04">A quick game</Kicker>
+      <Kicker n="07">A quick game</Kicker>
       <H2 className="mt-8 max-w-[900px]">
         Earth or Mars? <Em>It is harder than you think.</Em>
       </H2>
@@ -568,7 +568,7 @@ function MeetAstra() {
           </div>
         </div>
         <div>
-          <Kicker n="05">Meet Astra</Kicker>
+          <Kicker n="08">Meet Astra</Kicker>
           <H2 className="mt-8">
             He goes where you point him. <Em>And he tells you the truth.</Em>
           </H2>
@@ -663,7 +663,7 @@ function FalseFriend() {
     <section ref={ref} className="relative border-t border-line bg-ink px-4 py-24 sm:px-6 min-[900px]:flex min-[900px]:h-dvh min-[900px]:items-center min-[900px]:py-0">
       <div className="mx-auto grid w-full max-w-[1400px] items-center gap-14 min-[900px]:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <Kicker n="06">Looks alike is not enough</Kicker>
+          <Kicker n="03">Looks alike is not enough</Kicker>
           <div className="mt-10 space-y-8">
             {steps.map((s, k) => (
               <button
@@ -775,7 +775,7 @@ function MoonBase() {
         </div>
         <div>
           <div className="flex items-end justify-between gap-6">
-            <Kicker n="07">A base at the Moon's south pole</Kicker>
+            <Kicker n="02">A base at the Moon's south pole</Kicker>
             <Guide mood="happy" action="flag" size={96} className="-mb-2 hidden md:block" />
           </div>
           <H2 className="mt-8">
@@ -829,7 +829,7 @@ function HowItWorks() {
     <Section ink>
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <Kicker n="08">How it works</Kicker>
+          <Kicker n="05">How it works</Kicker>
           <H2 className="mt-8 max-w-[820px]">From a mission question to a place you can visit.</H2>
         </div>
         <Guide mood="focused" action="scan" size={110} className="hidden md:block" />
@@ -840,9 +840,6 @@ function HowItWorks() {
             <span className="outline-num text-[56px] leading-none">{s.k}</span>
             <div className="mt-6 text-lg font-medium">{s.t}</div>
             <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-chrome">{s.d}</p>
-            <span className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-full border border-strong/40 bg-strong/10 px-2.5 py-1 text-[11px] text-strong">
-              <Check size={12} /> Working now
-            </span>
             {i < steps.length - 1 && <span className="absolute top-1/2 -right-3 hidden h-px w-6 bg-line-2 md:block" />}
           </motion.li>
         ))}
@@ -902,7 +899,7 @@ function Library() {
           <H2 className="max-w-[820px]">
             The places teams already use. <Em>Our model learned from them.</Em>
           </H2>
-          <p className="max-w-sm text-sm text-dim">These are known sites, not our discoveries. We use them to train and test the model. New places live in Find new sites.</p>
+          <p className="max-w-sm text-sm text-dim">These are {EARTH_SITES.length} of the 38 known sites the model learned from, not our discoveries. New places live in Find new sites.</p>
         </div>
       </div>
       <div className="scrollbar-thin mt-14 flex snap-x gap-4 overflow-x-auto px-4 pb-6 sm:px-6 lg:px-[max(24px,calc((100vw-1400px)/2+24px))]">
@@ -948,19 +945,21 @@ function Progress() {
   const fresh = v?.independent.all.blend?.median;
   const done = [
     "Global data engine: 80,206 land areas measured from NASA POWER, MODIS, SRTM terrain, NASA EMIT minerals, volcanoes and craters",
-    "The Moon and Mars measured everywhere at full precision (LRO LOLA, MGS MOLA), with Diviner cold and ice at the lunar south pole and Odyssey water on Mars",
+    "The Moon and Mars measured everywhere at full precision (LRO LOLA, MGS MOLA), with Diviner ground temperature at all ten Moon targets and ice at the south pole, Lunar Prospector iron and titanium, and Odyssey water on Mars",
     hidden !== undefined && fresh !== undefined
-      ? `A learned model picked from nine on Kaggle: hidden known sites come back in the top ${hidden.toFixed(1)}% of land, and 28 published sites it never saw rank in the top ${fresh.toFixed(1)}%`
+      ? `A learned model picked from nine on Kaggle: a hidden known site typically comes back in the top ${hidden.toFixed(1)}% of land as the site scores it, and the 28 published sites it never saw typically rank in the top ${fresh.toFixed(1)}%`
       : "A learned model picked from nine on Kaggle and tested on 28 published sites it never saw",
     "A terrain AI, trained on Kaggle GPUs with heights from three worlds, that finds Earth twins for any spot on the Moon or Mars",
     "Find new sites: a mission builder that searches the planet, compares places and prints a site report",
     "Compare any place in 3D with a movable Sun, a shadow map, minerals and travel CO₂; lessons in English, Spanish and Bangla",
     "An open dataset of every score on Hugging Face (CC BY 4.0), for anyone to check or reuse",
+    "The best 10 km spot inside each 55 km place, as an experimental ground-shape hint",
+    "Caves and lava tubes on Maps: 1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC)",
   ];
   const next = [
     "Add the official 2026 challenge datasets as new pipeline steps (NASA publishes them on 13 Nov)",
-    "Pinpoint the best 10 km spot inside each 55 km candidate",
     "Expert review of the top new sites by our scientific validation lead",
+    "Mars SWIM ice and a finer rock map, once that data can be downloaded",
   ];
   return (
     <Section>
@@ -1008,10 +1007,10 @@ function Progress() {
 const TEAM = [
   { id: "rubab", name: "Abdullah Rubab", role: "Team lead" },
   { id: "hossin", name: "Tanvir Hossin", role: "Planetary terrain" },
-  { id: "hasan", name: "Md. Tanvir Hasan", role: "Science checks" },
+  { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation" },
   { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design" },
   { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing" },
-  { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film" },
+  { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film & motion" },
 ];
 
 function TeamTeaser() {
@@ -1047,7 +1046,8 @@ function TeamTeaser() {
 }
 
 function FinalCta() {
-  const pick = useMemo(() => TARGETS[Math.floor(Math.random() * TARGETS.length)], []);
+  // the challenge is about permanent Moon base sites first: end on the Artemis base region
+  const pick = useMemo(() => TARGETS.find((x) => x.id === "shackleton") ?? TARGETS[0], []);
   return (
     <section className="relative overflow-hidden border-t border-line px-4 py-32 sm:px-6 md:py-44">
       <div className="absolute inset-0 bg-[radial-gradient(50%_70%_at_50%_120%,rgba(242,200,121,0.14),transparent_70%)]" />
@@ -1060,7 +1060,7 @@ function FinalCta() {
         </h2>
         <div data-reveal className="mt-10 flex flex-wrap justify-center gap-3">
           <Magnetic>
-            <Link to={`/discover?target=${pick.id}&task=${pick.tasks[0]}`} className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-medium">
+            <Link to={`/discover?target=${pick.id}&task=${pick.tasks.includes("base") ? "base" : pick.tasks[0]}`} className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-medium">
               Find sites for {pick.name} <ArrowRight size={16} />
             </Link>
           </Magnetic>

@@ -50,7 +50,7 @@ export function MineralCard({ grid, k, target, targetName, compact = false }: { 
                       {!compact && <span className="ml-1.5 text-[10.5px] text-dim">{MINERAL_INFO[f].plain}</span>}
                     </span>
                     <span className="flex items-center gap-2">
-                      {hit && <span className="rounded-full border border-flare/40 bg-flare/10 px-1.5 py-px font-mono text-[9px] tracking-wider text-flare uppercase">at {targetName.split(" ")[0]}</span>}
+                      {hit && <span className="rounded-full border border-flare/40 bg-flare/10 px-1.5 py-px font-mono text-[9px] tracking-wider text-flare uppercase" title={`This mineral family is also found at ${targetName}`}>also at {targetName.split(" ")[0]}</span>}
                       <span className="font-mono text-platinum tabular">{sharePct(share[f])}</span>
                     </span>
                   </div>

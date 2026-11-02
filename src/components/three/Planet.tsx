@@ -32,6 +32,9 @@ interface PlanetProps {
   lod?: "1k" | "2k" | "4k";
   /** Click (not drag) anywhere on the surface. */
   onPick?: (lat: number, lon: number) => void;
+  /** Small light points on the surface (for example cave candidates), drawn in one go. */
+  dots?: { lat: number; lon: number }[];
+  dotColor?: string;
 }
 
 const earthVertex = /* glsl */ `
@@ -112,6 +115,8 @@ export function Planet({
   atmosphere = true,
   lod,
   onPick,
+  dots,
+  dotColor = "#f2c879",
 }: PlanetProps) {
   const tiltRef = useRef<THREE.Group>(null);
   const downAt = useRef<{ x: number; y: number } | null>(null);
@@ -192,6 +197,7 @@ export function Planet({
           <sphereGeometry args={[radius, 128, 96]} />
           {body !== "earth" && <meshStandardMaterial map={day} roughness={1} metalness={0} />}
         </mesh>
+        {dots && dots.length > 0 && <Dots dots={dots} radius={radius} color={dotColor} />}
         {markers.map((m) => (
           <Marker key={m.id} marker={m} radius={radius} active={m.id === activeId} onSelect={onSelect} />
         ))}
@@ -202,6 +208,21 @@ export function Planet({
         </mesh>
       )}
     </group>
+  );
+}
+
+function Dots({ dots, radius, color }: { dots: { lat: number; lon: number }[]; radius: number; color: string }) {
+  const geom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const pos = new Float32Array(dots.length * 3);
+    dots.forEach((d, i) => pos.set(latLonToVec3(d.lat, d.lon, radius * 1.004), i * 3));
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    return g;
+  }, [dots, radius]);
+  return (
+    <points geometry={geom}>
+      <pointsMaterial color={color} size={0.03} sizeAttenuation transparent opacity={0.95} depthWrite={false} />
+    </points>
   );
 }
 

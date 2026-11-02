@@ -41,6 +41,7 @@ import { logBadge } from "../lib/fieldlog";
 import { MineralCard } from "../components/find/MineralCard";
 import { PinpointCard } from "../components/find/PinpointCard";
 import { usePinpoint } from "../lib/pinpoint";
+import { fieldTestsFor, modelLine, placeGaps, townLine } from "../lib/gaps";
 import { useMotionReduced } from "../lib/motionPref";
 
 const ScoreGlobe = lazy(() => import("../components/three/ScoreGlobe"));
@@ -129,14 +130,25 @@ export default function Find() {
     if (step === "needs") setFocus({ lat: m.home.lat, lon: m.home.lon, key: Date.now() });
   }, [step, m.home.lat, m.home.lon, m.maxKm]);
 
-  // each step starts at the top of the console
+  // each step starts at the top of the console; on a phone the page itself scrolls, so bring the console's top into view
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     consoleRef.current?.scrollTo({ top: 0 });
+    if (window.matchMedia("(max-width: 1023px)").matches && consoleRef.current && consoleRef.current.getBoundingClientRect().top < 0)
+      consoleRef.current.scrollIntoView({ block: "start" });
   }, [step, sel]);
+
+  // when the sweep ends, turn the globe to the best new place so the results are in view
+  const turnedFor = useRef<SearchResult | null>(null);
+  useEffect(() => {
+    if (step !== "results" || scanning || sel !== null || !result || !result.places.length || turnedFor.current === result) return;
+    turnedFor.current = result;
+    setFocus({ lat: result.places[0].lat, lon: result.places[0].lon, key: Date.now() });
+  }, [step, scanning, sel, result]);
 
   /* ---------- the search sweep */
   const runScan = (keepPlace = false) => {
+    turnedFor.current = null; // turn to the best place again once this sweep ends
     setScanning(true);
     setScan(0);
     if (!keepPlace) {
@@ -413,7 +425,7 @@ function StartScreen({ onPreset, onBuild }: { onPreset: (p: (typeof PRESETS)[num
           <span className="font-mono text-[11px] tracking-[0.24em] text-chrome uppercase">Or start from a real mission</span>
           <span className="h-px flex-1 bg-line" />
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PRESETS.map((p, i) => {
             const t = TARGET_BY_ID[p.target];
             const Icon = TASK_ICON[p.task];
@@ -811,7 +823,7 @@ function StageLegend({ step, range, m }: { step: StepId; range: { lo: number; hi
             <div className="mt-2 h-2 rounded-full" style={{ background: RAMP_CSS }} />
             <div className="mt-1 flex justify-between font-mono text-[10px] text-dim">
               <span>{range ? range.lo.toFixed(2) : "…"}</span>
-              <span>{range ? range.hi.toFixed(2) : "…"}</span>
+              <span>{range ? `${range.hi.toFixed(2)} and above` : "…"}</span>
             </div>
           </>
         )}
@@ -1000,7 +1012,7 @@ function ResultsPanel({
       </AnimatePresence>
       {!scanning && result.places.length > 0 && (
         <p className="mt-4 text-[11.5px] leading-relaxed text-dim">
-          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, ice and loose ground, plus our learned model ({Math.round(m.modelMix * 100)}%). Click a place for the full report.
+          Scores compare each place with {t.name} for this job: ground shape, rocks and craters, cold and light, bare dry ground, plus our learned model ({Math.round(m.modelMix * 100)}%). Click a place for the full report.
         </p>
       )}
     </div>
@@ -1029,7 +1041,7 @@ function CompareSheet({ grid, m, ks, onClose, onOpen }: { grid: Grid; m: Mission
     { label: "Average slope", vals: ks.map((k) => v("f_slope", k)), fmt: (x) => `${x.toFixed(1)}°`, better: null },
     { label: "Height range", vals: ks.map((k) => v("f_relief", k)), fmt: (x) => `${(x / 1000).toFixed(2)} km`, better: null },
     { label: "Coldest night", vals: ks.map((k) => v("f_lst_night_min", k)), fmt: (x) => `${Math.round(x)} °C`, better: "low" },
-    { label: "Rain a year", vals: ks.map((k) => v("f_precip", k)), fmt: (x) => `${Math.round(x).toLocaleString()} mm`, better: "low" },
+    { label: "Rain and snow a year", vals: ks.map((k) => v("f_precip", k)), fmt: (x) => `${Math.round(x).toLocaleString()} mm`, better: "low" },
     { label: `From ${m.home.name}`, vals: cols.map((c) => c.km), fmt: (x) => `${Math.round(x).toLocaleString()} km`, better: "low" },
     { label: "Trip CO₂, 4 people", vals: cols.map((c) => tripCo2Tonnes(c.km, 4)), fmt: (x) => `${x.toFixed(1)} t`, better: "low" },
   ];
@@ -1197,7 +1209,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
       target: [
         ["Type", T.kind],
         ["Main rocks", t.rock?.label ?? "n/a"],
-        ["Rock match", rockWord],
+        ["Rock type match (not scored)", rockWord],
         ...(res?.feo_wt_pct !== undefined ? ([["Iron, titanium oxide", `${res.feo_wt_pct.toFixed(0)}%, ${res.tio2_wt_pct!.toFixed(res.tio2_wt_pct! < 1 ? 1 : 0)}% by weight`]] as [string, string][]) : []),
       ],
     },
@@ -1223,7 +1235,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
     {
       f: FACTORS[3],
       earth: [
-        ["Rain a year", v("f_precip") === null ? "n/a" : `${Math.round(v("f_precip")!)} mm`],
+        ["Rain and snow a year", v("f_precip") === null ? "n/a" : `${Math.round(v("f_precip")!)} mm`],
         ["Plants", plantWord(v("f_ndvi"))],
         ["Snow and ice", v("f_snowice") === null ? "n/a" : `${Math.round(v("f_snowice")! * 100)}%`],
       ],
@@ -1239,6 +1251,21 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
     },
   ];
 
+  const gaps = placeGaps({
+    body: T.body as "moon" | "mars",
+    targetName: T.name,
+    targetLat: T.lat,
+    snowice: v("f_snowice"),
+    ndvi: v("f_ndvi"),
+    bare: v("f_barren"),
+    nightMin: v("f_lst_night_min"),
+    rockEarth: rock?.label,
+    rockTarget: t.rock?.label,
+    rockWord,
+    targetTempAvg: res?.temp_avg_c,
+    mineralMatch: grid.mineralMatch(k, t),
+    factors: rows.map((r) => ({ label: r.f.label, value: factor(r.f.dims) })),
+  });
   return (
     <div>
       <button onClick={onBack} className="flex items-center gap-1.5 text-[12px] text-chrome hover:text-platinum">
@@ -1246,9 +1273,9 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
       </button>
       <div className="relative mt-3 overflow-hidden rounded-2xl border border-line bg-ink">
         {thumb ? <motion.img src={thumb} alt={`Satellite view of ${nm.title}, 50 km across`} initial={{ opacity: 0, scale: 1.04 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.9, ease: EASE }} className="h-56 w-full object-cover" /> : <div className="shimmer h-56" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-void/95 via-void/45 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 [&>span]:bg-void/80 [&>span]:backdrop-blur-sm">
             {knownKm(grid)[k] >= 150 ? <Chip tone="flare">New candidate</Chip> : <Chip tone="moon">Known site nearby</Chip>}
             <ConfidenceChip {...conf} />
             {lat < -60 && <Chip>Antarctic Treaty area</Chip>}
@@ -1337,7 +1364,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         ))}
         <MineralCard grid={grid} k={k} target={t} targetName={T.name} />
         <div className="surface rounded-2xl p-4">
-          <Meter value={cs.model} label="Learned model" kind="model" tone="var(--color-earth)" hint={`Looks more ${T.body === "moon" ? "Moon" : "Mars"}-like than ${Math.round(cs.model * 100)}% of land, judged by three models trained together on 38 known test sites.`} />
+          <Meter value={cs.model} label="Learned model" kind="model" tone="var(--color-earth)" hint={`${modelLine(cs.model, T.body)}, judged by three models trained together on 38 known test sites.`} />
         </div>
       </div>
 
@@ -1346,7 +1373,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
         {[
           [<Plane key="p" size={13} />, "From " + m.home.name, `${Math.round(km).toLocaleString()} km`],
           [<RotateCcw key="c" size={13} />, "CO₂, 4 people return", `≈ ${tripCo2Tonnes(km, 4).toFixed(1)} t`],
-          [<MapPin key="m" size={13} />, "Nearest town", nm.place ? `${nm.place}, ${Math.round(nm.placeKm ?? 0)} km` : "none listed"],
+          [<MapPin key="m" size={13} />, "Nearest town", townLine(lat, nm.place, nm.placeKm)],
           [<ShieldCheck key="s" size={13} />, "Permission", lat < -60 ? "Antarctic Treaty permit" : "Ask local authorities and land owners"],
         ].map(([icon, a, b], i) => (
           <div key={i} className="bg-panel p-3">
@@ -1360,7 +1387,7 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
 
       <h3 className="mt-7 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Tests a team could run here</h3>
       <ul className="mt-2 space-y-1.5">
-        {FIELD_TESTS[m.task].map((x) => (
+        {fieldTestsFor(FIELD_TESTS[m.task], v("f_snowice")).map((x) => (
           <li key={x} className="flex gap-2 text-[13px] leading-snug text-chrome">
             <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-flare" />
             {x}
@@ -1371,13 +1398,19 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
       <div className="mt-6 rounded-2xl border border-weak/30 bg-weak/[0.06] p-4">
         <KindBadge kind="gap" />
         <p className="mt-2 text-[12.5px] leading-relaxed text-chrome">
-          {T.body === "moon" ? "Gravity here is six times stronger, there is air, and Earth's magnetic field blocks space radiation." : "Gravity here is 2.6 times stronger, the air is 160 times thicker, and Earth's magnetic field blocks space radiation."} Use this site
-          for what it can copy: {rows
-            .filter((r) => factor(r.f.dims) >= 0.6)
-            .map((r) => r.f.label.toLowerCase())
-            .join(", ") || "parts of the ground and climate"}
-          .
+          {gaps.limits} {gaps.light}
         </p>
+        {gaps.place.length > 0 && (
+          <ul className="mt-2 space-y-1 text-[12.5px] leading-relaxed text-chrome">
+            {gaps.place.map((x) => (
+              <li key={x} className="flex gap-2">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-weak" />
+                {x}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-2 text-[12.5px] leading-relaxed text-platinum">Use this place for {gaps.useFor.join(" and ")}.</p>
       </div>
       <p className="mt-4 text-[10.5px] leading-relaxed text-dim">
         Data: SRTM terrain, NASA POWER, MODIS (NASA GIBS), NASA EMIT minerals, Smithsonian GVP, impact craters, Natural Earth; {T.body === "moon" ? "LRO LOLA" : "MGS MOLA"}
@@ -1386,3 +1419,4 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
     </div>
   );
 }
+

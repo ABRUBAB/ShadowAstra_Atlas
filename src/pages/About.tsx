@@ -14,21 +14,19 @@ const TEAM = [
   { id: "hossin", name: "Tanvir Hossin", role: "Planetary terrain", line: "Researches Moon and Mars terrain, targets and the data behind them." },
   { id: "hasan", name: "Md. Tanvir Hasan", role: "Scientific validation", line: "Validates our science, splits, baselines and independent checks." },
   { id: "saniul", name: "Mohammad Saniul Alam", role: "Experience design", line: "Designs the experience, maps, comparisons and how a judge reads them." },
-  { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing", line: "Builds and tests the app, and is the voice of our film." },
-  { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film & motion", line: "Edits our film and shapes the motion language." },
+  { id: "tasnuva", name: "Tasnuva Arif", role: "Development & testing", line: "Builds and tests the app, and narrated our first film." },
+  { id: "parvez", name: "Mohammed Mahmud Parvez", role: "Film & motion", line: "Edits our films, shapes the motion language and narrates our demo film." },
 ];
 
 const AWARDS = [
-  { a: "Best Use of Science", f: "Every land area measured the same way as the Moon or Mars target, at the same 50 km scale. A learned model tested by hiding known sites." },
-  { a: "Best Use of Data", f: "NASA POWER, MODIS (GIBS), SRTM, full-precision LOLA and MOLA, volcano and crater records, built into one open global dataset." },
-  { a: "Best Use of Technology", f: "80,206 places re-ranked live in the browser, a 3D score globe, WebGL terrain from real heights, and a shadow model." },
-  { a: "Galactic Impact", f: "Tells field teams where, and when, to practise, and what the practice can't prove." },
-  { a: "Best Mission Concept", f: "Pick a job and a destination. The whole planet answers with places to test, why, and the best months to go." },
-  { a: "Most Inspirational", f: "Astra, our field-test astronaut, shivers, sweats, cheers and admits when a place is poor practice." },
-  { a: "Best Storytelling", f: "Earth to Moon to Mars, “looks alike is not enough”, and light and shadow as the thread." },
-  { a: "Global Connection", f: "Check any town on Earth. Find the closest strong site from any team's city." },
-  { a: "Art & Technology", f: "Cinematic globes from NASA mosaics, a sunlight-and-shadow palette, calm motion." },
-  { a: "Local Impact", f: "Dhaka-first workshops and a Bangla classroom mode, so students far from Atacama do real planetary science." },
+  { a: "The test", f: "Every land area measured the same way as the Moon or Mars target, at the same 50 km scale, and a learned model tested by hiding known sites. Open How it works." },
+  { a: "The data", f: "NASA POWER, MODIS (GIBS), SRTM, EMIT minerals, full-precision LOLA and MOLA, LRO Diviner, Mars Odyssey, Lunar Prospector, volcano and crater records, caves and pits, in one open dataset." },
+  { a: "In the browser", f: "80,206 places re-ranked live, a 3D score globe, WebGL terrain from real heights and a shadow model." },
+  { a: "For field teams", f: "Where and when to practise, what to test there, and what the practice can't prove." },
+  { a: "Your mission", f: "Pick a job and a destination. The whole planet answers with places to test, why, and the best months to go." },
+  { a: "Astra", f: "Our field-test astronaut shivers, sweats, cheers and admits when a place is poor practice." },
+  { a: "Any town", f: "Check any town on Earth, and find the closest strong site from any team's city." },
+  { a: "In Bangla", f: "A classroom mode in Bangla and Spanish, so students far from Atacama can do real planetary science." },
 ];
 
 const VALUES = [
@@ -42,8 +40,9 @@ const TIMELINE = [
   { d: "Sep 2026", t: "Team formed in Dhaka", s: "Six people, one challenge: find Earth's best practice grounds." },
   { d: "1 Oct", t: "Concept film submitted", s: "Who, why, what and what next, in under four minutes." },
   { d: "Oct", t: "Working prototype", s: "Maps, 3D compare, the shadow map and Astra. Then every land area on Earth measured, a tested model, a terrain AI, EMIT minerals and lessons in three languages." },
-  { d: "Nov", t: "Hackathon weekend", s: "The official 2026 datasets, field test plans and expert review of the best new sites." },
-  { d: "Next", t: "Community", s: "Expert review, an open dataset anyone can reuse, and a classroom pilot in Dhaka." },
+  { d: "2 Nov", t: "Final release", s: "Every claim rechecked against our tests, place-by-place gaps in every report, and caves and lava tubes on Maps. The open dataset is on Hugging Face." },
+  { d: "13 Nov", t: "Hackathon weekend", s: "The official 2026 datasets, field test plans and the expert review of the best new sites." },
+  { d: "Next", t: "Community", s: "Field tests with planetary scientists and a classroom pilot in Dhaka." },
 ];
 
 function Words({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
@@ -133,7 +132,7 @@ function Hero() {
           <Words text="so crews can walk in the light." className="font-serif font-normal tracking-[-0.02em] text-flare italic" delay={0.3} />
         </h1>
         <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: EASE, delay: 0.7 }} className="mt-8 max-w-[600px] text-[17px] leading-relaxed text-chrome">
-          We are ShadowAstra, a six-person team from Dhaka. Our name comes from the place humanity will build its first permanent Moon base, the lunar south pole, where ridges catch the Sun and crater floors stay dark for billions of years.
+          We are ShadowAstra, a six-person team from Dhaka. Our name comes from the place where the first permanent Moon base is expected to be built, the lunar south pole, where ridges catch the Sun and crater floors stay dark for billions of years.
         </motion.p>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 1.1 }} className="mt-12">
           <Astronaut size={86} mood="happy" action="wave" say="That's us. Six crew, one mission." sayAlign="side" />
@@ -235,11 +234,11 @@ function Awards() {
     <section className="border-b border-line px-4 py-28 sm:px-6">
       <div className="mx-auto grid max-w-[1400px] gap-14 lg:grid-cols-[0.75fr_1.25fr]">
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <Kicker n="03">Built for every judging lens</Kicker>
+          <Kicker n="03">Where to look</Kicker>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }} className="mt-6 text-[clamp(28px,3.4vw,50px)] leading-[1.04] font-medium tracking-[-0.035em]">
-            Ten award categories, <span className="font-serif font-normal text-chrome italic">one honest product.</span>
+            Eight things to open, <span className="font-serif font-normal text-chrome italic">and check for yourself.</span>
           </motion.h2>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-chrome">Each category maps to something you can open and test in this prototype, or to a clearly labelled next step.</p>
+          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-chrome">Each line points to something working on this site today.</p>
           <div className="mt-10 hidden lg:block">
             <Astronaut size={110} mood="happy" action="flag" />
           </div>

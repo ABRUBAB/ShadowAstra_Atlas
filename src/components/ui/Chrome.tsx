@@ -32,7 +32,7 @@ export function Logo({ size = 34, withWord = true }: { size?: number; withWord?:
       />
       {withWord && (
         <span className="font-wide text-[10.5px] tracking-[0.14em] whitespace-nowrap text-platinum min-[420px]:text-[12px] min-[420px]:tracking-[0.18em]">
-          SHADOWASTRA <span className="text-earth">ATLAS</span>
+          SHADOWASTRA<span className="hidden text-earth min-[400px]:inline"> ATLAS</span>
         </span>
       )}
     </Link>
@@ -124,7 +124,7 @@ export function Nav({ overlay = false }: { overlay?: boolean }) {
       className={clsx(
         "z-50 w-full transition-colors duration-300",
         overlay ? "fixed top-0" : "sticky top-0",
-        overlay && !scrolled ? "bg-transparent" : "border-b border-line bg-void/90 backdrop-blur-md",
+        overlay && !scrolled ? "bg-transparent" : "border-b border-line bg-void/95 backdrop-blur-md",
       )}
     >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6">
@@ -265,7 +265,7 @@ export function Footer() {
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 py-5 font-mono text-[11px] text-dim sm:px-6">
           <span>© 2026 ShadowAstra · Dhaka</span>
           <MotionToggle />
-          <span>v0.7 · open source · open data</span>
+          <span>v1.0 · open source · open data</span>
         </div>
       </div>
     </footer>

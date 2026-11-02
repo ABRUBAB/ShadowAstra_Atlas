@@ -21,10 +21,11 @@ python s16_model_zoo.py # adds the Kaggle K5 nine-model comparison to validation
 python s23_pinpoint.py  # best 10 km spot: test on the 66 field sites → validation.json "pinpoint"    ~8 min
 python s22_parity_fixture.py    # tests/fixtures/parity.json, so the browser can be checked against Python ~1 min
 python s24_review.py kit        # expert review kit for the top 20 candidates (docs/review)          ~4 min
+python s25_caves.py             # Mars cave candidates and lunar pits for the Maps layer → caves.json  ~1 s
 python s21_open_dataset.py      # the open dataset (add --push with HF_TOKEN set to publish)          ~1 min
 ```
 
-Optional: `s18_minerals_test.py` (run with `SA_MINERALS=1`, ~16 min) decides whether EMIT minerals join the learned model. They did not help, so `s06_build.py` leaves them out by default.
+Optional: `s18_minerals_test.py` (run with `SA_MINERALS=1`, ~16 min) decides whether EMIT minerals join the learned model. As a model input they helped slightly overall (1.19% to 1.14%) but hurt where EMIT can see the ground (1.63% to 1.83%), so `s06_build.py` leaves them out by default.
 
 Target facts only (no score changes): `python s20_target_resources.py --patch-grid` writes the new facts straight into `public/data/grid.json` without rerunning the 12 minute `s06_build.py`. When the expert review comes back: `python s24_review.py import review_sheet.csv` → `public/data/review.json`.
 
@@ -35,16 +36,17 @@ Target facts only (no score changes): `python s20_target_resources.py --patch-gr
 | `s01_gibs.py` | NASA GIBS WMS images of MODIS products, turned back into numbers with the official GIBS colormaps | land cover fractions, NDVI, LST day/night, snow |
 | `s02_power.py` | NASA POWER regional climatology (MERRA-2), one parameter per request, 10° boxes | T2M, T2M_MIN, T2M_MAX, PRECTOTCORR, RH2M, ALLSKY_SFC_SW_DWN |
 | `s03_terrain.py` | AWS Terrain Tiles (SRTM based) | slope histogram (8 bins), mean and 90th percentile slope, relief (2nd to 98th percentile), roughness |
-| `s04_context.py` | Smithsonian GVP, Earth Impact Database selection (`catalogue.py`), Natural Earth | distance to volcano, impact score, country, region, nearest town |
+| `s04_context.py` | Smithsonian GVP, Earth Impact Database selection (62 confirmed craters in `catalogue.py`), Natural Earth | distance to volcano, impact score, country, region, nearest town |
 | `s05_targets.py` | USGS Astrogeology 16-bit LRO LOLA (118 m) and MGS MOLA (463 m) GeoTIFFs, read with HTTP range requests | target terrain statistics, best-month sunlight match per Earth latitude |
-| `s17_emit.py` | NASA EMIT L3 Aggregated Mineral Spectral Abundance 0.5° v002 (LP DAAC) | `.cache/emit.npz`: 11 minerals and 4 families (clays, sulfates, carbonates, iron oxides); EMIT cells sit a quarter cell off ours, so each of our cells averages the four it overlaps |
+| `s17_emit.py` | NASA EMIT L3 Aggregated Mineral Spectral Abundance 0.5° v002 (LP DAAC) | `.cache/emit.npz`: 11 minerals and 4 families (clays, sulfates, carbonates, iron oxides); EMIT cells sit a quarter cell off ours, so each of our cells averages the four it overlaps; EMIT sees only dry, bare land, so it fills 16,868 of the 80,206 places |
 | `s20_target_resources.py` | LRO Diviner polar resource product (PDS, HTTP range reads within 10 km of each south-pole target); Diviner global temperatures (Williams et al. 2017, 0.5° x 96 times of day, the 3 x 3 cells around each of the other Moon targets); Lunar Prospector GRS oxides and thorium (2° map); Mars Odyssey GRS H₂O 5° map. SWIM ice (swim.psi.edu) is not included: the site was down on 25 Oct 2026 and serves files only through a form | `.cache/target_resources.json`: ground temperatures (day and night away from the pole) and stable-ice shares (Moon), FeO, TiO₂ and Th (Moon), water in the topsoil (Mars) |
 | `s06_build.py` | everything above + `catalogue.py` known sites | `grid.bin` (typed arrays) and `grid.json` (layout, names, targets with minerals and resources, model test, confidence limits) |
 | `s19_k3_export.py` | Kaggle K3 outputs (`kaggle/_out/k3_ssl`) | `shape.bin` (terrain AI similarity per target), `terrain/{moon,mars}/tNN.bin` (5 AI twins per 1° cell), its tests |
 | `s14_validate.py` | the website's own data files | `validation.json`: independent sites, known sites, model share, jobs, robustness, ablations, terrain AI in the full score, EMIT mineral term |
 | `s22_parity_fixture.py` | the website's own data files, scored by `s14_validate.py` | `tests/fixtures/parity.json`: 28 target and job combinations over 300 places, mineral percentiles and confidence levels; `tests/unit/parity.test.ts` checks the browser against it |
-| `s23_pinpoint.py` | AWS Terrain Tiles (SRTM) on the same 1.19 km grid, NASA MODIS water mask (MOD44W on GIBS) | `validation.json → pinpoint`: where the 10 km window holding each of the 66 field sites ranks (result: 42% on average, chance 50%, sign test p = 0.13, so a hint, not a prediction); `tests/fixtures/pinpoint.json` for the browser twin |
+| `s23_pinpoint.py` | AWS Terrain Tiles (SRTM) on the same 1.19 km grid, NASA MODIS water mask (MOD44W on GIBS) | `validation.json → pinpoint`: where the 10 km window holding each of the 66 field sites ranks (result: median rank 42%, chance 50%, sign test p = 0.13, so a hint, not a passed test); `tests/fixtures/pinpoint.json` for the browser twin |
 | `s24_review.py` | the website's own data files, `s23` for the 10 km spot | `docs/review/EXPERT_REVIEW_KIT.md`, `docs/review/review_sheet.csv`, `public/data/review.json` (pending until the ratings come back) |
+| `s25_caves.py` | USGS Mars Global Cave Candidate Catalog (MGC³, Cushing) and the LROC lunar pit atlas, both downloaded by `s13` | `public/data/caves.json`: 1,062 Mars candidates (type, targeting priority, size) and 278 lunar pits (terrain, size, overhang) for the Caves and lava tubes layer on Maps; shown as facts, not scored |
 
 ## Same scale everywhere
 
@@ -61,8 +63,8 @@ Results are written into `grid.json` (`evaluation`) and `validation.json`, and s
 
 ## Rule for new data
 
-New data only changes the score if it ranks the known sites better (the independent sites are reported, never used to choose). Otherwise it is shown as a fact. EMIT minerals as a model input and the terrain AI in the full score both went through this rule; see `validation.json` → `minerals` and `terrain_ai`.
+New data only changes the score if it ranks the known sites better (the independent sites are reported, never used to choose). Otherwise it is shown as a fact. EMIT minerals (as a model input, and as a Mars mineral term in Rocks & craters, where the known Mars sites got slightly worse, 22.4% to 22.8%, and the independent ones better, 41.3% to 38.2%) and the terrain AI in the full score both went through this rule; see `validation.json` → `minerals` and `terrain_ai`. Cave candidates and lunar pits (`s25_caves.py`) and the Diviner, Lunar Prospector and Odyssey numbers (`s20`) are facts, never scored.
 
 ## Swapping in the official 2026 datasets
 
-The challenge datasets from NASA and partner agencies are released on 28 October 2026. Each source here is one script with one output per variable on the shared 360 × 720 grid (`common.save`), so a new dataset only needs a new `sNN_*.py` that writes its arrays, plus a line in `s06_build.py`.
+The full 2026 challenge statement came out on 28 October 2026. NASA's Resources tab, which holds the official challenge datasets, opens on 13 November 2026 and was still closed on 2 November 2026. Each source here is one script with one output per variable on the shared 360 × 720 grid (`common.save`), so a new dataset only needs a new `sNN_*.py` that writes its arrays, plus a line in `s06_build.py`.

@@ -191,14 +191,14 @@ export function astraAnswer(raw: string): AstraReply {
 
   if (/test(ed)?|valid|accura|proof|prove|how good/.test(q))
     return {
-      text: "We hid each known test site, plus every other known site within 300 km, retrained the model, and checked where the hidden site ranked. Hidden Moon sites typically land in the top 1% of all land, Mars sites in the top 5%. A simple hand-made rule only reached about the top 33%.",
+      text: "We hid each known test site, plus every other known site within 300 km, retrained the model, and checked where the hidden site ranked. With the learned model alone, hidden Moon sites typically land in the top 0.5% of all land and Mars sites in the top 2.4%. 28 sites it never saw typically land in the top 18% as the site scores them. A simple hand-made rule only reached about the top 31 to 35%.",
       mood: "wow",
       links: [{ label: "See the test", to: "/methods" }],
     };
 
   if (/demo|real|fake|computed|honest/.test(q))
     return {
-      text: "Green “Computed” values are measured from NASA and open data. Blue “Learned” values come from our model trained on 38 known sites. Red “Earth can't copy” items are shown but never scored. Grey “Demo” only appears for a moment while data loads.",
+      text: "Green “Computed” values are measured from NASA and open data. Blue “Learned” values come from our model trained on 38 known sites. Red “Earth can't copy” items are shown but never scored. Grey “Demo” values only appear while data loads, and the few rough estimates from published studies are labelled as such.",
       mood: "neutral",
     };
 
@@ -209,17 +209,17 @@ export function astraAnswer(raw: string): AstraReply {
       links: [{ label: "Try it: Dry Valleys vs Shackleton", to: lab("dry-valleys", "shackleton", "polar") }],
     };
 
-  if (/gap|cannot|can t|gravity|radiation|vacuum|atmosphere|limit/.test(q)) {
+  if (/gap|cannot|can t|gravity|radiation|vacuum|atmosphere|limit|break(s)? down|analog(y|ue)? (fail|break)|differ|not like|weak/.test(q)) {
     const w = world ?? "moon";
     return {
-      text: `No place on Earth can copy these ${w === "moon" ? "Moon" : "Mars"} conditions: ${REALITY_GAPS[w].join(", ")}. We show them next to every score so nobody forgets.`,
+      text: `No place on Earth can copy these ${w === "moon" ? "Moon" : "Mars"} conditions: ${REALITY_GAPS[w].join(", ")}. Every place report also lists where that place itself falls short, from its own numbers: snow cover, rock type, minerals, cold and light.`,
       mood: "sad",
     };
   }
 
   if (/data|dataset|nasa|source|satellite|map/.test(q))
     return {
-      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. Minerals from NASA EMIT on the space station. For the Moon and Mars: full-precision LOLA and MOLA heights, LRO Diviner temperatures and ice at the south pole, Mars Odyssey water, plus LROC, Viking and THEMIS images. Next: the official 2026 datasets.",
+      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. Minerals from NASA EMIT on the space station. For the Moon and Mars: full-precision LOLA and MOLA heights, LRO Diviner ground temperatures at all ten Moon targets and ice at the south pole, Lunar Prospector iron and titanium, Mars Odyssey water, Mars cave candidates and lunar pits, plus LROC, Viking and THEMIS images. Next: the official 2026 datasets.",
       mood: "neutral",
       links: [{ label: "Open the source list", to: "/methods" }],
     };

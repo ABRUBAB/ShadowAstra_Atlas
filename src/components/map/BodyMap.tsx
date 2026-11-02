@@ -26,6 +26,14 @@ export interface MapMarker {
   dashed?: boolean;
 }
 
+/** A small, light dot (for example a cave candidate); one canvas draws them all. */
+export interface MapDot {
+  lat: number;
+  lon: number;
+  label: string;
+  strong?: boolean;
+}
+
 /** A square on the ground (for example the best 10 km spot of a place), km on a side. */
 export interface MapBox {
   lat: number;
@@ -53,6 +61,8 @@ interface Props {
   overlayIds?: string[];
   markers: MapMarker[];
   boxes?: MapBox[];
+  dots?: MapDot[];
+  dotColor?: string;
   activeId?: string | null;
   onSelect?: (id: string) => void;
   onViewChange?: (v: MapView) => void;
@@ -66,6 +76,7 @@ interface Props {
 
 const LAYER_BY_ID = Object.fromEntries(LAYERS.map((l) => [l.id, l])) as Record<string, MapLayer>;
 const NO_BOXES: MapBox[] = [];
+const NO_DOTS: MapDot[] = [];
 
 function toLatLng(projection: MapLayer["projection"], lat: number, lon: number): L.LatLng | null {
   if (projection === "polar-south") {
@@ -94,7 +105,7 @@ function pinIcon(m: MapMarker, active: boolean) {
 }
 
 export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
-  { body, layerId, overlayIds = [], markers, boxes = NO_BOXES, activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl", zoomPosition = "bottomright" },
+  { body, layerId, overlayIds = [], markers, boxes = NO_BOXES, dots = NO_DOTS, dotColor = "#f2c879", activeId, onSelect, onViewChange, initial, className, wheelZoom = "ctrl", zoomPosition = "bottomright" },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -104,6 +115,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
   const overlayRef = useRef<L.Layer[]>([]);
   const markerLayer = useRef<L.LayerGroup | null>(null);
   const boxLayer = useRef<L.LayerGroup | null>(null);
+  const dotLayer = useRef<L.LayerGroup | null>(null);
   const silent = useRef(false);
   const cb = useRef({ onSelect, onViewChange });
   cb.current = { onSelect, onViewChange };
@@ -138,6 +150,7 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
     L.control.zoom({ position: zoomPosition }).addTo(map);
     map.attributionControl.setPrefix(false);
     boxLayer.current = L.layerGroup().addTo(map);
+    dotLayer.current = L.layerGroup().addTo(map);
     markerLayer.current = L.layerGroup().addTo(map);
 
     if (projection === "polar-south") {
@@ -244,6 +257,22 @@ export const BodyMap = forwardRef<BodyMapHandle, Props>(function BodyMap(
         }).addTo(map),
       );
   }, [overlayIds.join("|"), projection]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Dots: hundreds of small points on one canvas, each with a tooltip
+  useEffect(() => {
+    const group = dotLayer.current;
+    if (!group) return;
+    group.clearLayers();
+    if (!dots.length) return;
+    const renderer = L.canvas({ padding: 0.3 });
+    for (const d of dots) {
+      const ll = toLatLng(projection, d.lat, d.lon);
+      if (!ll) continue;
+      L.circleMarker(ll, { renderer, radius: d.strong ? 4 : 3, weight: 1, color: "#07080a", opacity: 0.7, fillColor: dotColor, fillOpacity: d.strong ? 0.95 : 0.7 })
+        .bindTooltip(d.label, { className: "sa-tip", direction: "top", offset: [0, -4] })
+        .addTo(group);
+    }
+  }, [dots, dotColor, projection]);
 
   // Markers
   useEffect(() => {

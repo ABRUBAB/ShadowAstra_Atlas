@@ -8,7 +8,7 @@ test("Earth twins of Jezero, by formula and by the terrain AI", async ({ page, c
   await expect(rows).toHaveCount(8, { timeout: 45_000 });
   await page.getByRole("button", { name: /AI match/ }).click();
   await expect(rows).toHaveCount(8);
-  await expect(rows.first()).toContainText(/agree/i);
+  await expect(rows.first()).toContainText(/AI score/i);
   // the spot is in the address, so it can be shared
   await expect(page).toHaveURL(/spot=18\.40(,|%2C)77\.60/);
   expect(consoleErrors).toEqual([]);

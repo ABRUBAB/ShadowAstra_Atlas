@@ -94,8 +94,23 @@ function Loading() {
   return <MiniLoader label="Loading" />;
 }
 
+/** One tab title per page, so many open tabs can be told apart. The report sets its own. */
+const TITLES: Record<string, string> = {
+  "/": "ShadowAstra Atlas · Practise for other worlds on this one",
+  "/discover": "Find new sites · ShadowAstra Atlas",
+  "/atlas": "Maps · ShadowAstra Atlas",
+  "/lab": "Compare · ShadowAstra Atlas",
+  "/methods": "How it works · ShadowAstra Atlas",
+  "/learn": "Learn · ShadowAstra Atlas",
+  "/about": "Team · ShadowAstra Atlas",
+};
+
 export default function App() {
   const { pathname } = useLocation();
+  const onReport = pathname === "/report";
+  useEffect(() => {
+    if (!onReport) document.title = TITLES[pathname] ?? "ShadowAstra Atlas";
+  }, [pathname, onReport]);
   useSpotlight();
   useScrollingFlag();
   const reduced = useMotionReduced();
@@ -141,11 +156,12 @@ export default function App() {
         </PageFade>
       </Suspense>
       </PageBoundary>
-      <AskAstra />
+      {/* the printable report stays clean: no floating buttons over its text, on screen or on paper */}
+      {!onReport && <AskAstra />}
       <CommandPalette />
-      <BackToTop />
+      {!onReport && <BackToTop />}
       <Toaster />
-      <BadgeToast />
+      {!onReport && <BadgeToast />}
     </MotionConfig>
   );
 }

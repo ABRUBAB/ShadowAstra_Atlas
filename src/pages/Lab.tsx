@@ -35,6 +35,7 @@ import {
 import { lightTwin, SUN_BINS } from "../lib/sun";
 import { analogFit, band, demoValues, greatCircleKm, HOME_BASES, PARAMS, STEWARDSHIP, TASK_WEIGHTS, tripCo2Tonnes, type ParamResult, type Weights } from "../lib/scoring";
 
+import { isPolar, modelLine } from "../lib/gaps";
 const TerrainTwins = lazy(() => import("../components/three/TerrainTwins"));
 
 const FOOTPRINTS = [40, 80, 160];
@@ -266,7 +267,7 @@ export default function Lab() {
                   families across Earth's dry land, so a field team can rehearse finding them.
                 </p>
                 <p className="mt-3 text-[12px] leading-relaxed text-dim">
-                  We tested minerals two ways: as an extra input to the learned model, and as part of Rocks & craters for Mars targets with known minerals. Neither ranked the known test sites better, so minerals are shown as measured facts, not scored. The tests are on How it works.
+                  We tested minerals two ways. As an extra input to the learned model they helped a little overall but made things worse where EMIT can see the ground; as part of Rocks & craters for Mars targets they made the known Mars sites slightly worse. So minerals are shown as measured facts, not scored. The tests are on How it works.
                 </p>
               </div>
             </div>
@@ -318,7 +319,7 @@ export default function Lab() {
               </>
             }
           />
-          <RealityGaps world={target.body} />
+          <RealityGaps world={target.body} lat={target.lat} />
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
             <Insight earthName={earthName} targetName={target.name} topo={topo} statsE={twins.statsE} statsT={twins.statsT} light={light} illE={illE} illT={illT} fit={fit.score} measured={!!cs} />
             <ModelRoadmap />
@@ -969,7 +970,7 @@ function EvidencePanel({
                 <span className="flex items-center gap-2 text-[13px] text-platinum">
                   {meta.label} <KindBadge kind={p.kind} />
                 </span>
-                <span className="font-mono text-[13px] text-platinum tabular">{p.value === null ? "n/a" : p.value.toFixed(2)}</span>
+                <span className="font-mono text-[13px] text-platinum tabular">{loading ? "··" : p.value === null ? "n/a" : p.value.toFixed(2)}</span>
               </div>
               <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-line">
                 {p.value !== null && <motion.div className={clsx("h-full rounded-full", p.kind === "computed" ? "bg-platinum" : "bg-chrome/45")} initial={{ width: 0 }} animate={{ width: `${p.value * 100}%` }} transition={{ duration: 1, ease: EASE }} />}
@@ -1020,7 +1021,7 @@ function EvidencePanel({
             <span className="font-mono text-[13px] tracking-normal text-earth">{learned.toFixed(2)}</span>
           </div>
           <p className="mt-1.5 text-[12.5px] leading-snug text-chrome">
-            Looks more {world === "moon" ? "Moon" : "Mars"}-like than {Math.round(learned * 100)}% of all land, judged by a model trained on 38 known test sites.
+            {modelLine(learned, world)}, judged by a model trained on 38 known test sites.
           </p>
         </div>
       )}
@@ -1553,6 +1554,9 @@ function Sustainability({ task, targetId, earth, onPick }: { task: TaskId; targe
               {i === 0 && <span className="absolute top-3 left-3 rounded-full bg-strong/90 px-2 py-0.5 font-mono text-[9.5px] tracking-wider text-void uppercase">closest credible</span>}
             </motion.button>
           ))}
+          <p className="text-[11px] leading-relaxed text-dim sm:col-span-2">
+            These are known test sites ranked by rough estimates from published studies, not by our measurements, so they can differ from the measured score at the top of this page. They suggest a nearby alternative; use Find new sites for measured ones.
+          </p>
         </div>
       </div>
     </Reveal>
@@ -1576,10 +1580,12 @@ const GAPS = {
   ],
 };
 
-function RealityGaps({ world }: { world: "moon" | "mars" }) {
+function RealityGaps({ world, lat }: { world: "moon" | "mars"; lat: number }) {
+  // at the poles the Sun skims the horizon: rims stay lit most of the year, floors never see light
+  const gaps = world === "moon" && isPolar(lat) ? GAPS.moon.map((g) => (g.k === "Solar day" ? { k: "Sunlight", v: "Low all year", e: "Rims lit most of the year, some floors never" } : g)) : GAPS[world];
   return (
     <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-      {GAPS[world].map((g, i) => (
+      {gaps.map((g, i) => (
         <motion.div key={g.k} className="bg-panel p-6" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.9, delay: i * 0.07 }}>
           <div className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">{g.k}</div>
           <div className="mt-3 text-[28px] font-light tracking-tight text-platinum">{g.v}</div>
@@ -1650,9 +1656,10 @@ function Insight({
 function ModelRoadmap() {
   const steps = [
     { k: "Done", t: "Every place measured", d: "80,206 land areas scored from NASA POWER, MODIS, terrain tiles, volcanoes and craters.", on: true },
-    { k: "Done", t: "Learned model, tested", d: "Three models trained together on 38 known sites. Hidden sites come back in the top 1 to 2% of all land.", on: true },
+    { k: "Done", t: "Learned model, tested", d: "Three models trained together on 38 known sites. A hidden known site typically comes back in the top 2.4% of all land (the model alone: 1.2%).", on: true },
     { k: "Done", t: "Terrain AI", d: "A vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars. Try “AI match” in Maps.", on: true },
-    { k: "Done", t: "Minerals and the far side", d: "NASA EMIT minerals on Earth; LRO Diviner cold and ice at the Moon's south pole; Mars Odyssey water on Mars.", on: true },
+    { k: "Done", t: "Minerals, cold, ice and water", d: "NASA EMIT minerals on Earth; LRO Diviner ground temperature at all ten Moon targets and ice at the south pole; Lunar Prospector iron and titanium; Mars Odyssey water on Mars.", on: true },
+    { k: "Done", t: "Caves and lava tubes", d: "1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC) as a layer on Maps.", on: true },
     { k: "Next", t: "Official 2026 datasets", d: "The challenge's own data, published by NASA on 13 November, added as new pipeline steps." },
   ];
   return (
@@ -1685,7 +1692,7 @@ function ClimateLine({ grid, cell }: { grid: Grid; cell: number }) {
   const items: [string, number | null, string][] = [
     ["Coldest night", v("f_lst_night_min"), " °C"],
     ["Hottest day", v("f_lst_day_max"), " °C"],
-    ["Rain a year", v("f_precip"), " mm"],
+    ["Rain and snow a year", v("f_precip"), " mm"],
   ];
   return (
     <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-line bg-line">

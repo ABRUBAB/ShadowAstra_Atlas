@@ -18,10 +18,12 @@ interface Props {
   onPick?: (lat: number, lon: number) => void;
   /** Mouse wheel: "ctrl" inside scrolling pages, "zoom" for full-screen maps. */
   wheel?: "ctrl" | "zoom";
+  dots?: { lat: number; lon: number }[];
+  dotColor?: string;
 }
 
 /** Interactive single-body globe used in the Atlas and the Analog Lab. */
-export default function GlobeView({ body, markers, activeId, onSelect, focus, lod, stars = true, onPick, wheel = "ctrl" }: Props) {
+export default function GlobeView({ body, markers, activeId, onSelect, focus, lod, stars = true, onPick, wheel = "ctrl", dots, dotColor }: Props) {
   const reduced = useMotionReduced();
   return (
     <Scene fallback={<StaticGlobe body={body} />}>
@@ -31,7 +33,7 @@ export default function GlobeView({ body, markers, activeId, onSelect, focus, lo
       <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={body === "earth" ? 2.2 : 2.4} />
       {stars && <Starfield count={1800} />}
       <Suspense fallback={<PlanetPlaceholder body={body} />}>
-        <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus && !reduced} spin={0.035} lod={lod} onPick={onPick} />
+        <Planet key={body} body={body} markers={markers} activeId={activeId} onSelect={onSelect} focus={focus} autoRotate={!focus && !reduced} spin={0.035} lod={lod} onPick={onPick} dots={dots} dotColor={dotColor} />
       </Suspense>
       <FitSphere radius={1.1} />
       <Orbit wheel={wheel} />

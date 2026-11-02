@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { ArrowRight, Box, ChevronLeft, ChevronRight, ExternalLink, Map as MapIcon, Radar, Sparkles, X } from "lucide-react";
 import { Nav, FitBadge, WorldDot, WORLD_COLOR } from "../components/ui/Chrome";
 import { Astronaut } from "../components/ui/Astronaut";
-import { BodyMap, type BodyMapHandle, type MapMarker } from "../components/map/BodyMap";
+import { BodyMap, type BodyMapHandle, type MapDot, type MapMarker } from "../components/map/BodyMap";
 import type { GlobeMarker } from "../components/three/Planet";
 import {
   EARTH_BY_ID,
@@ -32,6 +32,23 @@ import { EASE, Meter } from "../components/ui/kit";
 import { useMotionReduced } from "../lib/motionPref";
 
 const GlobeView = lazy(() => import("../components/three/GlobeView"));
+
+/** Mars cave candidates (USGS MGC³) and lunar pits (LROC), written by pipeline/s25_caves.py. */
+interface Caves {
+  mars: [number, number, string, number | null, number | null, number | null][];
+  moon: [number, number, string, string, number | null, number | null, boolean][];
+  types: Record<string, string>;
+  priority: Record<string, string>;
+}
+const CAVE_COLOR = "#8fd3c8";
+let cavesFile: Promise<Caves> | null = null;
+const loadCaves = () =>
+  (cavesFile ??= fetch("/data/caves.json").then((r) => {
+    if (!r.ok) throw new Error(`caves ${r.status}`);
+    return r.json() as Promise<Caves>;
+  }));
+const caveSize = (wide: number | null, deep: number | null) =>
+  [wide ? `${Math.round(wide)} m wide` : "", deep ? `${Math.round(deep)} m deep` : ""].filter(Boolean).join(", ");
 
 type WorldFilter = World | "both";
 type Selection = { kind: "earth" | "target" | "screen"; id: string } | null;
@@ -64,6 +81,21 @@ export default function Atlas() {
   const [world, setWorld] = useState<WorldFilter>("both");
   const [task, setTask] = useState<TaskId | null>(null);
   const [showScreening, setShowScreening] = useState(true);
+  const [showCaves, setShowCaves] = useState(() => params.get("caves") === "1");
+  const [caves, setCaves] = useState<Caves | null>(null);
+  useEffect(() => {
+    if (!showCaves || caves) return;
+    let live = true;
+    loadCaves()
+      .then((c) => live && setCaves(c))
+      .catch(() => {
+        cavesFile = null;
+        if (live) setShowCaves(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [showCaves, caves]);
   const [sel, setSel] = useState<Selection>(() =>
     initialSite && EARTH_BY_ID[initialSite] ? { kind: "earth", id: initialSite } : null,
   );
@@ -73,6 +105,8 @@ export default function Atlas() {
     return m && params.get("body") !== "earth" && params.get("body") ? { lat: +m[1], lon: +m[2] } : null;
   });
   const [earthFocus, setEarthFocus] = useState<{ lat: number; lon: number } | null>(null);
+  // the Moon or Mars spot an Earth twin was opened from, so the way back is one click
+  const [twinFrom, setTwinFrom] = useState<{ body: "moon" | "mars"; lat: number; lon: number } | null>(null);
   useEffect(() => {
     if (body === "earth") setSpot(null);
     else setEarthFocus(null);
@@ -84,8 +118,26 @@ export default function Atlas() {
     if (view === "2d") next.set("layer", layerByBody[body]);
     if (sel?.kind === "earth") next.set("site", sel.id);
     if (spot && body !== "earth") next.set("spot", `${spot.lat.toFixed(2)},${spot.lon.toFixed(2)}`);
+    if (showCaves) next.set("caves", "1");
     setParams(next, { replace: true });
-  }, [body, view, layerByBody, sel, spot, setParams]);
+  }, [body, view, layerByBody, sel, spot, showCaves, setParams]);
+
+  const caveDots = useMemo<MapDot[]>(() => {
+    if (!showCaves || !caves || body === "earth") return [];
+    if (body === "mars")
+      return caves.mars.map(([lat, lon, code, pri, wide, deep]) => ({
+        lat,
+        lon,
+        strong: pri === 1,
+        label: [caves.types[code] ?? "Cave candidate", caveSize(wide, deep), pri !== null ? caves.priority[String(pri)] : ""].filter(Boolean).join(" · "),
+      }));
+    return caves.moon.map(([lat, lon, name, terrain, wide, deep, overhang]) => ({
+      lat,
+      lon,
+      strong: overhang,
+      label: [name, `${terrain.toLowerCase()} pit`, caveSize(wide, deep), overhang ? "overhang seen" : ""].filter(Boolean).join(" · "),
+    }));
+  }, [showCaves, caves, body]);
 
   const matchEarth = (s: (typeof EARTH_SITES)[number]) =>
     (world === "both" || s.worlds.includes(world)) && (!task || s.tasks.includes(task));
@@ -183,6 +235,8 @@ export default function Atlas() {
                     activeId={spot ? "spot" : earthFocus && body === "earth" && !sel ? "twin" : (sel?.id ?? null)}
                     onSelect={onSelect}
                     focus={focus}
+                    dots={caveDots}
+                    dotColor={CAVE_COLOR}
                     onPick={
                       body === "earth"
                         ? undefined
@@ -202,6 +256,8 @@ export default function Atlas() {
                   layerId={layerId}
                   overlayIds={body === "earth" && lst ? ["earth-lst"] : []}
                   markers={markers}
+                  dots={caveDots}
+                  dotColor={CAVE_COLOR}
                   activeId={sel ? (sel.kind === "screen" ? `screen:${sel.id}` : sel.id) : null}
                   onSelect={onSelect}
                   initial={focus ? { ...focus, lat: focus.lat, lon: focus.lon, zoom: body === "earth" ? 5 : 4 } : undefined}
@@ -246,7 +302,10 @@ export default function Atlas() {
                 {showScreening && <Key color="#a197cf" label="Regions we checked" dashed />}
               </>
             ) : (
-              <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
+              <>
+                <Key color="#edeae4" label={body === "moon" ? "Moon base & target regions" : "Mars targets"} />
+                {caveDots.length > 0 && <Key color={CAVE_COLOR} label={body === "moon" ? "Lunar pits" : "Cave candidates"} />}
+              </>
             )}
             <span className="font-mono text-dim">{visibleCount} shown</span>
           </div>
@@ -337,6 +396,23 @@ export default function Atlas() {
               <p className="mt-3 text-[11px] leading-relaxed text-dim">The 3D globe uses a NASA mosaic; a layer opens the live 2D tile map.</p>
             </Section>
 
+            {body !== "earth" && (
+              <Section title="Caves and lava tubes">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3">
+                  <input type="checkbox" checked={showCaves} onChange={(e) => setShowCaves(e.target.checked)} className="mt-0.5 size-4 accent-[#8fd3c8]" />
+                  <span>
+                    <span className="block text-[13px] text-platinum">{body === "mars" ? "Show 1,062 cave candidates" : "Show 278 lunar pits"}</span>
+                    <span className="block text-[11px] leading-relaxed text-dim">
+                      {body === "mars"
+                        ? "Skylights, collapse pits and cracks seen from orbit (USGS Mars Global Cave Candidate Catalog). Bright dots are the best candidates."
+                        : "Holes where the roof of a lava tube or a melt pond fell in (LROC lunar pit atlas). Bright dots have an overhang."}{" "}
+                      These are what the Lava-tube job rehearses for. Hover or tap a dot for its size.
+                    </span>
+                  </span>
+                </label>
+              </Section>
+            )}
+
             {body === "earth" && (
               <Section title="Regions we checked">
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3">
@@ -361,6 +437,7 @@ export default function Atlas() {
                   spot={spot}
                   onClose={() => setSpot(null)}
                   onEarth={(lat, lon) => {
+                    setTwinFrom({ body, lat: spot.lat, lon: spot.lon });
                     setBody("earth");
                     setSel(null);
                     setView("3d");
@@ -368,7 +445,23 @@ export default function Atlas() {
                   }}
                 />
               )}
-              {!sel && !(spot && body !== "earth") && <Overview body={body} world={world} task={task} onEarth={goEarth} onTarget={goTarget} />}
+              {!sel && body === "earth" && earthFocus && twinFrom && (
+                <div className="space-y-4 p-5">
+                  <TwinTitle body={twinFrom.body} lat={earthFocus.lat} lon={earthFocus.lon} onClose={() => setEarthFocus(null)} />
+                  <p className="text-[12.5px] leading-relaxed text-chrome">The gold pin marks the middle of the place. Twins are matched on ground shape only, so check its cold, light and rocks in Find new sites before planning a trip.</p>
+                  <button
+                    onClick={() => {
+                      setBody(twinFrom.body);
+                      setSpot({ lat: twinFrom.lat, lon: twinFrom.lon });
+                      setEarthFocus(null);
+                    }}
+                    className="btn-primary inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px]"
+                  >
+                    <ChevronLeft size={14} /> Back to your spot and its twins
+                  </button>
+                </div>
+              )}
+              {!sel && !(spot && body !== "earth") && !(body === "earth" && earthFocus && twinFrom) && <Overview body={body} world={world} task={task} onEarth={goEarth} onTarget={goTarget} />}
               {sel?.kind === "earth" && <EarthDetail id={sel.id} world={world} onTarget={goTarget} onClose={() => setSel(null)} />}
               {sel?.kind === "target" && <TargetDetail id={sel.id} onEarth={goEarth} onClose={() => setSel(null)} />}
               {sel?.kind === "screen" && <ScreenDetail id={sel.id} onClose={() => setSel(null)} />}
@@ -486,13 +579,17 @@ function SpotTwins({ body, spot, onClose, onEarth }: { body: "moon" | "mars"; sp
         </div>
       )}
       {twins && (
+        <p className="rounded-xl border border-line bg-ink px-3 py-2 text-[12px] leading-relaxed text-platinum">
+          {mode === "like" ? "Matched on ground shape and on our learned model." : "Matched on ground shape only."} Cold, light and rocks are not compared here: score a place for a named target in Find new sites.
+        </p>
+      )}
+      {twins && (
         <ol className={clsx("space-y-2 transition-opacity duration-150", shown !== mode && "opacity-60")}>
           {twins.map((c, i) => (
             <TwinRow key={`${shown}-${c.k}`} grid={grid!} c={c} rank={i + 1} ai={shown === "ai"} onShow={() => onEarth(c.lat, c.lon)} />
           ))}
         </ol>
       )}
-      <p className="text-[11px] leading-relaxed text-dim">Rocks, cold and light are scored in Find new sites for the 18 named targets.</p>
     </div>
   );
 }
@@ -512,11 +609,11 @@ function TwinRow({ grid, c, rank, ai = false, onShow }: { grid: Grid; c: Candida
           <span className="block truncate text-[11px] text-dim">{nm.subtitle || formatCoord(c.lat, c.lon)}</span>
         </span>
         {ai ? (
-          <span className="flex w-12 flex-col items-end gap-1" title="How strongly the AI agrees across the spot and its neighbours">
+          <span className="flex w-12 flex-col items-end gap-1" title="How strongly the terrain AI matches this place, across your spot and its neighbours">
             <span className="h-1 w-full overflow-hidden rounded-full bg-line-2">
               <span className="block h-full rounded-full bg-flare" style={{ width: `${Math.round(c.score * 100)}%` }} />
             </span>
-            <span className="font-mono text-[9.5px] tracking-wider text-dim uppercase">agree</span>
+            <span className="font-mono text-[9.5px] tracking-wider text-dim uppercase">AI score</span>
           </span>
         ) : (
           <span className="font-mono text-[13px] text-flare">{c.score.toFixed(2)}</span>
@@ -546,7 +643,7 @@ function PlanetThumb({ body, on, size = 24 }: { body: Body; on: boolean; size?: 
 }
 
 const WORLD_FACTS: Record<Body, { kicker: string; line: string }> = {
-  earth: { kicker: "Practice ground", line: "38 known analog sites · live NASA GIBS and ESA layers" },
+  earth: { kicker: "Practice ground", line: "17 of our 38 known analog sites · live NASA GIBS and ESA layers" },
   moon: { kicker: "Destination", line: "10 targets · LRO LOLA 118 m heights · LROC images" },
   mars: { kicker: "Destination", line: "8 targets · MGS MOLA 463 m heights · Viking colour" },
 };
@@ -633,7 +730,7 @@ function LayerCard({ layer: l, on, onClick }: { layer: (typeof LAYERS)[number]; 
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-[12.5px] text-platinum">{l.name}</span>
+          <span className="line-clamp-2 text-[12.5px] leading-snug text-platinum" title={l.name}>{l.name}</span>
           <span className="shrink-0 font-mono text-[10px] text-dim">{l.resolution}</span>
         </span>
         <span className="mt-0.5 block truncate text-[11px] text-dim">{l.instrument}</span>
@@ -693,6 +790,14 @@ function StageLoading() {
       </div>
     </div>
   );
+}
+
+/** The Earth twin's place name (from the global grid) with its coordinates. */
+function TwinTitle({ body, lat, lon, onClose }: { body: "moon" | "mars"; lat: number; lon: number; onClose: () => void }) {
+  const { grid } = useGrid();
+  const k = grid ? grid.cellAt(lat, lon, 3) : -1;
+  const nm = grid && k >= 0 ? grid.name(k) : null;
+  return <PanelHeader eyebrow={`Earth twin of your ${body === "moon" ? "Moon" : "Mars"} spot`} title={nm?.title ?? formatCoord(lat, lon)} sub={`${nm?.subtitle ? `${nm.subtitle} · ` : ""}${formatCoord(lat, lon)}`} onClose={onClose} />;
 }
 
 function PanelHeader({ eyebrow, title, sub, onClose }: { eyebrow: string; title: string; sub: string; onClose: () => void }) {
@@ -943,7 +1048,7 @@ function ScreenDetail({ id, onClose }: { id: string; onClose: () => void }) {
     ["Height range", v("f_relief"), " m"],
     ["Coldest night", v("f_lst_night_min"), " °C"],
     ["Hottest ground", v("f_lst_day_max"), " °C"],
-    ["Rain a year", v("f_precip"), " mm"],
+    ["Rain and snow a year", v("f_precip"), " mm"],
   ];
   const volc = grid && k >= 0 ? grid.volcano(k) : null;
   return (

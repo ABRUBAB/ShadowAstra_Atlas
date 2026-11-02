@@ -165,7 +165,7 @@ export function CheckTown() {
                 {[
                   ["Coldest night", info.v("f_lst_night_min"), " °C"],
                   ["Hottest ground", info.v("f_lst_day_max"), " °C"],
-                  ["Rain a year", info.v("f_precip"), " mm"],
+                  ["Rain and snow a year", info.v("f_precip"), " mm"],
                 ].map(([k, val, u]) => (
                   <div key={k as string} className="bg-panel p-3">
                     <div className="text-[10.5px] text-dim">{k}</div>

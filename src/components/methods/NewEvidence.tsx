@@ -289,7 +289,7 @@ function ExpertReview() {
           {r.reviewer}, our scientific validation lead, rates the {r.candidates.length} strongest new candidates: every target's best new place and the two strongest runners-up. Five questions each: ground shape, rocks, cold and dryness, access, and whether he would recommend it.
         </p>
         <p className="mt-3 text-[13px] leading-relaxed text-dim">
-          {done ? "His verdict is shown as it came back. It does not change any score." : "In progress. His verdict will appear here as it comes back, good or bad. It will not change any score."}{" "}
+          {done ? "His verdict is shown as it came back. It does not change any score." : "Waiting for his ratings, which will be published here as they come back, good or bad. They will not change any score."}{" "}
           <a href={`${REPO_URL}/blob/main/docs/review/EXPERT_REVIEW_KIT.md`} target="_blank" rel="noreferrer" className="text-chrome underline underline-offset-2 hover:text-platinum">
             The review kit and rubric
           </a>
@@ -347,7 +347,7 @@ export function NewEvidence({ v, grid }: { v: Validation | null; grid: Grid | nu
           <div>
             <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">A terrain AI that reads the ground</h3>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">
-              On two Kaggle T4 GPUs we trained a vision transformer (DINO, self-supervised) on 50 km height maps from Earth, the Moon and Mars, with an extra part that stops it from simply telling the worlds apart.{" "}
+              On two Kaggle T4 GPUs we trained a vision transformer (DINO, self-supervised) on 50 km height maps from Earth, the Moon and Mars, with an extra part that discourages it from simply telling the worlds apart (70% of its nearest neighbours still come from the same world, against 33% by chance).{" "}
               {ai?.minutes ? `${ai.minutes} minutes of training, ${ai.steps?.toLocaleString()} steps.` : ""}
             </p>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">
@@ -375,7 +375,7 @@ export function NewEvidence({ v, grid }: { v: Validation | null; grid: Grid | nu
             </p>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">
               A good sign: the strongest gypsum EMIT sees is the Qaidam basin and the strongest hematite the Pilbara, both well-known Mars analogs. We tested minerals twice, as an input to the learned model and as part of Rocks & craters for the Mars targets where orbiters found these minerals.
-              {m && !m.shipped && m.model?.decision !== "with" ? " Neither ranked the known test sites better, so minerals are shown as measured facts and do not change any score." : ""}
+              {m && !m.shipped && m.model?.decision !== "with" ? " As a model input they helped a little overall (1.19% to 1.14%) but made things worse where EMIT can see the ground (1.63% to 1.83%); in Rocks & craters they made the known Mars sites slightly worse (22.4% to 22.8%). So minerals are shown as measured facts and do not change any score." : ""}
             </p>
             <p className="mt-3 text-[13px] leading-relaxed text-dim">Every place report now shows its EMIT minerals next to the target's.</p>
           </div>
@@ -400,8 +400,8 @@ export function NewEvidence({ v, grid }: { v: Validation | null; grid: Grid | nu
               <p className="mt-3 text-[13px] leading-relaxed text-dim">
                 We tested it on the {pin.all.n} real field sites: in each one's place, where does the piece that holds the actual site rank among the {Math.round(pin.rows.reduce((a, r) => a + r.windows, 0) / pin.rows.length)} pieces?{" "}
                 {pin.works
-                  ? `On average in the best ${Math.round(pin.all.median_rank * 100)}%, better than chance (p = ${pin.all.sign_test_p < 0.001 ? "< 0.001" : pin.all.sign_test_p.toFixed(3)}). It still only looks at slopes, so read it as where to start looking.`
-                  : `At ${Math.round(pin.all.median_rank * 100)}% on average, where chance is 50%: a slight lean that is not statistically clear (sign test p = ${pin.all.sign_test_p.toFixed(2)}), and the best piece is no closer to the real site than a random one (${pin.all.best_km_median} against ${pin.all.random_km_median} km). Teams pick their exact spots for reasons slopes do not show, such as a crater rim, a lava tube or a road. So the square stays a ground-shape hint, not a prediction, and it changes no score.`}
+                  ? `Typically (median) in the best ${Math.round(pin.all.median_rank * 100)}%, better than chance (p = ${pin.all.sign_test_p < 0.001 ? "< 0.001" : pin.all.sign_test_p.toFixed(3)}). It still only looks at slopes, so read it as where to start looking.`
+                  : `At ${Math.round(pin.all.median_rank * 100)}% typically (median), where chance is 50%: a slight lean that is not statistically clear (sign test p = ${pin.all.sign_test_p.toFixed(2)}), and the best piece is no closer to the real site than a random one (${pin.all.best_km_median} against ${pin.all.random_km_median} km). Teams pick their exact spots for reasons slopes do not show, such as a crater rim, a lava tube or a road. So the square stays a ground-shape hint, not a prediction, and it changes no score.`}
               </p>
             )}
           </div>

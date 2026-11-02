@@ -66,10 +66,12 @@ export interface Preset {
 /** Ready-made missions for people who don't know where to start. */
 export const PRESETS: Preset[] = [
   { id: "artemis", title: "Artemis base camp", line: "Live and work at the Moon's south pole", target: "shackleton", task: "base" },
+  { id: "moon-ice", title: "Ice in the dark", line: "Find ice where the Sun never shines, like at Cabeus", target: "cabeus", task: "ice" },
+  { id: "moon-drive", title: "Polar rover drive", line: "Drive long shadows and steep rims near Haworth", target: "haworth", task: "traverse" },
+  { id: "caves", title: "Lava-tube shelter", line: "Explore volcanic caves like the Marius Hills pit", target: "marius-pit", task: "caves" },
   { id: "landing", title: "First crewed Mars landing", line: "Practise touching down on icy Arcadia Planitia", target: "arcadia", task: "landing" },
   { id: "rover", title: "Mars rover drive", line: "Drive the slopes of Gale crater like Curiosity", target: "gale", task: "traverse" },
   { id: "ice", title: "Ice hunt on Mars", line: "Find buried ice like at Deuteronilus Mensae", target: "deuteronilus", task: "ice" },
-  { id: "caves", title: "Lava-tube shelter", line: "Explore volcanic caves like the Marius Hills pit", target: "marius-pit", task: "caves" },
   { id: "life", title: "Search for life", line: "Sample rocks like Perseverance does in Jezero", target: "jezero", task: "astrobio" },
 ];
 
@@ -80,7 +82,7 @@ export const FACTORS = [
   { id: "ground", label: "Ground shape", plain: "Slopes and height range across 50 km", dims: ["topography"] as const },
   { id: "rocks", label: "Rocks & craters", plain: "Volcanic ground, impact craters and bare rock", dims: ["geology"] as const },
   { id: "climate", label: "Cold & light", plain: "Cold nights, heat swing and how high the Sun climbs", dims: ["temperature", "lighting"] as const },
-  { id: "resources", label: "Ice & loose ground", plain: "Frozen ground where ice matters, bare dry soil where digging matters", dims: ["regolith"] as const },
+  { id: "resources", label: "Bare, dry ground", plain: "Little rain and few plants, so loose soil and rock are exposed (for ice jobs, ice counts under Cold & light)", dims: ["regolith"] as const },
 ] as const;
 export type FactorId = (typeof FACTORS)[number]["id"];
 

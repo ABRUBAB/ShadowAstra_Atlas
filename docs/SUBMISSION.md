@@ -1,12 +1,12 @@
 # Submission texts (ready to paste)
 
-## Space Apps form (updated 25 Oct 2026, v0.7)
+## Space Apps form (updated 2 Nov 2026, v1.0, the final pre-hackathon release)
 
 **Project Description**
-> ShadowAstra Atlas helps mission teams find new places on Earth to rehearse a Moon base or a Mars mission. Tell it the destination, the job (a landing test, base life, rover drives, ice, lava tubes, a life search) and your team's limits in plain words, and it searches all 80,206 land areas measured with open NASA data, comparing each with the Moon or Mars spot at the same scale. You get ten new places with satellite views, reasons, a confidence badge, the 10 km piece whose ground is most alike, and a printable site report, and you can compare up to four side by side. Tap any spot on the Moon or Mars to see its closest Earth twins. Every result is tested: known analog sites hidden from the model still land in the top 1.2% of all land, and 28 published sites it never saw land in the top 18%. New data only counts if it passes the same test: a terrain AI trained on Kaggle GPUs finds Earth twins of any Moon or Mars spot, and NASA EMIT minerals, Diviner temperatures, Lunar Prospector oxides and Mars Odyssey water describe both sides of every comparison. Lessons and a quiz work in English, Spanish and Bangla, with Astra, our field-test astronaut.
+> ShadowAstra Atlas helps mission teams find new places on Earth to rehearse a Moon base or a Mars mission. Tell it the destination, the job (a landing test, base life, rover drives, ice, lava tubes, a life search) and your team's limits in plain words, and it searches all 80,206 land areas measured with open NASA data, comparing each with the Moon or Mars spot at the same scale. You get ten new places with satellite views, reasons, a confidence badge, the 10 km piece whose ground is most alike (a hint, not a tested result), and a printable site report, and you can compare up to four side by side. Tap any spot on the Moon or Mars to see its closest Earth twins, and switch on the Caves and lava tubes layer (1,062 Mars cave candidates and 278 lunar pits). The scoring is tested: with each known analog site and its neighbours within 300 km hidden and the model retrained, the typical (median) site still lands in the top 2.4% of all land as the site scores it (the learned model alone: top 1.2%), and the typical one of 28 published sites the model never saw lands in the top 18%. New data only counts in the score if it passes the same test: a terrain AI trained on Kaggle GPUs finds Earth twins of any Moon or Mars spot, while NASA EMIT minerals (where EMIT can see bare, dry ground), LRO Diviner temperatures, Lunar Prospector oxides and Mars Odyssey water are shown as measured facts next to the scores, not scored. Lessons and a quiz work in English, Spanish and Bangla, with Astra, our field-test astronaut.
 
-**Which NASA Data Source Are You Using? (183 characters, limit 200)**
-> NASA POWER; GIBS MODIS; SRTM; EMIT L3 minerals; LRO LOLA and Diviner; MGS MOLA; Mars Odyssey GRS; Lunar Prospector GRS; Solar System Treks (LROC, Kaguya, CTX, Viking); Smithsonian GVP
+**Which NASA Data Source Are You Using? (197 characters, limit 200)**
+> NASA POWER; GIBS MODIS; SRTM; EMIT L3; LRO LOLA, LROC, Diviner; MGS MOLA; Mars Odyssey GRS; Lunar Prospector GRS; Solar System Treks (Kaguya, Viking); CTX via Esri; USGS MGC3 caves; Smithsonian GVP
 
 **Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas · open data https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas
 
@@ -29,15 +29,16 @@ A web atlas that finds and characterizes new Earth practice sites for a chosen M
 • Find new sites: pick a destination, a job and your limits; all 80,206 land areas on Earth are searched live.
 • Matched to the job: a rover test and an ice search need different places, so the ranking changes with the task.
 • Earth twins: tap any spot on the Moon or Mars and see the Earth places with the most similar ground, found by our formula or by a terrain AI trained on Kaggle GPUs.
-• Minerals from orbit: NASA's EMIT shows which places hold the clays, sulfates and iron oxides that rovers study on Mars.
+• Minerals from orbit: where NASA's EMIT can see bare, dry ground, each place report shows its clays, sulfates and iron oxides next to the minerals rovers study on Mars. These are facts, not part of the score.
 • Compare: any Earth place next to its target at the same scale, in maps and 3D, with a movable Sun and a shadow map.
-• Tested in the open: hidden known sites rank in the top 1.2% of land; 28 sites the model never saw rank in the top 18%.
+• Caves and lava tubes: a layer on the Moon and Mars maps with 1,062 Mars cave candidates and 278 lunar pits.
+• Tested in the open: the typical hidden known site ranks in the top 2.4% of all land as the site scores it (the learned model alone: top 1.2%); the typical one of 28 sites the model never saw ranks in the top 18%. The best 10 km spot is a hint, not a passed test.
 • Honest labels: every number is Computed, Learned or "Earth can't copy", with a confidence badge for each place.
 • Learn: lessons and a quiz in English, Spanish and Bangla.
 • Astra: our field-test astronaut, who reacts to results and answers questions.
 
 🛰️ OPEN DATA WE USE
-NASA POWER, NASA GIBS (MODIS, Blue Marble, Black Marble), SRTM elevation, NASA EMIT minerals, LRO LOLA and Diviner, MGS MOLA, Mars Odyssey GRS, NASA Solar System Treks (LROC, Kaguya, CTX, Viking), Smithsonian volcano records, GLiM rock map and ESA Copernicus Sentinel-2.
+NASA POWER, NASA GIBS (MODIS, Blue Marble, Black Marble), SRTM elevation, NASA EMIT minerals, LRO LOLA and Diviner (all ten Moon targets), Lunar Prospector gamma-ray spectrometer, MGS MOLA, Mars Odyssey GRS, NASA Solar System Treks (LROC, Kaguya, Viking), the CTX mosaic (Caltech Murray Lab, served by Esri), USGS Mars cave candidates (MGC3, Cushing), the LROC lunar pit atlas (Wagner and Robinson, ASU), Smithsonian volcano records, the Earth Impact Database, GLiM rock map and ESA Copernicus Sentinel-2.
 
 🔗 LINKS
 Live website: https://shadowastra-atlas.vercel.app
@@ -50,8 +51,8 @@ Challenge: https://www.spaceappschallenge.org/2026/challenges/permanent-moon-bas
 • Tanvir Hossin: Planetary Terrain Research
 • Md. Tanvir Hasan: Scientific Validation
 • Mohammad Saniul Alam: Experience Design
-• Tasnuva Arif: Development & Testing (Narrator)
-• Mohammed Mahmud Parvez: Film Editing
+• Tasnuva Arif: Development and Testing (narrated Video 1)
+• Mohammed Mahmud Parvez: Film and Motion (narrates Video 2)
 
 📍 EVENT
 NASA International Space Apps Challenge 2026, Dhaka local event, Bangladesh.

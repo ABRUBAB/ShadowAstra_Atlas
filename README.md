@@ -44,20 +44,20 @@
 > *“Places on Earth that have analogous characteristics to the Moon or Mars allow mission teams to test equipment and methods before they fly; however, such terrestrial analog sites are not entirely well characterized. Your challenge is to use open Earth, Moon, and Mars data from NASA and other space agencies to identify and characterize new terrestrial analogs.”*
 > NASA Space Apps Challenge 2026, **Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars**
 
-Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by reputation and access. A place can **look** like Mars and still be the wrong place to test a rover. So we did the opposite of picking by eye: **we measured all of Earth's land the same way, and let the mission decide.**
+Famous analogs such as Atacama, Haughton Crater and Death Valley were often chosen as much by reputation and access as by measurement. A place can **look** like Mars and still be the wrong place to test a rover. So we did the opposite of picking by eye: **we measured all of Earth's land the same way, and let the mission decide.**
 
 ## 📊 In numbers
 
 | | |
 |---|---|
 | **80,206** | land areas measured (every 0.5° cell, about 55 km wide) |
-| **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters…, plus NASA EMIT minerals for 16,868 dry places |
+| **24** | measurements per place: slopes, height range, roughness, cold nights, hot days, rain, humidity, plants, snow, bare ground, volcanoes, craters…, plus NASA EMIT minerals for the 16,868 dry, bare places where it can see the ground |
 | **18** | Moon and Mars targets measured at full precision (LRO LOLA 118 m, MGS MOLA 463 m) |
 | **38 + 28** | known analog sites to teach and test the model, plus 28 published sites kept out of training as an untouched test |
-| **top 1.2%** | where hidden known sites rank for the learned model (Moon 0.5%, Mars 2.4%; each site and its neighbours within 300 km hidden, model retrained) |
-| **top 17.8%** | where the 28 never-seen sites rank as the site scores them (Moon sites: top 7%); a simple rule manages top 40% |
-| **78%** | of 78 sites rank higher when scored for the job they were really used for (sign test p < 0.001) |
-| **9 of 10** | top places that stay put when every weight shifts by ±25% |
+| **top 2.4%** | where the typical (median) hidden known site ranks as the site scores it; the learned model alone reaches top 1.2% (Moon 0.5%, Mars 2.4%). Each site and its neighbours within 300 km are hidden and the model is retrained |
+| **top 18%** | where the typical one of the 28 never-seen sites ranks as the site scores it (17.8%; Moon 7.2% from only 7 sites, Mars 25.8%); the learned model alone gets top 15% and a simple rule about top 40% |
+| **78%** | of 78 site-and-world pairs (66 distinct sites) rank higher when scored for the job they were really used for (sign test p < 0.001) |
+| **9 of 10** | top places that stay put when the weights get random changes of about 25% |
 | **3 worlds** | Earth, Moon and Mars heights taught one terrain AI (a vision transformer, 2 × T4 GPUs on Kaggle) |
 
 ## ✨ What you can do
@@ -67,9 +67,10 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were chosen by 
 | 🌍 | **Find new sites** | A mission builder: pick a Moon or Mars destination, the job (landing, base life, rover drive, ice, lava tubes, life search, craters, low Sun) and your team's needs in plain words (how far from home, near a town, altitude, month). All 80,206 land areas are searched live; you get ten distinct new places with satellite views, reasons and hints about which rule hides better sites. |
 | ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
 | 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth, by our formula or by **a terrain AI** (a vision transformer trained on Kaggle GPUs with heights from all three worlds). |
-| 💎 | **Minerals from orbit** | Every place report shows what NASA's EMIT spectrometer sees in the ground (clays, sulfates, carbonates, iron oxides) next to the minerals orbiters and rovers found at Jezero, Gale, Meridiani and Mawrth Vallis. |
-| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too, for all 18 targets: LRO Diviner ground temperatures (stable ice at the south pole, the full day and night elsewhere), Lunar Prospector iron and titanium, Mars Odyssey water in the topsoil. |
-| 🎯 | **Best 10 km spot** | Each 55 km place is cut into 10 km pieces; the one whose slopes are most like the target's is drawn on the close-up map. We tested it on 66 real field sites and say plainly that it is a hint, not a prediction. |
+| 💎 | **Minerals from orbit** | Where NASA's EMIT spectrometer can see the ground (dry, bare land: 16,868 of the 80,206 places), the place report shows its clays, sulfates, carbonates and iron oxides next to the minerals orbiters and rovers found at Jezero, Gale, Meridiani and Mawrth Vallis. Shown as facts, not scored. |
+| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too, for all 18 targets: LRO Diviner ground temperatures for all ten Moon targets (the polar product with stable ice near the south pole, the global day and night product for the three non-polar ones), Lunar Prospector iron and titanium oxide at every Moon target, Mars Odyssey water in the topsoil. |
+| 🎯 | **Best 10 km spot** | Each 55 km place is cut into 10 km pieces; the one whose slopes are most like the target's is drawn on the close-up map. We tested it on 66 real field sites: the piece holding the real site has a median rank of 42% where chance is 50% (p = 0.13). That is a hint, not a passed test, and we say so on the page. |
+| 🕳️ | **Caves and lava tubes** | A layer on the Moon and Mars maps with 1,062 Mars cave candidates (USGS Mars Global Cave Candidate Catalog, MGC³, Cushing) and 278 lunar pits (LROC lunar pit atlas, Wagner and Robinson, ASU). Shown as facts, not scored. |
 | 🎓 | **Learn, in English, Spanish or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
 | 📄 | **Site report** | A printable one-page dossier for any place: the four factors and minerals on Earth and the target, field tests, planning, permission and what Earth can't copy. |
 | 📍 | **Check your town** | Type any town. See how Moon-like and Mars-like it is, its real climate numbers, and the nearest strong practice site. |
@@ -125,7 +126,7 @@ flowchart LR
 | **Rocks & craters** | volcano and impact-crater proximity plus bare rock, depending on the job | Smithsonian GVP, Earth Impact Database, MODIS land cover |
 | **Cold & heat** | coldest monthly night and the day-to-night swing (ice jobs add snow and ice) | MODIS land surface temperature, NASA POWER |
 | **Sunlight angle** | `1 − W₁(Sun heights) / 25°`, earth-mover distance in Earth's best month | our solar geometry |
-| **Bare, dry ground** | little rain and few plants | NASA POWER rain, MODIS NDVI |
+| **Bare, dry ground** (the site calls it *Ice & loose ground*) | little rain and few plants, so loose, bare, dry ground (regolith) you could dig; ice counts under Cold & heat (the site's *Cold & light*), not here | NASA POWER rain, MODIS NDVI |
 | **Learned model** | a rank-average of tuned XGBoost, tuned LightGBM and logistic regression, trained on 38 known sites (positive-unlabelled, 8 bags), picked from nine models on Kaggle; 60% of the total by default (you can choose 30% or 90%) | all of the above, plus GLiM rock groups |
 | Gravity · Air · Radiation | shown next to every score, never added in | Earth can't copy |
 
@@ -137,15 +138,16 @@ For every known test site we hid it **and every other known site within 300 km**
 
 | | Learned model | What the site shows (60% model) | Mission factors only | Simple rule |
 |---|---|---|---|---|
-| Hidden known sites, typical rank | top 1.2% | **top 2.4%** | top 19% | top 31 to 35% |
-| 28 never-seen sites, typical rank | top 15% | **top 18%** | top 41% | top 40% |
-| Never-seen Moon sites | top 0.8% | **top 7.2%** | top 48% | top 36% |
+| Hidden known sites, typical (median) rank | top 1.2% | **top 2.4%** | top 19% | top 31 to 35% |
+| 28 never-seen sites, typical (median) rank | top 15% | **top 18%** | top 41% | top 40% |
+| Never-seen Moon sites (only 7) | top 0.8% | **top 7.2%** | top 48% | top 36% |
 
-More tests: choosing the job a site was really used for ranks it higher for 78% of 78 sites (p < 0.001); shifting every weight by ±25% keeps 9 or 10 of the top 10 places; taking out *Rocks & craters* hurts most. The known sites alone would let the model count for 90%; we keep 60% so your target and job still shape the list.
+More tests: choosing the job a site was really used for ranks it higher for 78% of 78 site-and-world pairs (66 distinct sites, p < 0.001); random weight changes of about 25% (each weight multiplied by exp(N(0, 0.25))) keep 9 of the top 10 places; taking out *Rocks & craters* hurts most. The best 10 km spot is only a hint: the median rank of the window holding the real site is 42% where chance is 50% (p = 0.13). The known sites alone would let the model count for 90%; we keep 60% so your target and job still shape the list.
 
 **New data has to earn its place.** It only changes the score if it ranks the known sites better:
 - **Terrain AI (Kaggle K3).** For ground shape alone it beats our formula on the known sites (top 44% vs 62%) and the never-seen sites (58% vs 71%), and ties on expert pairs. In the full score it adds nothing (known sites 2.8% vs 2.4%), so it powers the AI twin finder and is an option in Find, not the default.
-- **NASA EMIT minerals.** As a model input they did not help where EMIT can see (1.6% → 1.8%). As a Mars mineral match in Rocks & craters they helped the never-seen Mars sites (41% → 38%) but not the known ones (22.4% → 22.8%), so they are shown as measured facts, not scored. Honest limits: the mission factors alone find known sites only about as well as a simple rule, because many analog sites were chosen for something smaller than our 55 km cells (an ice cave, a small lake, hot springs). Their job is to explain why a place matches and to tune it to your target and job; the learned model finds them. The How it works page shows where it fails and why.
+- **NASA EMIT minerals.** As a model input they helped slightly overall (1.19% → 1.14%) but hurt where EMIT can see the ground (1.63% → 1.83%). As a Mars mineral term in Rocks & craters they made the known Mars sites slightly worse (22.4% → 22.8%) and the never-seen ones better (41.3% → 38.2%). So they are shown as measured facts, not scored. EMIT covers only 16,868 of the 80,206 places (dry, bare land), so it does not describe every place.
+- **Honest limits.** On the never-seen sites the mission factors alone (top 41%) are only about as good as a simple rule (top 40%); on the known sites they do better (top 19% against 35%). Many analog sites were chosen for something smaller than our 55 km cells (an ice cave, a small lake, hot springs). The factors explain why a place matches and tune it to your target and job; the learned model is what finds the sites. The How it works page shows where it fails and why.
 
 ## 🛰️ Open data
 
@@ -154,18 +156,23 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 | 🌍 Earth | POWER climatology (MERRA-2) | air temperature, coldest and hottest months, rain, humidity, sunshine | NASA LaRC |
 | 🌍 Earth | MODIS land surface temperature, NDVI, snow, land cover | night cold, day heat, plants, snow months, bare ground | NASA GIBS |
 | 🌍 Earth | SRTM elevation (Terrain Tiles) | slopes, height range, roughness; 3D ground | NASA SRTM via AWS Open Data |
-| 🌍 Earth | Holocene volcanoes · impact craters · place names | rocks score, report facts, readable names | Smithsonian GVP · Earth Impact Database · Natural Earth |
+| 🌍 Earth | Holocene volcanoes · 62 confirmed impact craters (a selection) · place names | rocks score, report facts, readable names | Smithsonian GVP · Earth Impact Database · Natural Earth |
 | 🌍 Earth | Sentinel-2 cloudless 2020 · Blue Marble · ASTER | imagery, 3D drape, globe, game | ESA Copernicus via EOX · NASA GIBS |
-| 🌕 Moon | LRO LOLA global DEM (16-bit, 118 m) · LROC WAC | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
+| 🌕 Moon | LRO LOLA global DEM (16-bit, 118 m) · LROC WAC · Kaguya | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
 | 🔴 Mars | MGS MOLA global DEM (16-bit, 463 m) · Viking MDIM · THEMIS | target terrain at full precision; maps, 3D, game | USGS Astrogeology · NASA Solar System Treks |
+| 🔴 Mars | CTX mosaic (5 m) | sharper imagery when you zoom in on Maps | Caltech Murray Lab mosaic, served by Esri |
 | 🌍 Earth | EMIT L3 Aggregated Mineral Spectral Abundance 0.5° | clays, sulfates, carbonates and iron oxides in dry, bare land | NASA JPL · LP DAAC (Earthdata) |
-| 🌕 Moon | LRO Diviner polar resource product | ground temperatures and stable water ice around the south-pole targets | NASA · UCLA · PDS Geosciences |
+| 🌕 Moon | LRO Diviner polar resource product | ground temperatures and stable water ice around the seven south-pole targets | NASA · UCLA · PDS Geosciences |
+| 🌕 Moon | LRO Diviner global day and night temperatures | the full day and night ground temperature at the three non-polar targets | NASA · UCLA · PDS Geosciences |
+| 🌕 Moon | Lunar Prospector gamma-ray spectrometer (GRS) | iron oxide and titanium oxide at every Moon target | NASA · PDS Geosciences |
 | 🔴 Mars | Mars Odyssey GRS 5° water map | water in the topsoil at each Mars target | NASA · U. Arizona · PDS Geosciences |
+| 🔴 Mars | USGS Mars Global Cave Candidate Catalog (MGC³, Cushing) | 1,062 cave candidates on the Caves and lava tubes layer (facts, not scored) | USGS Astrogeology |
+| 🌕 Moon | LROC lunar pit atlas (Wagner and Robinson) | 278 lunar pits on the same layer (facts, not scored) | NASA LROC · Arizona State University |
 | 🪐 All | Kaggle K1, K3, K5 | Moon and Mars measured everywhere; terrain AI; nine-model comparison | our notebooks on Kaggle (2 × T4) |
 
 **Open dataset.** Every place, every target score, the AI twins and every test are on Hugging Face under CC BY 4.0: [ABRUBAB/shadowastra-atlas](https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas) (`pipeline/s21_open_dataset.py` rebuilds it).
 
-**Next:** the official 2026 challenge datasets (NASA publishes them on 13 Nov), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
+**Next:** the official 2026 challenge datasets (the full statement came out on 28 Oct 2026; NASA's Resources tab with the datasets opens on 13 Nov and was still closed on 2 Nov), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
@@ -219,9 +226,9 @@ React 19 · TypeScript · Vite · Tailwind CSS v4 · three.js + React Three Fibe
 **Performance:** the global dataset is 5.0 MB of typed arrays (2.3 MB with Brotli); scoring all 80,206 places takes 16 ms (p50) and 19 ms (p95) on an AMD Ryzen 5 5600H laptop, and a whole search with ranking and hints 27 ms; the terrain AI layer (1.4 MB) loads only when chosen; WebP textures in 1K, 2K and 4K; lazy routes and idle prefetch; slow or software graphics get a lighter mode automatically.
 
 ```
-pipeline/      Python: download, measure, model and test all of Earth (s01 to s24)
+pipeline/      Python: download, measure, model and test all of Earth (s01 to s25)
 kaggle/        GPU and CPU notebooks run on Kaggle (K1 to K5) and their runner
-public/data/   grid.bin + grid.json (the measured planet), validation.json (every test), shape.bin (terrain AI), terrain/ (Moon and Mars bands, AI twins)
+public/data/   grid.bin + grid.json (the measured planet), validation.json (every test), shape.bin (terrain AI), terrain/ (Moon and Mars bands, AI twins), caves.json (Mars cave candidates, lunar pits)
 src/
   lib/         grid (load, score, rank, search) · terrain · sun · scoring · astra
   components/  three (score globe, terrain slabs) · map · ui kit · Astra · game · town check
@@ -243,8 +250,9 @@ src/
 - [x] Sharper imagery as you zoom (Esri on Earth, CTX on Mars, Kaguya on the Moon), close-up map of each result
 - [x] K5 ensemble as the site model; EMIT minerals, Diviner temperatures and ice, Odyssey water, each tested before it counts
 - [x] Engineering pass: memory leaks fixed, faster clicks, security headers, error fallbacks, WCAG 2.2 fixes, unit, parity and browser tests, CI and uptime checks
-- [x] Best 10 km spot inside each place (tested on 66 field sites); Diviner and Lunar Prospector facts for every Moon target; expert review kit
-- [ ] Official 2026 challenge datasets (NASA publishes them on 13 Nov)
+- [x] Best 10 km spot inside each place (tested on 66 field sites; a hint, not a passed test); Diviner and Lunar Prospector facts for every Moon target; expert review kit
+- [x] Caves and lava tubes layer on the Moon and Mars maps: 1,062 Mars cave candidates and 278 lunar pits (`pipeline/s25_caves.py`). This is the final pre-hackathon release, v1.0 (2 Nov 2026)
+- [ ] Official 2026 challenge datasets (NASA's Resources tab opens on 13 Nov)
 - [ ] Expert review of the top 20 by Md. Tanvir Hasan; Mars SWIM ice when its site is back
 
 ## 👩‍🚀 Team ShadowAstra
@@ -255,8 +263,8 @@ src/
     <td align="center" width="16%"><img src="public/team/hossin.webp" width="110" alt="Tanvir Hossin"/><br/><b>Tanvir Hossin</b><br/><sub>Planetary terrain research</sub></td>
     <td align="center" width="16%"><img src="public/team/hasan.webp" width="110" alt="Md. Tanvir Hasan"/><br/><b>Md. Tanvir Hasan</b><br/><sub>Scientific validation</sub></td>
     <td align="center" width="16%"><img src="public/team/saniul.webp" width="110" alt="Mohammad Saniul Alam"/><br/><b>Mohammad Saniul Alam</b><br/><sub>Experience design</sub></td>
-    <td align="center" width="16%"><img src="public/team/tasnuva.webp" width="110" alt="Tasnuva Arif"/><br/><b>Tasnuva Arif</b><br/><sub>Development & testing</sub></td>
-    <td align="center" width="16%"><img src="public/team/parvez.webp" width="110" alt="Mohammed Mahmud Parvez"/><br/><b>Mohammed Mahmud Parvez</b><br/><sub>Film editing</sub></td>
+    <td align="center" width="16%"><img src="public/team/tasnuva.webp" width="110" alt="Tasnuva Arif"/><br/><b>Tasnuva Arif</b><br/><sub>Development and testing</sub></td>
+    <td align="center" width="16%"><img src="public/team/parvez.webp" width="110" alt="Mohammed Mahmud Parvez"/><br/><b>Mohammed Mahmud Parvez</b><br/><sub>Film and motion</sub></td>
   </tr>
 </table>
 
@@ -264,7 +272,7 @@ src/
 
 ## 📜 Credits & license
 
-Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner), MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
+Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner), Lunar Prospector, MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; USGS Mars Global Cave Candidate Catalog (MGC³, Cushing); LROC lunar pit atlas (Wagner and Robinson, ASU); CTX mosaic (Caltech Murray Lab, via Esri); SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
 
 NASA does not endorse this project. The 8-bit Trek elevation used for the 3D view is our own calibration (scores use the 16-bit USGS data), CO₂ numbers are rough estimates and site coordinates are approximate. Field visits need permission, local partners and care for the land.
 

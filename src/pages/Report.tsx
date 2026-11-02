@@ -12,6 +12,7 @@ import { useEarthThumb } from "../lib/thumbs";
 import { sharePct } from "../components/find/MineralCard";
 import { pinpointVerdict } from "../components/find/PinpointCard";
 import { usePinpoint } from "../lib/pinpoint";
+import { fieldTestsFor, placeGaps, townLine } from "../lib/gaps";
 import { useValidation } from "../lib/validation";
 
 /** A clean, printable site report: the characterization dossier for a field team. */
@@ -35,7 +36,18 @@ export default function Report() {
   }, []);
 
   if (!grid || !t || k < 0)
-    return <div className="grid min-h-dvh place-items-center bg-void text-[13px] text-chrome">{grid ? "Place not found." : `Loading NASA data… ${Math.round(progress * 100)}%`}</div>;
+    return (
+      <div className="grid min-h-dvh place-items-center bg-void px-6 text-center text-[13px] text-chrome">
+        {grid ? (
+          <div>
+            <p>This report needs a place. Open one from Find new sites, then press "Printable report".</p>
+            <a href="/discover" className="mt-3 inline-block text-flare hover:underline">Go to Find new sites</a>
+          </div>
+        ) : (
+          `Loading NASA data… ${Math.round(progress * 100)}%`
+        )}
+      </div>
+    );
 
   const lat = grid.lat(k);
   const lon = grid.lon(k);
@@ -54,6 +66,23 @@ export default function Report() {
   const mins = grid.minerals(k);
   const mm = grid.mineralMatch(k, t);
   const pc = sharePct;
+  const rock = grid.rock(k);
+  const rm = grid.rockMatch(k, t);
+  const gaps = placeGaps({
+    body: T.body as "moon" | "mars",
+    targetName: T.name,
+    targetLat: T.lat,
+    snowice: v("f_snowice"),
+    ndvi: v("f_ndvi"),
+    bare: v("f_barren"),
+    nightMin: v("f_lst_night_min"),
+    rockEarth: rock?.label,
+    rockTarget: t.rock?.label,
+    rockWord: !rock ? "unknown" : rm >= 0.75 ? "close" : rm >= 0.45 ? "partly alike" : "different",
+    targetTempAvg: res?.temp_avg_c,
+    mineralMatch: mm,
+    factors: FACTORS.map((x) => ({ label: x.label, value: f(x.dims) })),
+  });
 
   return (
     <div className="report min-h-dvh bg-[#ece7dc] py-8 text-[#1c1a16] print:bg-white print:py-0">
@@ -82,7 +111,7 @@ export default function Report() {
           </div>
         </header>
 
-        <section className="mt-6 grid grid-cols-[1.1fr_1fr] gap-6">
+        <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-[1.1fr_1fr]">
           <figure>
             {thumb ? <img src={thumb} alt="Satellite view, 50 km across" className="aspect-square w-full rounded-md object-cover" /> : <div className="aspect-square w-full rounded-md bg-[#f2ede3]" />}
             <figcaption className="mt-1 font-mono text-[9.5px] text-[#6a665e]">50 × 50 km, north up · ESA Sentinel-2 cloudless 2020</figcaption>
@@ -96,7 +125,7 @@ export default function Report() {
             <div className="font-mono text-[44px] leading-none font-light">{cs.total.toFixed(2)}</div>
             <div className="mt-1 text-[12px] text-[#55514a]">0 to 1. Measured from NASA data, with {Math.round(MODEL_MIX * 100)}% from three models trained together on 38 known test sites.</div>
             <div className="mt-2 text-[12px] text-[#55514a]">
-              Confidence: <b>{conf.level === "high" ? "high" : conf.level === "medium" ? "medium" : "not enough evidence"}</b> ({Math.round(conf.cover * 100)}% of measurements real, model runs agree within {Math.round(conf.spread * 100)} points)
+              Confidence: <b>{conf.level === "high" ? "high" : conf.level === "medium" ? "medium" : "not enough evidence"}</b> ({Math.round(conf.cover * 100)}% of the measurements exist for this place{conf.spread > 0.005 ? `, and repeated model runs differ by up to ${Math.round(conf.spread * 100)} points` : ", and repeated model runs give the same answer"})
             </div>
             <table className="mt-4 w-full text-[12.5px]">
               <tbody>
@@ -179,7 +208,7 @@ export default function Report() {
                 </td>
               </tr>
               <tr className="border-t border-[#eee8dc]">
-                <td className="py-2">Ice & loose ground</td>
+                <td className="py-2">Bare ground & ice</td>
                 <td className="py-2">
                   rain {fmt(v("f_precip"), " mm/yr")}, snow and ice {fmt(v("f_snowice") === null ? null : v("f_snowice")! * 100, "%")}
                 </td>
@@ -197,11 +226,11 @@ export default function Report() {
           </table>
         </section>
 
-        <section className="mt-8 grid grid-cols-2 gap-6">
+        <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <h2 className="text-[15px] font-medium">Field tests to run here</h2>
             <ul className="mt-2 list-disc space-y-1 pl-4 text-[12.5px]">
-              {FIELD_TESTS[task].map((x) => (
+              {fieldTestsFor(FIELD_TESTS[task], v("f_snowice")).map((x) => (
                 <li key={x}>{x}</li>
               ))}
             </ul>
@@ -212,7 +241,7 @@ export default function Report() {
               <li>
                 From {home.name}: {Math.round(km).toLocaleString()} km, about {tripCo2Tonnes(km, 4).toFixed(1)} t CO₂ for four people, return
               </li>
-              <li>Nearest town: {nm.place ? `${nm.place}, ${Math.round(nm.placeKm ?? 0)} km` : "none listed"}</li>
+              <li>Nearest town: {townLine(lat, nm.place, nm.placeKm)}</li>
               <li>Permission: {lat < -60 ? "Antarctic Treaty environmental permit" : "local authorities, land owners and communities"}</li>
             </ul>
           </div>
@@ -221,8 +250,16 @@ export default function Report() {
         <section className="mt-8 rounded-md bg-[#f6f2ea] p-4 text-[12.5px]">
           <h2 className="text-[14px] font-medium">What Earth can't copy</h2>
           <p className="mt-1">
-            {T.body === "moon" ? "Gravity is six times stronger on Earth, there is air, and Earth's magnetic field blocks space radiation. Lunar nights last two weeks." : "Gravity is 2.6 times stronger on Earth, the air is 160 times thicker, and Earth's magnetic field blocks space radiation."}
+            {gaps.limits} {gaps.light}
           </p>
+          {gaps.place.length > 0 && (
+            <ul className="mt-2 list-disc space-y-1 pl-4">
+              {gaps.place.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2">Use this place for {gaps.useFor.join(" and ")}.</p>
         </section>
 
         <footer className="mt-8 border-t border-[#dcd5c7] pt-4 text-[10.5px] leading-relaxed text-[#6a665e]">

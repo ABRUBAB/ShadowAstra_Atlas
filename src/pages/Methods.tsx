@@ -274,7 +274,7 @@ function SlopeViz({ grid }: { grid: Grid | null }) {
 function RocksViz() {
   const items = [
     { n: 1214, l: "volcanoes", c: "var(--color-chart-3)" },
-    { n: 65, l: "impact craters", c: "var(--color-chart-1)" },
+    { n: 62, l: "impact craters", c: "var(--color-chart-1)" },
     { n: 16, l: "rock types", c: "var(--color-chart-2)" },
   ];
   return (
@@ -375,13 +375,13 @@ function Factors({ grid }: { grid: Grid | null }) {
           <FactorCard i={0} icon={Mountain} title="Ground shape" line="Slopes and height range across 50 km." chips={["SRTM", "LRO LOLA 118 m", "MGS MOLA 463 m"]} formula={<>0.65 · overlap(slopes) + 0.35 · (1 − |log₁₀ height-range ratio|)</>}>
             <SlopeViz grid={grid} />
           </FactorCard>
-          <FactorCard i={1} icon={Flame} title="Rocks & craters" line="Volcanic ground, impact craters, bare rock and the main rock type." chips={["Smithsonian GVP", "Earth Impact Database", "GLiM"]} formula={<>Lava tubes: 0.85 · volcano + 0.15 · bare<br />Craters: 0.85 · crater + 0.15 · bare<br />Other jobs mix volcano, crater, bare and dry</>}>
+          <FactorCard i={1} icon={Flame} title="Rocks & craters" line="Volcanic ground, impact craters and bare rock. (Rock type is shown in reports and used by the learned model, not scored here.)" chips={["Smithsonian GVP", "Earth Impact Database", "MODIS land cover"]} formula={<>Lava tubes: 0.85 · volcano + 0.15 · bare<br />Craters: 0.85 · crater + 0.15 · bare<br />Other jobs mix volcano, crater, bare and dry</>}>
             <RocksViz />
           </FactorCard>
           <FactorCard i={2} icon={Sun} title="Cold & light" line="Night cold, the day and night swing, and how high the Sun climbs." chips={["MODIS LST", "NASA POWER", "Sun geometry"]} formula={<>Cold: 0.55 · cold + 0.45 · swing<br />Light: 1 − W₁(Sun heights) / 25°</>}>
             <SunViz />
           </FactorCard>
-          <FactorCard i={3} icon={Snowflake} title="Ice & loose ground" line="Rain, plants, snow and ice: what the ground is and what you could dig." chips={["NASA POWER", "MODIS NDVI", "MODIS snow"]} formula={<>Loose ground: 0.6 · bare + 0.4 · dry<br />Ice jobs: 0.6 · cold + 0.4 · ice</>}>
+          <FactorCard i={3} icon={Snowflake} title="Bare, dry ground" line="Rain and plants: how much loose soil and rock is exposed to drive on and dig. For ice jobs, ice is scored under Cold & light." chips={["NASA POWER", "MODIS NDVI", "MODIS snow"]} formula={<>Bare ground: 0.6 · bare + 0.4 · dry<br />(Ice jobs: Cold becomes 0.6 · cold + 0.4 · ice)</>}>
             <DryViz grid={grid} />
           </FactorCard>
         </div>
@@ -506,7 +506,7 @@ function FailCard({ s, i }: { s: Validation["independent"]["sites"][number]; i: 
     <motion.article initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: EASE, delay: i * 0.08 }} className="surface overflow-hidden rounded-2xl">
       <div className="relative aspect-[16/9] bg-ink">
         {thumb && <img src={thumb} alt={`${s.name}, satellite view 50 km across`} className="h-full w-full object-cover" />}
-        <span className="absolute top-3 left-3 rounded-full bg-void/80 px-2.5 py-1 font-mono text-[11px] text-platinum backdrop-blur">top {Math.round(s.blend)}%</span>
+        <span className="absolute top-3 left-3 rounded-full bg-void/80 px-2.5 py-1 font-mono text-[11px] text-platinum backdrop-blur">top {s.blend >= 99.5 ? s.blend.toFixed(1) : Math.round(s.blend)}%</span>
       </div>
       <div className="p-5">
         <div className="text-[15px] text-platinum">{s.name}</div>
@@ -574,16 +574,16 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           <StatTile
             value={
-              v?.independent.moon.blend ? (
+              v?.independent.all.blend ? (
                 <>
-                  top <Counter value={v.independent.moon.blend.median} decimals={1} />%
+                  top <Counter value={v.independent.all.blend.median} decimals={1} />%
                 </>
               ) : (
                 "…"
               )
             }
-            label="New Moon test sites"
-            sub="Typical rank among all 80,206 land areas, as the site shows it. None were used for training."
+            label="28 new test sites"
+            sub={`Typical rank among all 80,206 land areas, as the site scores them. None were used for training.${v?.independent.moon.blend ? ` Moon ${v.independent.moon.blend.median.toFixed(1)}% (only 7 sites), Mars ${v.independent.mars.blend!.median.toFixed(1)}%.` : ""}`}
           />
           <StatTile
             delay={0.08}
@@ -597,7 +597,7 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
               )
             }
             label="Hidden known sites"
-            sub="Each site and its neighbours within 300 km hidden, then the model retrained."
+            sub="Typical rank, as the site scores them, with each site and its neighbours within 300 km hidden and the model retrained. The learned model alone: top 1.2%."
           />
           <StatTile
             delay={0.16}
@@ -610,7 +610,7 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
                 "…"
               )
             }
-            label="Top places that stay when weights shift ±25%"
+            label="Top places that stay when the weights change by about 25%"
             sub="Typical over eight missions, 60 random shifts each."
           />
         </div>
@@ -620,7 +620,7 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
             <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">28 published sites, kept out of training</h3>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">From the Austrian Space Forum, ISRO, Europlanet, NASA teams and Apollo training. Each dot is one site; the white line is the typical rank.</p>
             <p className="mt-3 text-[14px] leading-relaxed text-chrome">
-              The learned model finds them best. The mission factors alone do about as well as a simple rule: their job is to explain <em>why</em> a place matches and to tune it to your target and job.
+              The learned model finds them best. On these new sites the mission factors alone do about as well as a simple rule: their job is to explain <em>why</em> a place matches and to tune it to your target and job. Note that Rocks & craters partly uses the volcano and crater lists, so volcanic and impact sites get some help by design.
             </p>
             <div className="mt-5 inline-flex rounded-full border border-line-2 p-1 text-[12px]">
               {(["all", "moon", "mars"] as const).map((w) => (
@@ -657,7 +657,7 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
                   <div className="mt-1 text-[12px] text-chrome">rank higher with their own job</div>
                 </div>
                 <div className="pb-1 font-mono text-[12px] text-dim">
-                  {v.jobs.rows.length} sites
+                  {v.jobs.rows.length} site and world pairs (66 sites)
                   {v.jobs.sign_test_p !== null && <> · p {v.jobs.sign_test_p < 0.001 ? "< 0.001" : `= ${v.jobs.sign_test_p.toFixed(3)}`}</>}
                 </div>
               </div>
@@ -678,7 +678,7 @@ function Proof({ v, grid }: { v: Validation | null; grid: Grid | null }) {
 
         <div className="mt-20">
           <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">Where it fails, and why</h3>
-          <p className="mt-2 max-w-[640px] text-[14px] leading-relaxed text-chrome">The three test sites it ranks lowest. Each was chosen for something small inside a green landscape.</p>
+          <p className="mt-2 max-w-[640px] text-[14px] leading-relaxed text-chrome">The three test sites it ranks lowest, each chosen for something a 55 km average cannot see: a rock type, an ice margin or a small feature in a green landscape.</p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">{fails.length ? fails.map((s, i) => <FailCard key={s.id} s={s} i={i} />) : [0, 1, 2].map((i) => <div key={i} className="surface h-[300px] rounded-2xl" />)}</div>
         </div>
 
@@ -822,8 +822,8 @@ const SOURCES: Source[] = [
   { body: "earth", name: "MODIS NDVI, snow and land cover", agency: "NASA GIBS · Terra MODIS", use: "Plants, snow months, bare ground, ice, cities and farms", res: "~1 to 5 km", status: "live", link: "https://earthdata.nasa.gov/gibs" },
   { body: "earth", name: "SRTM-based Terrain Tiles", agency: "NASA SRTM · AWS Open Data", use: "Slopes, height range and roughness for every land area; 3D ground", res: "~30 m source", status: "live", link: "https://registry.opendata.aws/terrain-tiles/" },
   { body: "earth", name: "Holocene volcano list", agency: "Smithsonian GVP", use: "Distance to 1,214 volcanoes active in the last 12,000 years", res: "points", status: "live", link: "https://volcano.si.edu/" },
-  { body: "earth", name: "Confirmed impact craters", agency: "Earth Impact Database (PASSC)", use: "65 craters with their sizes", res: "points", status: "live", link: "http://www.passc.net/EarthImpactDatabase/" },
-  { body: "earth", name: "GLiM rock map", agency: "Hartmann & Moosdorf 2012", use: "Main rock type of every land area (shown and tested, not yet scored)", res: "0.5°", status: "live", link: "https://doi.org/10.1594/PANGAEA.788537" },
+  { body: "earth", name: "Confirmed impact craters", agency: "Earth Impact Database (PASSC)", use: "62 confirmed craters (a selection) with their sizes", res: "points", status: "live", link: "http://www.passc.net/EarthImpactDatabase/" },
+  { body: "earth", name: "GLiM rock map", agency: "Hartmann & Moosdorf 2012", use: "Main rock type of every land area: used by the learned model and shown in reports, not part of Rocks & craters", res: "0.5°", status: "live", link: "https://doi.org/10.1594/PANGAEA.788537" },
   { body: "earth", name: "Sentinel-2 cloudless 2020", agency: "ESA Copernicus · EOX", use: "True-colour imagery, 3D drape, the Earth or Mars game", res: "10 m", status: "live", link: "https://s2maps.eu" },
   { body: "earth", name: "Blue Marble, ASTER relief", agency: "NASA GIBS · NASA/METI", use: "Globe, polar imagery, shaded relief", res: "30 m to 1 km", status: "live", link: "https://earthdata.nasa.gov/gibs" },
   { body: "earth", name: "Natural Earth", agency: "Public domain", use: "Country, region and town names for every place", res: "1:10 m", status: "live", link: "https://www.naturalearthdata.com/" },
@@ -832,13 +832,15 @@ const SOURCES: Source[] = [
   { body: "moon", name: "LRO LOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Moon targets", res: "118 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m" },
   { body: "moon", name: "LOLA tiles and polar hillshade", agency: "NASA Solar System Treks", use: "3D ground, shadow map, polar map", res: "118 to 237 m", status: "live", link: "https://trek.nasa.gov/moon/" },
   { body: "moon", name: "LROC WAC mosaic", agency: "NASA / ASU", use: "Visible imagery, 3D drape, game", res: "100 m", status: "live", link: "https://lroc.im-ldi.com/" },
-  { body: "moon", name: "LROC lunar pits", agency: "NASA / ASU", use: "278 pits and skylights for cave missions", res: "points", status: "live", link: "https://lroc.im-ldi.com/" },
-  { body: "moon", name: "LRO Diviner polar resources", agency: "NASA / UCLA · PDS", use: "Average and warmest ground temperature and stable ice near the south-pole targets", res: "0.5 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" },
+  { body: "moon", name: "LROC lunar pits", agency: "NASA / ASU", use: "278 pits and skylights for cave missions; a layer on Maps", res: "points", status: "live", link: "https://lroc.im-ldi.com/" },
+  { body: "moon", name: "LRO Diviner", agency: "NASA / UCLA · PDS", use: "Ground temperature at all ten Moon targets (polar product near the south pole, day and night curve elsewhere) and stable ice near the pole", res: "0.5 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" },
+  { body: "moon", name: "Lunar Prospector GRS", agency: "NASA · PDS Geosciences", use: "Iron and titanium oxide at every Moon target, shown in reports", res: "~150 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lunarp/" },
   { body: "mars", name: "MGS MOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Mars targets", res: "463 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m" },
   { body: "mars", name: "Viking MDIM 2.1", agency: "NASA / USGS", use: "Colour imagery, 3D drape, game", res: "232 m", status: "live", link: "https://astrogeology.usgs.gov/" },
-  { body: "mars", name: "MGS TES mineral maps", agency: "NASA / ASU", use: "Olivine, pyroxene, hematite, clays, dust and thermal inertia", res: "~7 km", status: "live", link: "https://jmars.mars.asu.edu/" },
-  { body: "mars", name: "Mars craters and geology", agency: "Robbins catalogue · USGS SIM 3292", use: "384,343 craters and 1,311 geologic units", res: "points · 1:20M", status: "live", link: "https://astrogeology.usgs.gov/" },
-  { body: "mars", name: "Human landing Exploration Zones", agency: "NASA · USGS CTX mosaics", use: "39 candidate zones for the first crews", res: "zones", status: "live", link: "https://astrogeology.usgs.gov/" },
+  { body: "mars", name: "MGS TES mineral maps", agency: "NASA / ASU", use: "Olivine, pyroxene, hematite, clays, dust and thermal inertia", res: "~7 km", status: "planned", link: "https://jmars.mars.asu.edu/" },
+  { body: "mars", name: "Mars craters and geology", agency: "Robbins catalogue · USGS SIM 3292", use: "384,343 craters and 1,311 geologic units", res: "points · 1:20M", status: "planned", link: "https://astrogeology.usgs.gov/" },
+  { body: "mars", name: "Human landing Exploration Zones", agency: "NASA · USGS CTX mosaics", use: "39 candidate zones for the first crews", res: "zones", status: "planned", link: "https://astrogeology.usgs.gov/" },
+  { body: "mars", name: "Mars Global Cave Candidate Catalog (MGC³)", agency: "USGS Astrogeology · Cushing", use: "1,062 skylights, pits and cracks that may open into caves; a layer on Maps", res: "points", status: "live", link: "https://astrogeology.usgs.gov/search/map/mars_global_cave_candidate_catalog_v1_cushing" },
   { body: "mars", name: "Mars Odyssey GRS water", agency: "NASA / U. Arizona · PDS", use: "Water-equivalent hydrogen in the topsoil at each Mars target", res: "5°", status: "live", link: "https://pds-geosciences.wustl.edu/missions/odyssey/grs.htm" },
   { body: "mars", name: "MRO HiRISE DTMs", agency: "NASA / UArizona", use: "Wheel-scale slopes for landing sites", res: "1 m", status: "planned", link: "https://www.uahirise.org/dtm/" },
 ];

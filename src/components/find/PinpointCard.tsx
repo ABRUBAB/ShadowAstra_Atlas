@@ -12,8 +12,8 @@ export function pinpointVerdict(t: NonNullable<ReturnType<typeof useValidation>[
   const a = t.all;
   const pct = Math.round(a.median_rank * 100);
   return t.works
-    ? `Tested on ${a.n} real field sites: the 10 km piece holding the site ranks in the best ${pct}% of the place's pieces on average (chance is 50%).`
-    : `Tested on ${a.n} real field sites, the piece holding the site ranks at ${pct}% on average where chance is 50%: a slight lean, not a clear one (p = ${a.sign_test_p.toFixed(2)}). Treat it as a ground-shape hint, not a prediction.`;
+    ? `Tested on ${a.n} real field sites: the 10 km piece holding the site typically (median) ranks in the best ${pct}% of the place's pieces (chance is 50%).`
+    : `Tested on ${a.n} real field sites, the piece holding the site typically (median) ranks at ${pct}% where chance is 50%: a slight lean, not a clear one. Treat it as an experimental ground-shape hint, not a prediction.`;
 }
 
 /** The best 10 km spot inside a 55 km place, for the chosen target. */
@@ -25,9 +25,9 @@ export function PinpointCard({ lat, lon, targetHist, targetId, targetName, task 
     <div className="surface mt-4 rounded-2xl p-4" aria-live="polite">
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2 text-[13px] text-platinum">
-          <Crosshair size={14} className="text-flare" /> Best 10 km spot <KindBadge kind="computed" />
+          <Crosshair size={14} className="text-flare" /> Best 10 km spot <KindBadge kind="computed" /> <span className="rounded-full border border-line-2 px-1.5 py-px font-mono text-[9.5px] tracking-wider text-dim uppercase">experimental</span>
         </span>
-        <span className="font-mono text-[10px] tracking-wider text-dim uppercase">SRTM · 1.2 km grid</span>
+        <span className="font-mono text-[10px] tracking-wider text-dim uppercase">{lat <= 60 && lat >= -56 ? "SRTM" : "Terrain Tiles"} · 1.2 km grid</span>
       </div>
       {pin === null && <div className="shimmer mt-3 h-[58px] rounded-xl" />}
       {pin === "failed" && <p className="mt-2 text-[12px] text-dim">The terrain tiles for this place could not be loaded.</p>}
