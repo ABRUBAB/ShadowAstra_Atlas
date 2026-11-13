@@ -13,6 +13,7 @@ import { sharePct } from "../components/find/MineralCard";
 import { pinpointVerdict } from "../components/find/PinpointCard";
 import { usePinpoint } from "../lib/pinpoint";
 import { fieldTestsFor, placeGaps, townLine } from "../lib/gaps";
+import { earthdataUrl, targetDataLink, worldviewUrl } from "../lib/nasaLinks";
 import { useValidation } from "../lib/validation";
 
 /** A clean, printable site report: the characterization dossier for a field team. */
@@ -243,6 +244,20 @@ export default function Report() {
               </li>
               <li>Nearest town: {townLine(lat, nm.place, nm.placeKm)}</li>
               <li>Permission: {lat < -60 ? "Antarctic Treaty environmental permit" : "local authorities, land owners and communities"}</li>
+              <li>
+                Check it in NASA's tools:{" "}
+                <a href={worldviewUrl(lat, lon)} className="underline">
+                  Worldview
+                </a>
+                ,{" "}
+                <a href={earthdataUrl(lat, lon)} className="underline">
+                  Earthdata Search
+                </a>
+                ,{" "}
+                <a href={targetDataLink(T.body).url} className="underline">
+                  {targetDataLink(T.body).label}
+                </a>
+              </li>
             </ul>
           </div>
         </section>

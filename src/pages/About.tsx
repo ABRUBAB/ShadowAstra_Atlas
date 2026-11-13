@@ -41,7 +41,7 @@ const TIMELINE = [
   { d: "1 Oct", t: "Concept film submitted", s: "Who, why, what and what next, in under four minutes." },
   { d: "Oct", t: "Working prototype", s: "Maps, 3D compare, the shadow map and Astra. Then every land area on Earth measured, a tested model, a terrain AI, EMIT minerals and lessons in three languages." },
   { d: "2 Nov", t: "Final release", s: "Every claim rechecked against our tests, place-by-place gaps in every report, and caves and lava tubes on Maps. The open dataset is on Hugging Face." },
-  { d: "13 Nov", t: "Hackathon weekend", s: "The official 2026 datasets, field test plans and the expert review of the best new sites." },
+  { d: "13 Nov", t: "Hackathon weekend", s: "NASA's challenge resources checked against Atlas (most were already in), the final videos and the expert review of the best new sites." },
   { d: "Next", t: "Community", s: "Field tests with planetary scientists and a classroom pilot in Dhaka." },
 ];
 

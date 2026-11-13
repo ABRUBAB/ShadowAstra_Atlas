@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, animate, motion } from "motion/react";
 import clsx from "clsx";
-import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Copy, FileText, LocateFixed, MapPin, Plane, RotateCcw, Search, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, Copy, ExternalLink, FileText, LocateFixed, MapPin, Plane, RotateCcw, Search, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
 import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, climateReaction, reactionFor, type Reaction } from "../components/ui/Astronaut";
 import { Chip, ConfidenceChip, Counter, EASE, GlyphTile, KindBadge, Meter, Ring, Seg, Tip, toast } from "../components/ui/kit";
@@ -37,6 +37,7 @@ import {
 } from "../lib/mission";
 import { useEarthThumb } from "../lib/thumbs";
 import { placeId, useSaved } from "../lib/saved";
+import { earthdataUrl, targetDataLink, worldviewUrl } from "../lib/nasaLinks";
 import { logBadge } from "../lib/fieldlog";
 import { MineralCard } from "../components/find/MineralCard";
 import { PinpointCard } from "../components/find/PinpointCard";
@@ -1411,6 +1412,26 @@ function SiteReport({ grid, k, m, result, onBack }: { grid: Grid; k: number; m: 
           </ul>
         )}
         <p className="mt-2 text-[12.5px] leading-relaxed text-platinum">Use this place for {gaps.useFor.join(" and ")}.</p>
+      </div>
+
+      <h3 className="mt-7 font-mono text-[10px] tracking-[0.22em] text-dim uppercase">Check it in NASA's own tools</h3>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {[
+          ["NASA Worldview", worldviewUrl(lat, lon)],
+          ["NASA Earthdata Search", earthdataUrl(lat, lon)],
+          [targetDataLink(T.body).label, targetDataLink(T.body).url],
+        ].map(([label, href]) => (
+          <a
+            key={label}
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[12px] text-chrome transition-colors hover:border-line-2 hover:text-platinum"
+          >
+            {label} <ExternalLink size={12} aria-hidden />
+            <span className="sr-only">(opens in a new tab)</span>
+          </a>
+        ))}
       </div>
       <p className="mt-4 text-[10.5px] leading-relaxed text-dim">
         Data: SRTM terrain, NASA POWER, MODIS (NASA GIBS), NASA EMIT minerals, Smithsonian GVP, impact craters, Natural Earth; {T.body === "moon" ? "LRO LOLA" : "MGS MOLA"}

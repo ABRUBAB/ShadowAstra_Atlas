@@ -1660,7 +1660,7 @@ function ModelRoadmap() {
     { k: "Done", t: "Terrain AI", d: "A vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars. Try “AI match” in Maps.", on: true },
     { k: "Done", t: "Minerals, cold, ice and water", d: "NASA EMIT minerals on Earth; LRO Diviner ground temperature at all ten Moon targets and ice at the south pole; Lunar Prospector iron and titanium; Mars Odyssey water on Mars.", on: true },
     { k: "Done", t: "Caves and lava tubes", d: "1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC) as a layer on Maps.", on: true },
-    { k: "Next", t: "Official 2026 datasets", d: "The challenge's own data, published by NASA on 13 November, added as new pipeline steps." },
+    { k: "Next", t: "More signs of ice", d: "LRO LEND and Mini-RF, from NASA's 2026 challenge resources, tested before they change any score." },
   ];
   return (
     <Reveal delay={0.08}>

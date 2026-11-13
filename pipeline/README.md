@@ -67,4 +67,4 @@ New data only changes the score if it ranks the known sites better (the independ
 
 ## Swapping in the official 2026 datasets
 
-The full 2026 challenge statement came out on 28 October 2026. NASA's Resources tab, which holds the official challenge datasets, opens on 13 November 2026 and was still closed on 2 November 2026. Each source here is one script with one output per variable on the shared 360 × 720 grid (`common.save`), so a new dataset only needs a new `sNN_*.py` that writes its arrays, plus a line in `s06_build.py`.
+The full 2026 challenge statement came out on 28 October 2026 and NASA's Resources tab on 13 November 2026: Earthdata Search, Worldview, PDS, LRO (LROC, LOLA, Diviner, LEND, Mini-RF) and Diviner's polar products, plus CSA RADARSAT, ESA Copernicus and Open Science Catalog, and JAXA G-Portal. Atlas already uses the NASA ones except LEND and Mini-RF. Each source here is one script with one output per variable on the shared 360 × 720 grid (`common.save`), so a new dataset only needs a new `sNN_*.py` that writes its arrays, plus a line in `s06_build.py`.

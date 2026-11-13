@@ -827,7 +827,6 @@ const SOURCES: Source[] = [
   { body: "earth", name: "Sentinel-2 cloudless 2020", agency: "ESA Copernicus · EOX", use: "True-colour imagery, 3D drape, the Earth or Mars game", res: "10 m", status: "live", link: "https://s2maps.eu" },
   { body: "earth", name: "Blue Marble, ASTER relief", agency: "NASA GIBS · NASA/METI", use: "Globe, polar imagery, shaded relief", res: "30 m to 1 km", status: "live", link: "https://earthdata.nasa.gov/gibs" },
   { body: "earth", name: "Natural Earth", agency: "Public domain", use: "Country, region and town names for every place", res: "1:10 m", status: "live", link: "https://www.naturalearthdata.com/" },
-  { body: "earth", name: "Official 2026 challenge datasets", agency: "NASA + partner agencies", use: "NASA publishes them on 13 November, when the hackathon starts; each goes through the same pipeline and the same test", res: "various", status: "planned", link: "https://www.spaceappschallenge.org/2026/challenges/permanent-moon-base-locations-and-mars/" },
   { body: "earth", name: "EMIT surface minerals (L3 ASA v2)", agency: "NASA / JPL · LP DAAC", use: "Clays, sulfates, carbonates and iron oxides in dry, bare land; Mars mineral match", res: "0.5° from 60 m", status: "live", link: "https://doi.org/10.5067/EMIT/EMITL3ASA.002" },
   { body: "moon", name: "LRO LOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Moon targets", res: "118 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/moon_lro_lola_dem_118m" },
   { body: "moon", name: "LOLA tiles and polar hillshade", agency: "NASA Solar System Treks", use: "3D ground, shadow map, polar map", res: "118 to 237 m", status: "live", link: "https://trek.nasa.gov/moon/" },
@@ -835,6 +834,7 @@ const SOURCES: Source[] = [
   { body: "moon", name: "LROC lunar pits", agency: "NASA / ASU", use: "278 pits and skylights for cave missions; a layer on Maps", res: "points", status: "live", link: "https://lroc.im-ldi.com/" },
   { body: "moon", name: "LRO Diviner", agency: "NASA / UCLA · PDS", use: "Ground temperature at all ten Moon targets (polar product near the south pole, day and night curve elsewhere) and stable ice near the pole", res: "0.5 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" },
   { body: "moon", name: "Lunar Prospector GRS", agency: "NASA · PDS Geosciences", use: "Iron and titanium oxide at every Moon target, shown in reports", res: "~150 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lunarp/" },
+  { body: "moon", name: "LRO LEND and Mini-RF", agency: "NASA · PDS (2026 challenge resources)", use: "Hydrogen and radar signs of ice near the poles, to check next to Diviner's ice", res: "orbital maps", status: "planned", link: "https://pds-geosciences.wustl.edu/missions/lro/" },
   { body: "mars", name: "MGS MOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Mars targets", res: "463 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m" },
   { body: "mars", name: "Viking MDIM 2.1", agency: "NASA / USGS", use: "Colour imagery, 3D drape, game", res: "232 m", status: "live", link: "https://astrogeology.usgs.gov/" },
   { body: "mars", name: "MGS TES mineral maps", agency: "NASA / ASU", use: "Olivine, pyroxene, hematite, clays, dust and thermal inertia", res: "~7 km", status: "planned", link: "https://jmars.mars.asu.edu/" },
@@ -855,6 +855,10 @@ function Sources() {
         <h2 className="mt-6 max-w-[900px] text-[clamp(32px,4.4vw,64px)] leading-[1.02] font-medium tracking-[-0.04em]">
           NASA first, <span className="font-serif font-normal text-chrome italic">checked against other agencies.</span>
         </h2>
+        <p className="mt-6 max-w-[760px] text-[15px] leading-relaxed text-chrome">
+          NASA published the challenge's own resources on 13 November. Earthdata, Worldview, the Planetary Data System, LRO and Diviner were already part of
+          Atlas; LRO's LEND and Mini-RF come next. Every place report links to the same spot in NASA Worldview and Earthdata Search, so you can check it there.
+        </p>
         <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {cols.map(({ b, list }, ci) => (
             <motion.div key={b} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: EASE, delay: ci * 0.08 }} className="surface rounded-3xl p-6">

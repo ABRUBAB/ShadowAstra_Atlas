@@ -27,6 +27,9 @@ test("mission builder to report to compare", async ({ page, consoleErrors }) => 
   // the best 10 km spot: computed from terrain tiles, with its tested verdict
   await expect(page.getByText(/Of the \d+ pieces of 10 km inside this place/)).toBeVisible({ timeout: 45_000 });
   await expect(page.getByText(/Tested on 66 real field sites/).first()).toBeVisible();
+  // the same place in NASA's own tools
+  await expect(page.getByRole("link", { name: /NASA Worldview/ })).toHaveAttribute("href", /^https:\/\/worldview\.earthdata\.nasa\.gov\/\?v=/);
+  await expect(page.getByRole("link", { name: /NASA Earthdata Search/ })).toHaveAttribute("href", /^https:\/\/search\.earthdata\.nasa\.gov\/search\?sb=/);
 
   // the printable report for the same place
   await page.getByRole("link", { name: /Site report/ }).click();
@@ -35,6 +38,7 @@ test("mission builder to report to compare", async ({ page, consoleErrors }) => 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
   await expect(page.getByText(/NASA EMIT|no clear EMIT view/).first()).toBeVisible();
   await expect(page.getByText(/Best 10 km spot/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Worldview", exact: true })).toHaveAttribute("href", /worldview\.earthdata\.nasa\.gov/);
   await page.goBack();
 
   // compare the same place in 3D

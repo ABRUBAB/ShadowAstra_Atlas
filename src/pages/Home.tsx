@@ -957,7 +957,7 @@ function Progress() {
     "Caves and lava tubes on Maps: 1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC)",
   ];
   const next = [
-    "Add the official 2026 challenge datasets as new pipeline steps (NASA publishes them on 13 Nov)",
+    "Add LRO LEND and Mini-RF signs of ice from NASA's 2026 challenge resources, tested like every other source",
     "Expert review of the top new sites by our scientific validation lead",
     "Mars SWIM ice and a finer rock map, once that data can be downloaded",
   ];

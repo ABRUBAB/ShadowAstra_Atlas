@@ -172,7 +172,7 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 
 **Open dataset.** Every place, every target score, the AI twins and every test are on Hugging Face under CC BY 4.0: [ABRUBAB/shadowastra-atlas](https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas) (`pipeline/s21_open_dataset.py` rebuilds it).
 
-**Next:** the official 2026 challenge datasets (the full statement came out on 28 Oct 2026; NASA's Resources tab with the datasets opens on 13 Nov and was still closed on 2 Nov), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
+**Next:** LRO LEND and Mini-RF from NASA's 2026 challenge resources (published 13 Nov 2026; Earthdata, Worldview, PDS, LRO and Diviner were already in Atlas), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
@@ -252,7 +252,7 @@ src/
 - [x] Engineering pass: memory leaks fixed, faster clicks, security headers, error fallbacks, WCAG 2.2 fixes, unit, parity and browser tests, CI and uptime checks
 - [x] Best 10 km spot inside each place (tested on 66 field sites; a hint, not a passed test); Diviner and Lunar Prospector facts for every Moon target; expert review kit
 - [x] Caves and lava tubes layer on the Moon and Mars maps: 1,062 Mars cave candidates and 278 lunar pits (`pipeline/s25_caves.py`). This is the final pre-hackathon release, v1.0 (2 Nov 2026)
-- [ ] Official 2026 challenge datasets (NASA's Resources tab opens on 13 Nov)
+- [x] Checked NASA's 2026 challenge resources (13 Nov): Earthdata, Worldview, PDS, LRO and Diviner already in; LEND and Mini-RF next
 - [ ] Expert review of the top 20 by Md. Tanvir Hasan; Mars SWIM ice when its site is back
 
 ## 👩‍🚀 Team ShadowAstra
