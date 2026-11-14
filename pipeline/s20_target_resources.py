@@ -235,8 +235,9 @@ def main() -> None:
         gp = OUT / "grid.json"
         g = json.loads(gp.read_text(encoding="utf-8"))
         for t in g["targets"]:
-            if t["id"] in res:
-                t["resources"] = res[t["id"]]
+            if t["id"] in res:  # keep the LEND and Mini-RF facts that s26 merged in
+                keep = {k: v for k, v in t.get("resources", {}).items() if k.startswith(("lend_", "cpr_", "minirf_"))}
+                t["resources"] = {**res[t["id"]], **keep}
         gp.write_text(json.dumps(g, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(f"resources written into {gp.name} for {sum(t['id'] in res for t in g['targets'])} targets")
 

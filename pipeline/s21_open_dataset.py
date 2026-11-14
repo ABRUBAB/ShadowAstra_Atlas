@@ -141,10 +141,14 @@ def main() -> None:
              "water_made_minerals": ",".join(t.get("minerals", {}).get("families", [])) or None, "minerals_source": t.get("minerals", {}).get("source")}
         res = t.get("resources", {})
         for k in ("temp_avg_c", "temp_avg_coldest_c", "temp_max_c", "temp_max_hottest_c", "temp_min_c", "ice_surface_share", "ice_1m_share", "radius_km", "h2o_wt_pct",
-                  "feo_wt_pct", "tio2_wt_pct", "th_ppm"):
+                  "feo_wt_pct", "tio2_wt_pct", "th_ppm",
+                  "lend_dip_pct", "lend_dip_err_pct", "lend_rate_cps", "lend_ref_cps", "lend_radius_km",
+                  "cpr_median", "cpr_above1_share", "cpr_coverage", "cpr_radius_km", "cpr_pixel_m", "cpr_ref_median", "cpr_ref_above1_share"):
             r[k] = res.get(k)
         r["resources_source"] = res.get("source")
         r["oxides_source"] = res.get("oxides_source")
+        r["lend_source"] = res.get("lend_source")
+        r["minirf_source"] = res.get("minirf_source")
         rows.append(r)
     with open(OUTD / "targets.csv", "w", newline="", encoding="utf-8") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0]))

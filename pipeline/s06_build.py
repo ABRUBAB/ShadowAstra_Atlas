@@ -270,6 +270,9 @@ def main() -> None:
     tnpz = np.load(CACHE / "targets.npz")
     tres_path = CACHE / "target_resources.json"  # step 20: Diviner (Moon south pole) and Odyssey GRS (Mars)
     tres = json.loads(tres_path.read_text(encoding="utf-8")) if tres_path.exists() else {}
+    ice_path = CACHE / "target_ice.json"  # step 26: LRO LEND neutrons and Mini-RF radar at the Moon targets (facts)
+    for tid, extra in (json.loads(ice_path.read_text(encoding="utf-8")) if ice_path.exists() else {}).items():
+        tres.setdefault(tid, {}).update(extra)
 
     worlds_of = {a[0]: a[4] for a in KNOWN_ANALOGS}
     model_out, spread_out, evaluation = {}, {}, {}
