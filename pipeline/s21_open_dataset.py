@@ -13,7 +13,7 @@ the website loads (public/data) with the NumPy twin of its scoring (s14_validate
   validation.json         every test the How it works page shows
 
     python pipeline/s21_open_dataset.py                  → pipeline/.cache/hf_dataset/
-    HF_TOKEN=... python pipeline/s21_open_dataset.py --push
+    HF_TOKEN=... python pipeline/s21_open_dataset.py --push [--message "what changed"]
 """
 
 from __future__ import annotations
@@ -195,8 +195,8 @@ def main() -> None:
 
         api = HfApi(token=os.environ["HF_TOKEN"])
         api.create_repo(REPO, repo_type="dataset", exist_ok=True)
-        api.upload_folder(folder_path=str(OUTD), repo_id=REPO, repo_type="dataset",
-                          commit_message="ShadowAstra Atlas open dataset (site v0.7: Diviner day and night for every Moon target, Lunar Prospector oxides, pinpoint test)")
+        msg = sys.argv[sys.argv.index("--message") + 1] if "--message" in sys.argv else "ShadowAstra Atlas open dataset update"
+        api.upload_folder(folder_path=str(OUTD), repo_id=REPO, repo_type="dataset", commit_message=msg)
         print(f"pushed: https://huggingface.co/datasets/{REPO}")
 
 
