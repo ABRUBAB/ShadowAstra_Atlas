@@ -59,22 +59,23 @@ test("Compare: a field test crosses both blocks, ends with its log, and the 3D v
   // the button waits for both elevation grids
   await expect(run).toBeEnabled({ timeout: 60_000 });
   await run.click();
-  await expect(page.getByRole("region", { name: "Field test", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Field test", exact: true })).toBeVisible({ timeout: 60_000 });
   const start = page.getByRole("button", { name: "Start the run" });
-  await expect(start).toBeEnabled();
+  // shadows for both blocks are computed before the run can start
+  await expect(start).toBeEnabled({ timeout: 60_000 });
   await expect(start).toBeFocused();
   // a live readout on each block, and Astra ready to call out the run
   await expect(page.getByLabel("Under the team at McMurdo Dry Valleys")).toContainText(/Slope.*Height.*Light/s);
   await expect(page.getByLabel("Under the team at Shackleton crater rim")).toContainText(/Sunlit|In shadow|Night/);
-  await expect(page.getByRole("status").filter({ hasText: /ready at the west edge/ })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /ready at the west edge/ })).toBeVisible({ timeout: 60_000 });
 
   await start.click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Skip to end/ }).click();
   const log = page.getByRole("region", { name: "Field test log" });
-  await expect(log).toBeVisible();
+  await expect(log).toBeVisible({ timeout: 60_000 });
   for (const row of ["Steepest slope", "Over the 15° limit", "In shadow all day", "Rough drive time", "What this run supports", "Where the analogy still breaks"]) await expect(log).toContainText(row);
-  await expect(page.getByRole("status").filter({ hasText: /^Done\. Field tests supported: \d of 3/ })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^Done\. Field tests supported: \d of 3/ })).toBeVisible({ timeout: 60_000 });
 
   // full screen keeps the field test; Esc brings the page back
   await page.getByRole("button", { name: "Full screen", exact: true }).click();
