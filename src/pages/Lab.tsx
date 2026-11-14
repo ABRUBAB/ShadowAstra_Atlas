@@ -1208,7 +1208,7 @@ function TerrainCard({
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-2 max-sm:order-2">
+              <div className="flex flex-wrap items-center gap-1.5 max-sm:order-2 sm:gap-2">
                 <Seg value={overlay} onChange={(v) => setOverlay(v as Overlay)} options={overlays} />
                 {!field && (
                   <>
@@ -1217,7 +1217,7 @@ function TerrainCard({
                     </button>
                     <label className="flex items-center gap-2 text-[11px] text-chrome">
                       <span className="font-mono">AZ</span>
-                      <input type="range" min={0} max={359} value={sunAz} onChange={(e) => setSunAz(+e.target.value)} className="w-20 accent-[#f2c879]" aria-label="Sun azimuth" />
+                      <input type="range" min={0} max={359} value={sunAz} onChange={(e) => setSunAz(+e.target.value)} className="w-12 accent-[#f2c879] sm:w-20" aria-label="Sun azimuth" />
                     </label>
                     {overlay !== "imagery" && (
                       <label className="flex items-center gap-2 text-[11px] text-chrome">
