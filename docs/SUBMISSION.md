@@ -10,7 +10,7 @@
 
 **Links:** live https://shadowastra-atlas.vercel.app · code https://github.com/ABRUBAB/ShadowAstra_Atlas · open data https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas
 
-## NASA project page (global form, filled and saved 14 Nov 2026 13:50; not submitted)
+## NASA project page (global form, last saved 14 Nov 2026 16:15; not submitted)
 
 Team page: https://www.spaceappschallenge.org/2026/find-a-team/shadowastra/?tab=project
 Global deadline: Sunday 15 November, 11:59 PM Dhaka time ("Submit for Judging"). Only the last submission counts.
@@ -34,22 +34,22 @@ What it does
 > In the app you build a mission in plain words: a target on the Moon or Mars (for example Shackleton crater at the lunar south pole, or Jezero Crater), a job (landing tests, base life, rover drives, ice drilling, lava tubes or a search for life) and your team's limits. A 3D globe searches every land area live and returns ten new places, away from the famous sites.
 
 How it works
-> 1. **Every land area measured.** Our Python pipeline measured all 80,206 land areas of Earth (0.5 degrees, about 55 km) with NASA POWER climate, Terra MODIS ground temperature, plants and snow (via NASA GIBS), SRTM-based terrain, NASA EMIT minerals, volcanoes and impact craters. Each Moon and Mars target is measured the same way from LRO LOLA (118 m) and MGS MOLA (463 m) heights, with LRO Diviner temperatures and ice, and Lunar Prospector and Mars Odyssey chemistry and water.
+> 1. **Every land area measured.** Our Python pipeline measured all 80,206 land areas of Earth (0.5 degrees, about 55 km) with NASA POWER climate, Terra MODIS ground temperature, plants and snow (via NASA GIBS), SRTM-based terrain, NASA EMIT minerals, volcanoes and impact craters. Each Moon and Mars target is measured the same way from LRO LOLA (118 m) and MGS MOLA (463 m) heights, with LRO Diviner temperatures and ice, LRO LEND neutrons and Mini-RF radar (signs of ice), and Lunar Prospector and Mars Odyssey chemistry and water.
 > 2. **Four challenge factors, weighted by the job.** Ground shape (slopes and height range across 50 km), rocks and craters, cold and light, and bare, dry ground. A rover test and an ice search need different places, so the ranking changes with the job.
 > 3. **Two AI models of our own.** A learned model (tuned XGBoost, LightGBM and logistic regression, picked from nine models with Optuna on Kaggle) adds what 38 known analog sites have in common. A self-supervised vision transformer (DINO ViT-S/8), trained on two Kaggle T4 GPUs with heights from Earth, the Moon and Mars, compares ground shape and finds Earth twins of any Moon or Mars spot.
 > 4. **Honest results.** Each of the ten places shows what matches, how strongly, where the analogy breaks down, field tests to run, the nearest town, a confidence badge, the best 10 km spot inside it (a hint, not a tested result), a printable site report, and links to the same spot in NASA Worldview and Earthdata Search. Every number is labelled Computed, Learned or "Earth can't copy".
 > 5. **It all runs in your browser.** The measured planet is about 5 MB of data, so scoring all 80,206 places takes about 16 ms on a laptop, with no server and no sign-in.
 
 How we know it works
-> With each known analog site and its neighbours within 300 km hidden and the model retrained, the typical known site still lands in the top 2.4% of all land (the learned model alone: top 1.2%). The typical one of 28 published analog sites the model never saw lands in the top 18%. New data only changes the score if it ranks the known sites better; otherwise it is shown as a measured fact (EMIT minerals, Diviner temperatures and ice, Lunar Prospector oxides, Mars Odyssey water). Every test, including the ones that failed, is on our How it works page: https://shadowastra-atlas.vercel.app/methods
+> With each known analog site and its neighbours within 300 km hidden and the model retrained, the typical known site still lands in the top 2.4% of all land (the learned model alone: top 1.2%). The typical one of 28 published analog sites the model never saw lands in the top 18%. New data only changes the score if it ranks the known sites better; otherwise it is shown as a measured fact (EMIT minerals, Diviner temperatures and ice, LEND neutrons, Mini-RF radar, Lunar Prospector oxides, Mars Odyssey water). Every test, including the ones that failed, is on our How it works page: https://shadowastra-atlas.vercel.app/methods
 
 Also in the app (bullets)
-> A 3D compare of any place with its target at the same scale, with a movable Sun and a shadow map. · A field test on those 3D blocks: a rover or a walking team drives the same route on both worlds, each under its own real Sun, and the run ends with a field log (steepest slope, shadow, climb, drive time, which field tests it supports, where the analogy breaks). · Earth twins: tap any spot on the Moon or Mars to see the Earth places with the most similar ground. · A caves and lava tubes layer with 1,062 Mars cave candidates and 278 lunar pits. · Three globes with live NASA layers. · A classroom page with lessons and a quiz in English, Spanish and Bangla, with Astra, our field-test astronaut. · Every score is open on Hugging Face (CC BY 4.0) and all the code is on GitHub.
+> A 3D compare of any place with its target at the same scale, with a movable Sun and a shadow map. · A field test on those 3D blocks: a rover or a walking team drives the same route on both worlds, each under its own real Sun, and the run ends with a field log (steepest slope, shadow, climb, drive time, which field tests it supports, where the analogy breaks). · Signs of ice at every Moon target from three LRO instruments, read straight from NASA's Planetary Data System: Diviner (cold enough to keep ice?), LEND (fewer neutrons means more hydrogen) and Mini-RF (radar roughness). Six of the seven south-pole targets show a clear LEND dip; the deepest is Cabeus, where NASA's LCROSS found water. Shown as facts, with each instrument's limits. · Earth twins: tap any spot on the Moon or Mars to see the Earth places with the most similar ground. · A caves and lava tubes layer with 1,062 Mars cave candidates and 278 lunar pits. · Three globes with live NASA layers. · A classroom page with lessons and a quiz in English, Spanish and Bangla, with Astra, our field-test astronaut. · Every score is open on Hugging Face (CC BY 4.0) and all the code is on GitHub.
 
 Benefits and intended impact
 > Mission teams get a ranked shortlist of new practice sites for their exact target and job, with the gaps written out, instead of reusing the same few famous places. Field scientists get a quick way to check any place against the Moon or Mars with open data. Students anywhere, including in Bangladesh, can see how these choices are made, in their own language.
 >
-> Next: our scientific validation lead reviews the top new sites; we want planetary scientists to test one of them on the ground; we will add LRO LEND and Mini-RF signs of ice from NASA's 2026 challenge resources and finer slopes from MRO HiRISE; and we plan a classroom pilot in Dhaka.
+> Next: our scientific validation lead reviews the top new sites; we want planetary scientists to test one of them on the ground; we will add finer slopes from MRO HiRISE; and we plan a classroom pilot in Dhaka.
 
 What makes it creative
 > Analog sites are usually picked by reputation. Atlas turns the question around: start from the mission, measure the whole planet the same way as the target, and let the job decide what "alike" means. It is honest by design: it says where each analogy breaks down, labels what Earth cannot copy, and publishes the failed tests too. And it brings the Moon and Mars to a classroom in Dhaka, in Bangla.
@@ -71,7 +71,7 @@ Links (bullets)
 
 **Use of Super Intelligence (SI)** (for data collection only; the judges do not see it). Ticked: Ideation or Brainstorming; Research or Information Gathering; Data Analysis and Interpretation; Building SI/ML Into the Project; Coding, Debugging, or Troubleshooting; Writing, Editing, or Translation; Visual Design or Image Creation; Presentation, Video, or Audio.
 
-**NASA Data** (19 links)
+**NASA Data** (21 links)
 
 | Link Text | Link Url |
 |---|---|
@@ -94,6 +94,8 @@ Links (bullets)
 | NASA Worldview (every place links to the same spot) | https://worldview.earthdata.nasa.gov/ |
 | NASA Earthdata Search (every place links to the same spot) | https://search.earthdata.nasa.gov/ |
 | NASA Image and Video Library (footage in our demo video) | https://images.nasa.gov/ |
+| LRO LEND epithermal neutron maps, 2009 to 2011 (LRO-L-LEND-4/5-RDR-V1.0), PDS Geosciences | https://pds-geosciences.wustl.edu/missions/lro/lend.htm |
+| LRO Mini-RF radar CPR mosaics, south polar 118 m and global 237 m, PDS Geosciences | https://pds-geosciences.wustl.edu/missions/lro/mrf.htm |
 
 **Space Agency Partner & Other Data** (17 links)
 
