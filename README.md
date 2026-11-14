@@ -270,6 +270,14 @@ src/
 
 <p align="center"><sub>Made in Dhaka, Bangladesh 🇧🇩 for the 2026 NASA Space Apps Challenge.</sub></p>
 
+## 🤖 Use of SI tools
+
+We used Super Intelligence (SI) tools, and this is where:
+
+- **Code, data pipeline, documentation and video edit.** Claude (Anthropic), through Claude Code, helped us write and test them. That includes Astra, who is drawn in code (one SVG). The team set every goal and data choice, checked every number against our tests and reviewed every change.
+- **Inside the app.** Two models of our own, trained by the team: the learned site model (XGBoost, LightGBM and logistic regression, tuned with Optuna on Kaggle) and the terrain AI (a self-supervised DINO ViT-S/8 trained on Kaggle GPUs). The app labels their output as Learned or as terrain AI, and their tests are on the How it works page.
+- **Images, audio and video.** We used no image, video or voice generator in the app or in the 30-second demo. The globe textures come from NASA products, the team photos are real, the narration is the real voice of Mohammed Mahmud Parvez and the music is his own. The logo animation in our local Video 1 was made with Google Gemini.
+
 ## 📜 Credits & license
 
 Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner), Lunar Prospector, MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; USGS Mars Global Cave Candidate Catalog (MGC³, Cushing); LROC lunar pit atlas (Wagner and Robinson, ASU); CTX mosaic (Caltech Murray Lab, via Esri); SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).

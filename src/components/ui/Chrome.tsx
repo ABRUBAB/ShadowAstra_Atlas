@@ -225,6 +225,10 @@ export function Footer() {
             Odyssey), AWS Terrain Tiles (SRTM), Smithsonian GVP, ESA Sentinel-2, Natural Earth. NASA does not endorse this project. Known test sites
             are used to train and test our model, not shown as discoveries.
           </p>
+          <p className="max-w-md text-xs leading-relaxed text-dim">
+            SI use: Claude (Anthropic) helped us write and test the code; the team set every goal and checked every number. The two models in the
+            app are our own, trained by the team.
+          </p>
         </div>
         <div className="space-y-3 text-sm">
           <div className="font-mono text-[11px] tracking-widest text-dim uppercase">Explore</div>
