@@ -127,6 +127,33 @@ export function lightTwin(earthLat: number, targetBody: Body, targetLat: number)
   };
 }
 
+/** The middle of month m (0 = January) as a fraction of Earth's orbit, counted like monthWindow. */
+export function monthFraction(m: number) {
+  const [a, b] = monthWindow(m);
+  return (a + b) / 2;
+}
+
+export interface SunPosition {
+  /** Degrees above the horizon; below zero the Sun is down. */
+  elev: number;
+  /** Degrees from north, clockwise (90 = east). */
+  az: number;
+}
+
+/**
+ * Where the Sun stands at a latitude, for a point in the year (f, as in sunRegime: 0 = northern
+ * spring equinox) and a local Sun time in hours (12 = the Sun at its highest). Circular orbit,
+ * like the rest of this file, so it is good to a degree or two.
+ */
+export function sunPosition(body: Body, lat: number, f: number, hour: number): SunPosition {
+  const decl = OBLIQUITY[body] * Math.sin(2 * Math.PI * f);
+  const h = ((hour - 12) / 12) * Math.PI;
+  const d = decl * D2R;
+  const p = lat * D2R;
+  const az = Math.atan2(-Math.sin(h) * Math.cos(d), Math.sin(d) * Math.cos(p) - Math.cos(h) * Math.cos(d) * Math.sin(p)) / D2R;
+  return { elev: elevation(lat, decl, h), az: (az + 360) % 360 };
+}
+
 /** Daily noon and midnight Sun elevation at an Earth latitude, for the rehearsal calendar. */
 export function earthDailyExtremes(lat: number) {
   const out: { day: number; max: number; min: number }[] = [];
