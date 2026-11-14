@@ -217,9 +217,16 @@ export function astraAnswer(raw: string): AstraReply {
     };
   }
 
+  if (/\blend\b|neutron|hydrogen|mini ?rf|radar|\bcpr\b/.test(q))
+    return {
+      text: "Two LRO instruments look for the ice itself. LEND counts neutrons: hydrogen slows them down, so icy ground sends fewer up. Most south-pole targets show a clear dip, the deepest at Cabeus, but LEND's view is blurry. Mini-RF is a radar: rough rock and clean ice both give a high CPR, so it is a hint, not proof. Both are shown as facts and never change a score.",
+      mood: "thinking",
+      links: [{ label: "See the clues for Cabeus", to: `${lab("dry-valleys", "cabeus", "polar")}#gaps` }],
+    };
+
   if (/data|dataset|nasa|source|satellite|map/.test(q))
     return {
-      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. Minerals from NASA EMIT on the space station. For the Moon and Mars: full-precision LOLA and MOLA heights, LRO Diviner ground temperatures at all ten Moon targets and ice at the south pole, Lunar Prospector iron and titanium, Mars Odyssey water, Mars cave candidates and lunar pits, plus LROC, Viking and THEMIS images. Next: the official 2026 datasets.",
+      text: "For Earth: NASA POWER climate, MODIS ground temperature, plants and snow from NASA GIBS, SRTM heights, the Smithsonian volcano list and impact craters. Minerals from NASA EMIT on the space station. For the Moon and Mars: full-precision LOLA and MOLA heights, LRO Diviner ground temperatures at all ten Moon targets and ice at the south pole, LRO LEND neutrons and Mini-RF radar at all ten Moon targets (from NASA's 2026 challenge resources), Lunar Prospector iron and titanium, Mars Odyssey water, Mars cave candidates and lunar pits, plus LROC, Viking and THEMIS images.",
       mood: "neutral",
       links: [{ label: "Open the source list", to: "/methods" }],
     };

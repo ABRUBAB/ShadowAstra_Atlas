@@ -834,7 +834,8 @@ const SOURCES: Source[] = [
   { body: "moon", name: "LROC lunar pits", agency: "NASA / ASU", use: "278 pits and skylights for cave missions; a layer on Maps", res: "points", status: "live", link: "https://lroc.im-ldi.com/" },
   { body: "moon", name: "LRO Diviner", agency: "NASA / UCLA · PDS", use: "Ground temperature at all ten Moon targets (polar product near the south pole, day and night curve elsewhere) and stable ice near the pole", res: "0.5 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" },
   { body: "moon", name: "Lunar Prospector GRS", agency: "NASA · PDS Geosciences", use: "Iron and titanium oxide at every Moon target, shown in reports", res: "~150 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lunarp/" },
-  { body: "moon", name: "LRO LEND and Mini-RF", agency: "NASA · PDS (2026 challenge resources)", use: "Hydrogen and radar signs of ice near the poles, to check next to Diviner's ice", res: "orbital maps", status: "planned", link: "https://pds-geosciences.wustl.edu/missions/lro/" },
+  { body: "moon", name: "LRO LEND neutron map", agency: "NASA / IKI · PDS Geosciences", use: "Fewer neutrons means more hydrogen: the dip at every Moon target against highland ground, shown as a fact (averaged map 2009 to 2011)", res: "15 to 30 km", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/lend.htm" },
+  { body: "moon", name: "LRO Mini-RF radar (CPR)", agency: "NASA / JHU APL · PDS Geosciences", use: "Radar roughness within 10 km of every Moon target: rough rock or possibly ice, shown as a fact (polar and global mosaics)", res: "118 to 237 m", status: "live", link: "https://pds-geosciences.wustl.edu/missions/lro/mrf.htm" },
   { body: "mars", name: "MGS MOLA global DEM (16-bit)", agency: "NASA · USGS Astrogeology", use: "Full-precision slopes and height range for Mars targets", res: "463 m", status: "live", link: "https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m" },
   { body: "mars", name: "Viking MDIM 2.1", agency: "NASA / USGS", use: "Colour imagery, 3D drape, game", res: "232 m", status: "live", link: "https://astrogeology.usgs.gov/" },
   { body: "mars", name: "MGS TES mineral maps", agency: "NASA / ASU", use: "Olivine, pyroxene, hematite, clays, dust and thermal inertia", res: "~7 km", status: "planned", link: "https://jmars.mars.asu.edu/" },
@@ -857,7 +858,7 @@ function Sources() {
         </h2>
         <p className="mt-6 max-w-[760px] text-[15px] leading-relaxed text-chrome">
           NASA published the challenge's own resources on 13 November. Earthdata, Worldview, the Planetary Data System, LRO and Diviner were already part of
-          Atlas; LRO's LEND and Mini-RF come next. Every place report links to the same spot in NASA Worldview and Earthdata Search, so you can check it there.
+          Atlas, and LRO's LEND neutron map and Mini-RF radar are now in too, as facts at every Moon target. Every place report links to the same spot in NASA Worldview and Earthdata Search, so you can check it there.
         </p>
         <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {cols.map(({ b, list }, ci) => (

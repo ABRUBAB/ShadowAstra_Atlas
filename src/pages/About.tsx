@@ -20,7 +20,7 @@ const TEAM = [
 
 const AWARDS = [
   { a: "The test", f: "Every land area measured the same way as the Moon or Mars target, at the same 50 km scale, and a learned model tested by hiding known sites. Open How it works." },
-  { a: "The data", f: "NASA POWER, MODIS (GIBS), SRTM, EMIT minerals, full-precision LOLA and MOLA, LRO Diviner, Mars Odyssey, Lunar Prospector, volcano and crater records, caves and pits, in one open dataset." },
+  { a: "The data", f: "NASA POWER, MODIS (GIBS), SRTM, EMIT minerals, full-precision LOLA and MOLA, LRO Diviner, LEND and Mini-RF, Mars Odyssey, Lunar Prospector, volcano and crater records, caves and pits, in one open dataset." },
   { a: "In the browser", f: "80,206 places re-ranked live, a 3D score globe, WebGL terrain from real heights and a shadow model." },
   { a: "For field teams", f: "Where and when to practise, what to test there, and what the practice can't prove." },
   { a: "Your mission", f: "Pick a job and a destination. The whole planet answers with places to test, why, and the best months to go." },

@@ -955,9 +955,9 @@ function Progress() {
     "An open dataset of every score on Hugging Face (CC BY 4.0), for anyone to check or reuse",
     "The best 10 km spot inside each 55 km place, as an experimental ground-shape hint",
     "Caves and lava tubes on Maps: 1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC)",
+    "Signs of ice at all ten Moon targets from NASA's 2026 challenge resources: LRO LEND neutrons and Mini-RF radar, shown as facts next to Diviner's ice",
   ];
   const next = [
-    "Add LRO LEND and Mini-RF signs of ice from NASA's 2026 challenge resources, tested like every other source",
     "Expert review of the top new sites by our scientific validation lead",
     "Mars SWIM ice and a finer rock map, once that data can be downloaded",
   ];

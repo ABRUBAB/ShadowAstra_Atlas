@@ -37,7 +37,7 @@ export interface GridTarget {
   rock?: { family: string; label: string; aff: number[] };
   /** Water-made mineral families found at the target from orbit or by rovers (Mars only). */
   minerals?: { families: MineralFamily[]; source: string };
-  /** Measured on the target itself (pipeline/s20): LRO Diviner at the Moon's south pole, Mars Odyssey GRS on Mars. */
+  /** Measured on the target itself (pipeline/s20, s26): LRO Diviner, Lunar Prospector, LRO LEND and Mini-RF on the Moon, Mars Odyssey GRS on Mars. */
   resources?: TargetResources;
 }
 
@@ -61,6 +61,34 @@ export interface TargetResources {
   oxides_source?: string;
   /** Mars: water-equivalent hydrogen in the top tens of cm, weight %. */
   h2o_wt_pct?: number | null;
+  /**
+   * Moon (pipeline/s26): LRO LEND collimated epithermal neutrons, nominal-mission map 2009 to 2011.
+   * Count rate in the map cells within lend_radius_km, compared with the Moon's average for 80°S to 80°N:
+   * negative = fewer neutrons = more hydrogen. lend_dip_err_pct is the 1 sigma counting error.
+   */
+  lend_dip_pct?: number;
+  lend_dip_err_pct?: number;
+  lend_rate_cps?: number;
+  lend_ref_cps?: number;
+  lend_cells?: number;
+  lend_radius_km?: number;
+  lend_map_deg?: number;
+  lend_source?: string;
+  /**
+   * Moon (pipeline/s26): LRO Mini-RF S-band circular polarization ratio within cpr_radius_km.
+   * cpr_median is null when the mosaic does not cover the target ("not covered"); cpr_ref_* are the same
+   * statistics for the surrounding region (cpr_ref_region), for context.
+   */
+  cpr_median?: number | null;
+  cpr_above1_share?: number | null;
+  cpr_coverage?: number;
+  cpr_pixels?: number;
+  cpr_radius_km?: number;
+  cpr_pixel_m?: number;
+  cpr_ref_median?: number;
+  cpr_ref_above1_share?: number;
+  cpr_ref_region?: string;
+  minirf_source?: string;
 }
 
 export const MINERAL_FAMILIES = ["clay", "sulfate", "carbonate", "iron"] as const;

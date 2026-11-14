@@ -15,6 +15,7 @@ import { usePinpoint } from "../lib/pinpoint";
 import { fieldTestsFor, placeGaps, townLine } from "../lib/gaps";
 import { earthdataUrl, targetDataLink, worldviewUrl } from "../lib/nasaLinks";
 import { useValidation } from "../lib/validation";
+import { LEND_CREDIT, LEND_INLINE, LEND_REF, MINIRF_CREDIT, cprCovered, cprRefLabel, lendTone, pctShort, signedPct } from "../lib/iceSigns";
 
 /** A clean, printable site report: the characterization dossier for a field team. */
 export default function Report() {
@@ -221,6 +222,13 @@ export default function Report() {
                       : T.tasks.includes("ice") || T.tasks.includes("polar")
                         ? "water ice likely nearby"
                         : "ice not the focus"}
+                  {res &&
+                    lendTone(res, T.lat) &&
+                    `; LRO LEND neutrons within ${Math.round(res.lend_radius_km ?? 15)} km: ${signedPct(res.lend_dip_pct!)} ± ${res.lend_dip_err_pct!.toFixed(1)}% against ${LEND_REF}, ${LEND_INLINE[lendTone(res, T.lat)!]} (a blurry view)`}
+                  {res?.cpr_median !== undefined &&
+                    (cprCovered(res)
+                      ? `; LRO Mini-RF radar within ${Math.round(res.cpr_radius_km ?? 10)} km: median CPR ${res.cpr_median!.toFixed(2)}, ${pctShort(res.cpr_above1_share ?? 0)} of the ground above 1${res.cpr_ref_median !== undefined ? ` (${cprRefLabel(res)}: ${res.cpr_ref_median.toFixed(2)})` : ""}${res.cpr_coverage !== undefined && res.cpr_coverage < 0.9 ? `, from the ${pctShort(res.cpr_coverage)} of the circle it mapped` : ""}; rough rock and ice both raise it`
+                      : "; radar: not covered by the LRO Mini-RF mosaic")}
                 </td>
               </tr>
             </tbody>
@@ -279,7 +287,8 @@ export default function Report() {
 
         <footer className="mt-8 border-t border-[#dcd5c7] pt-4 text-[10.5px] leading-relaxed text-[#6a665e]">
           Data: SRTM terrain (AWS Terrain Tiles), NASA POWER climatology, NASA GIBS MODIS ground temperature, plants, snow and land cover, NASA EMIT L3 minerals (LP DAAC), Smithsonian GVP volcanoes, Earth Impact
-          Database, Natural Earth;{T.body === "moon" ? " LRO LOLA 118 m" : " MGS MOLA 463 m"} heights (USGS Astrogeology){res ? ` and ${res.source}` : ""} for {T.name}. Method and model tests: shadowastra-atlas.vercel.app/methods. Team ShadowAstra, Dhaka · NASA Space Apps
+          Database, Natural Earth;{T.body === "moon" ? " LRO LOLA 118 m" : " MGS MOLA 463 m"} heights (USGS Astrogeology){res ? ` and ${res.source}` : ""}
+          {res?.lend_source ? `, ${LEND_CREDIT} and ${MINIRF_CREDIT}` : ""} for {T.name}. Method and model tests: shadowastra-atlas.vercel.app/methods. Team ShadowAstra, Dhaka · NASA Space Apps
           Challenge 2026. NASA does not endorse this report.
         </footer>
       </article>

@@ -1,11 +1,12 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import clsx from "clsx";
 import { ArrowRight, Check, Minus } from "lucide-react";
 import { WorldDot } from "../ui/Chrome";
 import { EASE, Kicker } from "../ui/kit";
-import { MINERAL_INFO, type Grid, type MineralFamily } from "../../lib/grid";
+import { MINERAL_INFO, type Grid, type GridMeta, type MineralFamily } from "../../lib/grid";
+import { CPR_CAVEAT, CPR_PLAIN, LEND_CAVEAT, LEND_PLAIN, LEND_VERDICT, cprCovered, lendTone, lendValue, pctShort, signedPct } from "../../lib/iceSigns";
 import { useReview, type Validation } from "../../lib/validation";
 import { REPO_URL } from "../ui/Chrome";
 
@@ -224,6 +225,164 @@ function OtherSide({ grid }: { grid: Grid }) {
   );
 }
 
+/** LEND neutron dip (dot and ± 1 sigma line) and Mini-RF radar CPR at the ten Moon targets. */
+function IceLooks({ rows }: { rows: GridMeta["targets"] }) {
+  const S = 6; // axis from −6% to +6%
+  const x = (v: number) => 50 + (Math.max(-S, Math.min(S, v)) / S) * 50;
+  const ink = "var(--color-chart-2)";
+  return (
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="LEND neutrons and Mini-RF radar at the ten Moon targets">
+      <table className="w-full min-w-[300px] text-left text-[12.5px] sm:min-w-[600px]">
+        <thead>
+          <tr className="text-[10.5px] tracking-wide text-dim uppercase">
+            <th className="py-1.5 font-normal">Target</th>
+            <th className="hidden py-1.5 font-normal sm:table-cell">Neutrons against highland ground · LEND</th>
+            <th className="py-1.5 pl-3 text-right font-normal">
+              <span className="sm:hidden">Neutrons · LEND</span>
+            </th>
+            <th className="py-1.5 pl-4 text-right font-normal">
+              Radar CPR<span className="hidden sm:inline"> · Mini-RF</span>
+            </th>
+            <th className="py-1.5 pl-3 text-right font-normal">Above 1</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t, i) => {
+            const r = t.resources!;
+            const tone = lendTone(r, t.lat)!;
+            const d = r.lend_dip_pct!;
+            const e = r.lend_dip_err_pct!;
+            const seen = r.cpr_coverage !== undefined && r.cpr_coverage < 0.9 ? r.cpr_coverage : null;
+            const group = i === 0 || (rows[i - 1].lat < -60) !== (t.lat < -60) ? (t.lat < -60 ? "South pole" : "Near the equator") : null;
+            return (
+              <Fragment key={t.id}>
+                {group && (
+                  <tr>
+                    <td colSpan={5} className={clsx("pb-1 font-mono text-[10px] tracking-[0.2em] text-dim uppercase", i === 0 ? "pt-2" : "pt-4")}>
+                      {group}
+                    </td>
+                  </tr>
+                )}
+              <tr className="border-t border-line">
+                <td className="py-2 pr-3 text-chrome">{t.name}</td>
+                <td className="hidden w-[42%] py-2 sm:table-cell" title={`${t.name}: ${lendValue(r)}, ${r.lend_cells} map cells within ${r.lend_radius_km} km. ${LEND_VERDICT[tone]}.`}>
+                  <div className="relative h-4">
+                    <span className="absolute inset-y-0 left-1/2 w-px bg-line-2" />
+                    <span className="absolute top-1/2 h-[2px] -translate-y-1/2 rounded-full" style={{ left: `${x(d - e)}%`, width: `${x(d + e) - x(d - e)}%`, background: ink }} />
+                    <span
+                      className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
+                      style={{ left: `${x(d)}%`, borderColor: ink, background: tone === "clear" ? ink : "var(--color-panel)" }}
+                    />
+                  </div>
+                </td>
+                <td className="py-2 pl-3 text-right font-mono whitespace-nowrap text-platinum tabular-nums">{lendValue(r)}</td>
+                <td className="py-2 pl-4 text-right font-mono whitespace-nowrap text-platinum tabular-nums">
+                  {cprCovered(r) ? (
+                    <>
+                      {r.cpr_median!.toFixed(2)}
+                      {seen !== null && <span className="ml-1.5 hidden text-[10.5px] text-dim sm:inline">({pctShort(seen)} mapped)</span>}
+                    </>
+                  ) : (
+                    <span className="text-dim">not covered</span>
+                  )}
+                </td>
+                <td className="py-2 pl-3 text-right font-mono text-platinum tabular-nums">{cprCovered(r) ? pctShort(r.cpr_above1_share ?? 0) : ""}</td>
+              </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+        <tfoot className="hidden sm:table-footer-group">
+          <tr>
+            <td />
+            <td className="pt-1.5">
+              <div className="relative h-4 font-mono text-[10px] text-dim">
+                {[-6, -3, 0, 3, 6].map((v) => (
+                  <span key={v} className={clsx("absolute", v === -S ? "" : v === S ? "-translate-x-full" : "-translate-x-1/2")} style={{ left: `${x(v)}%` }}>
+                    {v === 0 ? "0" : signedPct(v, 0)}
+                  </span>
+                ))}
+              </div>
+            </td>
+            <td colSpan={3} />
+          </tr>
+        </tfoot>
+      </table>
+      <div className="mt-3 hidden flex-wrap gap-x-5 gap-y-1.5 text-[11.5px] text-chrome sm:flex">
+        <span className="inline-flex items-center gap-2">
+          <span className="size-2.5 rounded-full border-2" style={{ borderColor: ink, background: ink }} /> clear dip, at least 3 times its counting error
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="size-2.5 rounded-full border-2" style={{ borderColor: ink, background: "var(--color-panel)" }} /> smaller, or near the equator
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-[2px] w-4 rounded-full" style={{ background: ink }} /> ± counting error
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** The LEND and Mini-RF row: what they measure, what the ten targets show (written from the data), the caveats. */
+function IceRow({ grid }: { grid: Grid | null }) {
+  const rows = grid ? grid.meta.targets.filter((t) => t.body === "moon" && t.resources?.lend_dip_pct !== undefined).sort((a, b) => a.lat - b.lat) : [];
+  const polar = rows.filter((t) => lendTone(t.resources!, t.lat) !== "rock");
+  const clear = polar.filter((t) => lendTone(t.resources!, t.lat) === "clear");
+  const deepest = polar.length ? polar.reduce((a, b) => (b.resources!.lend_dip_pct! < a.resources!.lend_dip_pct! ? b : a)) : null;
+  const radar = polar.filter((t) => cprCovered(t.resources!));
+  const meds = radar.map((t) => t.resources!.cpr_median!);
+  const most = radar.length ? radar.reduce((a, b) => ((b.resources!.cpr_above1_share ?? 0) > (a.resources!.cpr_above1_share ?? 0) ? b : a)) : null;
+  const ref = radar[0]?.resources;
+  const short = (name: string) => name.replace(/\s*\(.*\)$/, "");
+  const word = (n: number) => ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][n] ?? String(n);
+  return (
+    <div className={ROW}>
+      <div className="min-w-0">
+        <h3 className="text-[24px] leading-tight font-medium tracking-[-0.02em]">Looking for the ice itself: LEND and Mini-RF</h3>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">
+          Diviner shows where ice could survive. Two more instruments on NASA's Lunar Reconnaissance Orbiter, both in the 2026 challenge resources, look for the ice itself. We read them straight from the Planetary Data System, only the ground near each target.
+        </p>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">
+          <span className="text-platinum">LEND counts neutrons.</span> {LEND_PLAIN}{" "}
+          {deepest
+            ? `${word(clear.length).replace(/^./, (c) => c.toUpperCase())} of the ${word(polar.length)} south-pole targets show a clear dip against typical highland ground; the deepest is ${short(deepest.name)} (${signedPct(deepest.resources!.lend_dip_pct!)})${deepest.id === "cabeus" ? ", where NASA's LCROSS probe found water in 2009" : ""}. `
+            : ""}
+          Near the equator the kind of rock moves the count by a few percent (dark mare lava sends more neutrons than bright highland rock), so those three numbers say little about water.
+        </p>
+        <p className="mt-3 text-[14px] leading-relaxed text-chrome">
+          <span className="text-platinum">Mini-RF is a radar.</span> {CPR_PLAIN} {CPR_CAVEAT}{" "}
+          {meds.length && ref?.cpr_ref_median !== undefined
+            ? `Around the south-pole targets the median CPR is ${Math.min(...meds).toFixed(2)} to ${Math.max(...meds).toFixed(2)}, against ${ref.cpr_ref_median.toFixed(2)} for the whole polar region${most && (most.resources!.cpr_above1_share ?? 0) > 0 ? `; the most ground above 1 is at ${short(most.name)} (${pctShort(most.resources!.cpr_above1_share!)})` : ""}.`
+            : ""}
+        </p>
+        <p className="mt-3 text-[13px] leading-relaxed text-dim">
+          {LEND_CAVEAT} PDS publishes LEND counts, not a water map, so we do not turn the dip into an amount of water. Both are shown as measured facts on Compare and in the printable site report.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Decision ok={false}>Shown as facts, not scored</Decision>
+          <Link to="/lab?earth=dry-valleys&target=cabeus&task=polar#gaps" className="link-wipe inline-flex items-center gap-1.5 text-[13px] text-chrome">
+            See the three clues for Cabeus <ArrowRight size={13} />
+          </Link>
+        </div>
+      </div>
+      <div className="surface min-w-0 rounded-3xl p-5 sm:p-6">
+        {rows.length ? (
+          <>
+            <IceLooks rows={rows} />
+            <p className="mt-4 text-[11px] leading-relaxed text-dim">
+              LEND: collimated epithermal neutron counts, averaged map from 15 Sep 2009 to 11 Dec 2011 (PDS LRO-L-LEND-4/5-RDR-V1.0), map cells within 15 km of a south-pole target and 30 km elsewhere, against highland ground between 50°S and 50°N
+              (Lunar Prospector iron oxide below 8%). The ± is counting noise only. Mini-RF: S-band radar circular polarization ratio within 10 km, from the south polar mosaic (118 m pixels) or the global mosaic (237 m), which saw only part of the
+              three equatorial circles and is grainier, so its shares above 1 run higher; compare shares within one mosaic.
+            </p>
+          </>
+        ) : (
+          <Wait h={200} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** How it works: the October additions (terrain AI, EMIT minerals, Moon and Mars measurements), each with its test. */
 /** Where the window holding each real field site ranked among its place's 10 km windows (0 = best). */
 function PinpointStrip({ t }: { t: NonNullable<Validation["pinpoint"]> }) {
@@ -389,6 +548,8 @@ export function NewEvidence({ v, grid }: { v: Validation | null; grid: Grid | nu
           </p>
           <div className="mt-6">{grid ? <OtherSide grid={grid} /> : <Wait h={200} />}</div>
         </div>
+
+        <IceRow grid={grid} />
 
         <div className={ROW}>
           <div>

@@ -16,6 +16,7 @@ import { earthSite } from "../lib/places";
 import { logBadge } from "../lib/fieldlog";
 import { scoreCell, useGrid, type Grid } from "../lib/grid";
 import { MineralCard } from "../components/find/MineralCard";
+import { IceSigns } from "../components/IceSigns";
 import { LAYERS_BY_BODY } from "../data/layers";
 import { formatCoord, zoomForMercator } from "../lib/geo";
 import {
@@ -339,6 +340,11 @@ export default function Lab() {
             }
           />
           <RealityGaps world={target.body} lat={target.lat} />
+          {gt?.resources?.lend_dip_pct !== undefined && (
+            <div className="mt-4">
+              <IceSigns res={gt.resources} targetName={target.name} lat={target.lat} />
+            </div>
+          )}
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
             <Insight earthName={earthName} targetName={target.name} topo={topo} statsE={twins.statsE} statsT={twins.statsT} light={light} illE={illE} illT={illT} fit={fit.score} measured={!!cs} />
             <ModelRoadmap />
@@ -1785,7 +1791,8 @@ function ModelRoadmap() {
     { k: "Done", t: "Terrain AI", d: "A vision transformer trained on Kaggle GPUs with heights from Earth, the Moon and Mars. Try “AI match” in Maps.", on: true },
     { k: "Done", t: "Minerals, cold, ice and water", d: "NASA EMIT minerals on Earth; LRO Diviner ground temperature at all ten Moon targets and ice at the south pole; Lunar Prospector iron and titanium; Mars Odyssey water on Mars.", on: true },
     { k: "Done", t: "Caves and lava tubes", d: "1,062 Mars cave candidates (USGS) and 278 lunar pits (LROC) as a layer on Maps.", on: true },
-    { k: "Next", t: "More signs of ice", d: "LRO LEND and Mini-RF, from NASA's 2026 challenge resources, tested before they change any score." },
+    { k: "Done", t: "More signs of ice", d: "LRO LEND neutrons and Mini-RF radar at all ten Moon targets, from NASA's 2026 challenge resources. Shown as facts, not scored.", on: true },
+    { k: "Next", t: "Expert review", d: "Our scientific validation lead rates the strongest new sites; his ratings will appear on How it works." },
   ];
   return (
     <Reveal delay={0.08}>

@@ -68,7 +68,7 @@ Famous analogs such as Atacama, Haughton Crater and Death Valley were often chos
 | ⚖️ | **Compare up to four** | Pick results and see them side by side: the four factors, measured values, rock type, distance, trip CO₂ and confidence. |
 | 🪐 | **Earth twins of any spot** | Tap anywhere on the Moon or Mars. Kaggle-measured LOLA and MOLA ground is compared with every place on Earth, by our formula or by **a terrain AI** (a vision transformer trained on Kaggle GPUs with heights from all three worlds). |
 | 💎 | **Minerals from orbit** | Where NASA's EMIT spectrometer can see the ground (dry, bare land: 16,868 of the 80,206 places), the place report shows its clays, sulfates, carbonates and iron oxides next to the minerals orbiters and rovers found at Jezero, Gale, Meridiani and Mawrth Vallis. Shown as facts, not scored. |
-| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too, for all 18 targets: LRO Diviner ground temperatures for all ten Moon targets (the polar product with stable ice near the south pole, the global day and night product for the three non-polar ones), Lunar Prospector iron and titanium oxide at every Moon target, Mars Odyssey water in the topsoil. |
+| 🌡️ | **Both sides measured** | Reports put NASA numbers on the Moon and Mars side too, for all 18 targets: LRO Diviner ground temperatures for all ten Moon targets (the polar product with stable ice near the south pole, the global day and night product for the three non-polar ones), Lunar Prospector iron and titanium oxide at every Moon target, Mars Odyssey water in the topsoil. Two direct looks for ice at every Moon target, from NASA's 2026 challenge resources: the LRO LEND neutron dip (hydrogen) and LRO Mini-RF radar roughness (CPR), with their limits (LEND's view is blurry; rough rock and ice both raise CPR). Shown as facts, not scored. |
 | 🎯 | **Best 10 km spot** | Each 55 km place is cut into 10 km pieces; the one whose slopes are most like the target's is drawn on the close-up map. We tested it on 66 real field sites: the piece holding the real site has a median rank of 42% where chance is 50% (p = 0.13). That is a hint, not a passed test, and we say so on the page. |
 | 🕳️ | **Caves and lava tubes** | A layer on the Moon and Mars maps with 1,062 Mars cave candidates (USGS Mars Global Cave Candidate Catalog, MGC³, Cushing) and 278 lunar pits (LROC lunar pit atlas, Wagner and Robinson, ASU). Shown as facts, not scored. |
 | 🎓 | **Learn, in English, Spanish or Bangla** | Short lessons, a quiz scored with real data, and a printable worksheet for classrooms. |
@@ -166,6 +166,8 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 | 🌕 Moon | LRO Diviner polar resource product | ground temperatures and stable water ice around the seven south-pole targets | NASA · UCLA · PDS Geosciences |
 | 🌕 Moon | LRO Diviner global day and night temperatures | the full day and night ground temperature at the three non-polar targets | NASA · UCLA · PDS Geosciences |
 | 🌕 Moon | Lunar Prospector gamma-ray spectrometer (GRS) | iron oxide and titanium oxide at every Moon target | NASA · PDS Geosciences |
+| 🌕 Moon | LRO LEND averaged neutron maps, 2009 to 2011 (LRO-L-LEND-4/5-RDR-V1.0; 0.5° south polar and 1° maps) | the epithermal neutron dip (more hydrogen) at every Moon target, against highland ground (facts, not scored) | NASA · IKI · U. Arizona · PDS Geosciences |
+| 🌕 Moon | LRO Mini-RF radar CPR mosaics (south polar 118 m, LRO-L-MRFLRO-5-CDR-MOSAIC-V1.0; global 237 m, LRO-L-MRFLRO-5-GLOBAL-MOSAIC-V1.0) | radar roughness within 10 km of every Moon target (facts, not scored) | NASA · JHU APL · PDS Geosciences |
 | 🔴 Mars | Mars Odyssey GRS 5° water map | water in the topsoil at each Mars target | NASA · U. Arizona · PDS Geosciences |
 | 🔴 Mars | USGS Mars Global Cave Candidate Catalog (MGC³, Cushing) | 1,062 cave candidates on the Caves and lava tubes layer (facts, not scored) | USGS Astrogeology |
 | 🌕 Moon | LROC lunar pit atlas (Wagner and Robinson) | 278 lunar pits on the same layer (facts, not scored) | NASA LROC · Arizona State University |
@@ -173,7 +175,7 @@ More tests: choosing the job a site was really used for ranks it higher for 78% 
 
 **Open dataset.** Every place, every target score, the AI twins and every test are on Hugging Face under CC BY 4.0: [ABRUBAB/shadowastra-atlas](https://huggingface.co/datasets/ABRUBAB/shadowastra-atlas) (`pipeline/s21_open_dataset.py` rebuilds it).
 
-**Next:** LRO LEND and Mini-RF from NASA's 2026 challenge resources (published 13 Nov 2026; Earthdata, Worldview, PDS, LRO and Diviner were already in Atlas), NASADEM, MRO HiRISE, ESA HRSC. The [pipeline](pipeline/README.md) is built so each new source is one script.
+**Next:** NASADEM, MRO HiRISE, ESA HRSC. From NASA's 2026 challenge resources (published 13 Nov 2026), Earthdata, Worldview, PDS, LRO and Diviner were already in Atlas, and LEND and Mini-RF are now in as facts (`pipeline/s26_lend_minirf.py`). The [pipeline](pipeline/README.md) is built so each new source is one script.
 
 <details>
 <summary><b>🏆 How we cover every award category</b></summary>
@@ -253,7 +255,7 @@ src/
 - [x] Engineering pass: memory leaks fixed, faster clicks, security headers, error fallbacks, WCAG 2.2 fixes, unit, parity and browser tests, CI and uptime checks
 - [x] Best 10 km spot inside each place (tested on 66 field sites; a hint, not a passed test); Diviner and Lunar Prospector facts for every Moon target; expert review kit
 - [x] Caves and lava tubes layer on the Moon and Mars maps: 1,062 Mars cave candidates and 278 lunar pits (`pipeline/s25_caves.py`). This is the final pre-hackathon release, v1.0 (2 Nov 2026)
-- [x] Checked NASA's 2026 challenge resources (13 Nov): Earthdata, Worldview, PDS, LRO and Diviner already in; LEND and Mini-RF next
+- [x] Checked NASA's 2026 challenge resources (13 Nov): Earthdata, Worldview, PDS, LRO and Diviner already in; LEND neutrons and Mini-RF radar added as facts at all ten Moon targets (`pipeline/s26_lend_minirf.py`)
 - [ ] Expert review of the top 20 by Md. Tanvir Hasan; Mars SWIM ice when its site is back
 
 ## 👩‍🚀 Team ShadowAstra
@@ -281,7 +283,7 @@ We used Super Intelligence (SI) tools, and this is where:
 
 ## 📜 Credits & license
 
-Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner), Lunar Prospector, MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; USGS Mars Global Cave Candidate Catalog (MGC³, Cushing); LROC lunar pit atlas (Wagner and Robinson, ASU); CTX mosaic (Caltech Murray Lab, via Esri); SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
+Data: NASA POWER (LaRC); NASA GIBS / ESDIS; NASA EMIT (JPL, LP DAAC); NASA Solar System Treks (JPL); USGS Astrogeology; PDS Geosciences; LRO (LROC, LOLA, Diviner, LEND, Mini-RF), Lunar Prospector, MGS MOLA, Viking, Mars Odyssey (THEMIS, GRS), Terra MODIS & ASTER, Suomi NPP VIIRS; USGS Mars Global Cave Candidate Catalog (MGC³, Cushing); LROC lunar pit atlas (Wagner and Robinson, ASU); CTX mosaic (Caltech Murray Lab, via Esri); SRTM via AWS Terrain Tiles; Smithsonian Global Volcanism Program; Earth Impact Database (PASSC); Natural Earth; Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020, CC BY-NC-SA 4.0).
 
 NASA does not endorse this project. The 8-bit Trek elevation used for the 3D view is our own calibration (scores use the 16-bit USGS data), CO₂ numbers are rough estimates and site coordinates are approximate. Field visits need permission, local partners and care for the land.
 
