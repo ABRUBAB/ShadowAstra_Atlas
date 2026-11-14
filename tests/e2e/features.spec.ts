@@ -1,4 +1,4 @@
-/** Maps (AI twins), How it works (drag, charts, scroll), Learn and the 404 page. */
+/** Maps (AI twins), How it works (drag, charts, scroll), the Compare field test, Learn and the 404 page. */
 import { expect, test } from "./fixtures";
 
 test("Earth twins of Jezero, by formula and by the terrain AI", async ({ page, consoleErrors }) => {
@@ -49,6 +49,39 @@ test("How it works: the globe can be dragged and the charts load", async ({ page
   await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("is-scrolling"))).toBe(true);
   await page.mouse.click(tb.x + tb.width / 2, tb.y + tb.height / 2);
   await expect.poll(theme).not.toBe(before);
+  expect(consoleErrors).toEqual([]);
+});
+
+test("Compare: a field test crosses both blocks, ends with its log, and the 3D view goes full screen", async ({ page, consoleErrors }) => {
+  await page.goto("/lab?earth=dry-valleys&target=shackleton&task=polar");
+  const run = page.getByRole("button", { name: "Run a field test" });
+  await run.scrollIntoViewIfNeeded();
+  // the button waits for both elevation grids
+  await expect(run).toBeEnabled({ timeout: 60_000 });
+  await run.click();
+  await expect(page.getByRole("region", { name: "Field test", exact: true })).toBeVisible();
+  const start = page.getByRole("button", { name: "Start the run" });
+  await expect(start).toBeEnabled();
+  await expect(start).toBeFocused();
+  // a live readout on each block, and Astra ready to call out the run
+  await expect(page.getByLabel("Under the team at McMurdo Dry Valleys")).toContainText(/Slope.*Height.*Light/s);
+  await expect(page.getByLabel("Under the team at Shackleton crater rim")).toContainText(/Sunlit|In shadow|Night/);
+  await expect(page.getByRole("status").filter({ hasText: /ready at the west edge/ })).toBeVisible();
+
+  await start.click();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Skip to end/ }).click();
+  const log = page.getByRole("region", { name: "Field test log" });
+  await expect(log).toBeVisible();
+  for (const row of ["Steepest slope", "Over the 15° limit", "In shadow all day", "Rough drive time", "What this run supports", "Where the analogy still breaks"]) await expect(log).toContainText(row);
+  await expect(page.getByRole("status").filter({ hasText: /^Done\. Field tests supported: \d of 3/ })).toBeVisible();
+
+  // full screen keeps the field test; Esc brings the page back
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Exit full screen" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Field test log" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Full screen", exact: true })).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
 

@@ -1,5 +1,5 @@
 import { Scene } from "../ui/Safe";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Body } from "../../data/sites";
@@ -490,7 +490,19 @@ function StageOrbit({ top, wheel }: { top: number; wheel: "ctrl" | "zoom" }) {
       ctl.current = null;
     };
   }, [camera, gl, wheel]);
+  const framed = useRef("");
   useEffect(() => {
+    if (!size.width || !size.height) return;
+    const key = `${size.width}x${size.height}`;
+    if (key !== framed.current) {
+      framed.current = key;
+      // a new canvas shape gets a new framing: wide canvases look across the blocks from low down,
+      // taller ones (phones, full screen beside the field test panel) from higher up, so the blocks
+      // use the height they are given. The viewer's own turn around the stage is kept.
+      const elev = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(29 + (2 - size.width / size.height) * 14, 29, 50));
+      const turn = Math.atan2(camera.position.x, camera.position.z);
+      camera.position.set(Math.sin(turn) * Math.cos(elev), Math.sin(elev), Math.cos(turn) * Math.cos(elev));
+    }
     const d = fitDistance(camera as THREE.PerspectiveCamera, size.width, size.height, top);
     if (!d) return;
     const c = ctl.current;
@@ -511,7 +523,7 @@ function StageOrbit({ top, wheel }: { top: number; wheel: "ctrl" | "zoom" }) {
   return null;
 }
 
-export default function TerrainTwins(props: Props) {
+function TerrainTwins(props: Props) {
   const { earth, target, drapeEarth, drapeTarget, litEarth, litTarget, footprintKm, exaggeration, overlay, field, fullScreen } = props;
   const narrow = typeof window !== "undefined" && window.innerWidth < 640;
   const upm = (SIZE / (footprintKm * 1000)) * exaggeration;
@@ -545,3 +557,6 @@ export default function TerrainTwins(props: Props) {
     </Scene>
   );
 }
+
+/** Memoised: the Lab re-renders a few times a second during a field test, and the scene needs none of it. */
+export default memo(TerrainTwins);

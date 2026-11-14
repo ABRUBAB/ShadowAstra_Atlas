@@ -3,9 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, animate, motion } from "motion/react";
 import { useMotionReduced } from "../lib/motionPref";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, Columns2, Cpu, Hand, Info, Leaf, Link2, Link2Off, Pause, Play, Plane, RotateCcw, ShieldCheck, SplitSquareHorizontal, Sparkles, Sun, X } from "lucide-react";
+import { ArrowDown, ArrowRight, Columns2, Cpu, Hand, Info, Leaf, Link2, Link2Off, Maximize2, Minimize2, Pause, Play, Plane, RotateCcw, Route as RouteIcon, ShieldCheck, SplitSquareHorizontal, Sparkles, Sun, X } from "lucide-react";
 import { Footer, Nav, WorldDot } from "../components/ui/Chrome";
 import { Astronaut, reactionFor, type Action, type Mood } from "../components/ui/Astronaut";
+import { FieldCallout, FieldControls, FieldPanel, FieldReadout, useFieldTest } from "../components/lab/FieldTest";
+import { useFullScreen } from "../components/lab/useFullScreen";
 import { BodyMap, type BodyMapHandle, type MapView } from "../components/map/BodyMap";
 import { SwipeStage } from "../components/map/Swipe";
 import type { Overlay } from "../components/three/TerrainTwins";
@@ -235,7 +237,24 @@ export default function Lab() {
               </div>
             }
           />
-          <TerrainCard twins={twins} plates={plates} illE={illE} illT={illT} footprint={footprint} sunElev={sunElev} setSunElev={setSunElev} defaultSun={defaultSun} earthName={earthName} targetName={target.name} targetBody={target.body} earthImg={earthVisible(earth.lat).name} />
+          <TerrainCard
+            twins={twins}
+            plates={plates}
+            illE={illE}
+            illT={illT}
+            footprint={footprint}
+            sunElev={sunElev}
+            setSunElev={setSunElev}
+            defaultSun={defaultSun}
+            earthName={earthName}
+            targetName={target.name}
+            targetBody={target.body}
+            earthImg={earthVisible(earth.lat).name}
+            earthLat={earth.lat}
+            targetLat={target.lat}
+            task={task}
+            snowice={grid && cell >= 0 ? grid.value("f_snowice", cell) : null}
+          />
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
             <ProfileCard earth={twins.earth} target={twins.target} footprint={footprint} targetBody={target.body} />
             <SlopeCard statsE={twins.statsE} statsT={twins.statsT} topo={topo} targetBody={target.body} />
@@ -439,6 +458,9 @@ function StageCoach() {
   );
 }
 
+/** The key that turns the wheel into zoom inside the page (lib/wheel.ts). */
+const ZOOM_KEY = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl";
+
 /** "Drag to orbit" hint that fades after a few seconds. */
 function OrbitHint() {
   const [show, setShow] = useState(true);
@@ -454,7 +476,7 @@ function OrbitHint() {
             <motion.span animate={{ x: [-6, 6, -6] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
               <Hand size={14} />
             </motion.span>
-            Drag to orbit · scroll to zoom
+            Drag to orbit · {ZOOM_KEY} + scroll to zoom
           </div>
         </motion.div>
       )}
@@ -1056,6 +1078,10 @@ function TerrainCard({
   targetName,
   targetBody,
   earthImg,
+  earthLat,
+  targetLat,
+  task,
+  snowice,
 }: {
   twins: TwinState;
   plates: Plates;
@@ -1069,16 +1095,65 @@ function TerrainCard({
   targetName: string;
   targetBody: "moon" | "mars";
   earthImg: string;
+  earthLat: number;
+  targetLat: number;
+  task: TaskId;
+  snowice: number | null;
 }) {
   const [overlay, setOverlay] = useState<Overlay>("imagery");
   const [sunAz, setSunAz] = useState(135);
   const [playing, setPlaying] = useState(false);
   const [exag, setExag] = useState(3);
+  const [fieldOpen, setFieldOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const runBtn = useRef<HTMLButtonElement>(null);
+  const startBtn = useRef<HTMLButtonElement>(null);
+  const full = useFullScreen(box);
+  const ready = !!(twins.earth && twins.target);
+  // the field test's controls stay put while a new place or footprint loads; the 3D parts wait for the grids
+  const field = fieldOpen;
+  const live = fieldOpen && ready;
+  const ft = useFieldTest({ open: field, earth: twins.earth, target: twins.target, earthLat, targetLat, targetBody, task, snowice, earthName, targetName });
+  const at = ft.data ? Math.min(ft.index, ft.data.n - 1) : 0;
+
+  const openField = () => {
+    setFieldOpen(true);
+    setPlaying(false);
+    // the field test brings its own Sun, so the turning-Sun map would only confuse
+    if (overlay === "light") setOverlay("imagery");
+    requestAnimationFrame(() => startBtn.current?.focus({ preventScroll: true }));
+  };
+  const closeField = () => {
+    setFieldOpen(false);
+    requestAnimationFrame(() => runBtn.current?.focus({ preventScroll: true }));
+  };
+
+  const overlays: { id: Overlay; label: string }[] = [
+    { id: "imagery", label: "Real imagery" },
+    ...(field ? [] : [{ id: "light" as const, label: "Light & shadow" }]),
+    { id: "relief", label: "Elevation" },
+  ];
+  const ghost = "flex items-center gap-1.5 rounded-full border border-line-2 px-3 py-1.5 text-[12px] text-chrome transition-colors hover:text-platinum";
+  // during a field test each block shows its own Sun's shadows; the lamp over the stage stays high and neutral
+  const lampElev = field ? 50 : overlay === "imagery" ? Math.max(sunElev, 25) : sunElev;
+
   return (
     <Reveal>
-      <div data-theme="dark" className="relative overflow-hidden rounded-2xl border border-line bg-panel">
-        <div className="relative h-[520px] md:h-[640px]">
-          {twins.earth && twins.target ? (
+      <div
+        ref={box}
+        role={full.on ? "dialog" : undefined}
+        aria-modal={full.on || undefined}
+        aria-label={full.on ? "3D land slices, full screen" : undefined}
+        className={clsx("overflow-hidden bg-panel", full.on ? "fixed inset-0 z-[1250] flex flex-col lg:flex-row" : "relative rounded-2xl border border-line")}
+      >
+        <div
+          data-theme="dark"
+          className={clsx(
+            "relative bg-panel text-platinum",
+            full.on ? (field ? "h-[60%] shrink-0 lg:h-auto lg:min-w-0 lg:flex-1" : "min-h-0 flex-1") : field ? "h-[600px] md:h-[660px]" : "h-[520px] md:h-[640px]",
+          )}
+        >
+          {ready ? (
             <Suspense fallback={<Loader label="Preparing 3D terrain" />}>
               <TerrainTwins
                 earth={twins.earth}
@@ -1088,62 +1163,111 @@ function TerrainCard({
                 litEarth={illE?.lit ?? null}
                 litTarget={illT?.lit ?? null}
                 footprintKm={footprint}
-                sunElev={overlay === "imagery" ? Math.max(sunElev, 25) : sunElev}
+                sunElev={lampElev}
                 sunAz={sunAz}
-                playing={playing}
+                playing={playing && !field}
                 exaggeration={exag}
                 overlay={overlay}
+                field={live ? ft.scene : null}
+                fullScreen={full.on}
               />
               <OrbitHint />
             </Suspense>
           ) : (
             <Loader label={twins.error ?? `Streaming elevation · ${Math.round(twins.progress * 100)}%`} progress={twins.progress} />
           )}
-          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-5">
-            <SlabLabel world="earth" name={earthName} grid={twins.earth} img={earthImg} />
-            <SlabLabel world={targetBody} name={targetName} grid={twins.target} img={IMAGERY[targetBody].visible.name} right />
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4 sm:p-5">
+            <SlabLabel world="earth" name={earthName} grid={twins.earth} img={earthImg}>
+              {live && ft.data && <FieldReadout point={ft.data.routeE[at]} limit={ft.limit} night={ft.data.night.earth} name={earthName} />}
+            </SlabLabel>
+            <SlabLabel world={targetBody} name={targetName} grid={twins.target} img={IMAGERY[targetBody].visible.name} right>
+              {live && ft.data && <FieldReadout point={ft.data.routeT[at]} limit={ft.limit} night={ft.data.night.target} name={targetName} right />}
+            </SlabLabel>
           </div>
-          <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-2 border-t border-line bg-void/85 p-3 backdrop-blur-xl">
-            <Seg
-              value={overlay}
-              onChange={(v) => setOverlay(v as Overlay)}
-              options={[
-                { id: "imagery", label: "Real imagery" },
-                { id: "light", label: "Light & shadow" },
-                { id: "relief", label: "Elevation" },
-              ]}
-            />
-            <button onClick={() => setPlaying((p) => !p)} title="Sweep the Sun around the horizon, as at the lunar poles" className="flex items-center gap-1.5 rounded-full border border-flare/50 px-3 py-1.5 text-[12px] text-flare transition-colors hover:bg-flare/10">
-              {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? "Pause Sun" : "Turn the Sun"}
-            </button>
-            <label className="flex items-center gap-2 text-[11px] text-chrome">
-              <span className="font-mono">AZ</span>
-              <input type="range" min={0} max={359} value={sunAz} onChange={(e) => setSunAz(+e.target.value)} className="w-20 accent-[#f2c879]" aria-label="Sun azimuth" />
-            </label>
-            {overlay !== "imagery" && (
-              <label className="flex items-center gap-2 text-[11px] text-chrome">
-                <Sun size={13} className="text-flare" />
-                <input type="range" min={0.5} max={60} step={0.5} value={sunElev} onChange={(e) => setSunElev(+e.target.value)} className="w-20 accent-[#f2c879]" aria-label="Sun elevation" />
-                <span className="w-10 font-mono text-platinum tabular">{sunElev.toFixed(1)}°</span>
-                {sunElev !== defaultSun && (
-                  <button onClick={() => setSunElev(defaultSun)} className="text-dim hover:text-chrome" title="Reset to the target's median Sun">
-                    <RotateCcw size={12} />
+          <div className="absolute inset-x-0 bottom-0">
+            {live && (
+              <div className="pointer-events-none px-3 sm:px-4">
+                <FieldCallout ft={ft} earthName={earthName} targetName={targetName} where={full.on ? "in the panel" : "below"} />
+              </div>
+            )}
+            {/* actions first; on phones the full-screen button joins them and the view options wrap below */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-line bg-void/85 p-2.5 backdrop-blur-xl sm:p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {field ? (
+                  <FieldControls ft={ft} primaryRef={startBtn} />
+                ) : (
+                  <button
+                    ref={runBtn}
+                    type="button"
+                    onClick={openField}
+                    disabled={!ready}
+                    title="Send a rover or a walking team across both blocks"
+                    className="flex items-center gap-1.5 rounded-full bg-flare px-3.5 py-1.5 text-[12px] font-medium text-void transition-opacity hover:opacity-90 disabled:opacity-40"
+                  >
+                    <RouteIcon size={13} aria-hidden /> Run a field test
                   </button>
                 )}
-              </label>
-            )}
-            <Seg value={String(exag)} onChange={(v) => setExag(+v)} options={[1, 3, 6].map((x) => ({ id: String(x), label: `${x}×` }))} />
-            <span className="ml-auto hidden font-mono text-[10px] text-dim md:block">drag to orbit · scroll to zoom</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 max-sm:order-2">
+                <Seg value={overlay} onChange={(v) => setOverlay(v as Overlay)} options={overlays} />
+                {!field && (
+                  <>
+                    <button onClick={() => setPlaying((p) => !p)} title="Sweep the Sun around the horizon, as at the lunar poles" className="flex items-center gap-1.5 rounded-full border border-flare/50 px-3 py-1.5 text-[12px] text-flare transition-colors hover:bg-flare/10">
+                      {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? "Pause Sun" : "Turn the Sun"}
+                    </button>
+                    <label className="flex items-center gap-2 text-[11px] text-chrome">
+                      <span className="font-mono">AZ</span>
+                      <input type="range" min={0} max={359} value={sunAz} onChange={(e) => setSunAz(+e.target.value)} className="w-20 accent-[#f2c879]" aria-label="Sun azimuth" />
+                    </label>
+                    {overlay !== "imagery" && (
+                      <label className="flex items-center gap-2 text-[11px] text-chrome">
+                        <Sun size={13} className="text-flare" />
+                        <input type="range" min={0.5} max={60} step={0.5} value={sunElev} onChange={(e) => setSunElev(+e.target.value)} className="w-20 accent-[#f2c879]" aria-label="Sun elevation" />
+                        <span className="w-10 font-mono text-platinum tabular">{sunElev.toFixed(1)}°</span>
+                        {sunElev !== defaultSun && (
+                          <button onClick={() => setSunElev(defaultSun)} className="text-dim hover:text-chrome" title="Reset to the target's median Sun">
+                            <RotateCcw size={12} />
+                          </button>
+                        )}
+                      </label>
+                    )}
+                  </>
+                )}
+                <Seg value={String(exag)} onChange={(v) => setExag(+v)} options={[1, 3, 6].map((x) => ({ id: String(x), label: `${x}×` }))} />
+              </div>
+              <span className="ml-auto hidden font-mono text-[10px] text-dim xl:block">drag to orbit · {full.on ? "scroll" : `${ZOOM_KEY} + scroll`} to zoom</span>
+              <button
+                type="button"
+                onClick={full.on ? full.exit : () => void full.enter()}
+                aria-label={full.on ? "Exit full screen" : "Full screen"}
+                title={full.on ? "Exit full screen (Esc)" : "Full screen"}
+                className={clsx(ghost, "ml-auto max-sm:order-1 xl:ml-0", full.on && "border-chrome/60 text-platinum")}
+              >
+                {full.on ? <Minimize2 size={13} aria-hidden /> : <Maximize2 size={13} aria-hidden />}
+                <span className={full.on ? undefined : "hidden sm:inline"}>{full.on ? "Exit full screen" : "Full screen"}</span>
+              </button>
+            </div>
           </div>
         </div>
+        {field && (
+          <FieldPanel
+            ft={ft}
+            earthName={earthName}
+            targetName={targetName}
+            targetBody={targetBody}
+            compact={full.on}
+            onClose={closeField}
+            className={full.on ? "min-h-0 flex-1 overflow-y-auto border-t border-line lg:w-[440px] lg:flex-none lg:border-t-0 lg:border-l" : "border-t border-line"}
+          />
+        )}
       </div>
     </Reveal>
   );
 }
 
-function SlabLabel({ world, name, grid, img, right }: { world: World; name: string; grid: TerrainGrid | null; img: string; right?: boolean }) {
+function SlabLabel({ world, name, grid, img, right, children }: { world: World; name: string; grid: TerrainGrid | null; img: string; right?: boolean; children?: React.ReactNode }) {
   return (
-    <div className={clsx("max-w-[46%]", right && "text-right")}>
+    <div className={clsx("max-w-[48%]", right && "text-right")}>
       <div className={clsx("flex items-center gap-2 text-[15px] font-medium [text-shadow:0_1px_8px_#000]", right && "justify-end")}>
         <WorldDot world={world} /> {name}
       </div>
@@ -1154,6 +1278,7 @@ function SlabLabel({ world, name, grid, img, right }: { world: World; name: stri
           {img}
         </div>
       )}
+      {children}
     </div>
   );
 }
